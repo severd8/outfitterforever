@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>
+<radialGradient id="bg" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#1d4436"/><stop offset="1" stop-color="#040d09"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe89a"/><stop offset=".5" stop-color="#d9a531"/><stop offset="1" stop-color="#8a5a12"/></linearGradient>
+<linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a5bd6"/><stop offset="1" stop-color="#2a1d78"/></linearGradient>
+<linearGradient id="belt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8683a"/><stop offset="1" stop-color="#5a2f14"/></linearGradient>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".6"/></filter>
+</defs>
+<rect width="512" height="512" rx="72" fill="url(#bg)"/>
+<rect x="10" y="10" width="492" height="492" rx="64" fill="none" stroke="url(#gold)" stroke-width="10"/>
+<circle cx="256" cy="236" r="170" fill="url(#gold)" stroke="#5a3a06" stroke-width="8"/>
+<circle cx="256" cy="236" r="140" fill="#0f2a22" stroke="#fff0b0" stroke-width="4"/>
+<g fill="none" stroke="#7fe0b0" stroke-width="10" stroke-linecap="round" opacity=".85"><path d="M322.5 141.0 A116 116 0 0 1 351.0 302.5 M189.5 331.0 A116 116 0 0 1 161.0 169.5"/></g>
+<path d="M341.8 315.6 L369.9 303.5 L343.7 285.2 Z M170.2 156.4 L142.1 168.5 L168.3 186.8 Z" fill="#7fe0b0" opacity=".85"/>
+<g filter="url(#shadow)">
+<path d="M256 168 V150 a12 12 0 1 1 12 -12" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+<path d="M256 168 L176 204 H336 Z" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linejoin="round"/>
+<path d="M206 200 L234 190 Q256 214 278 190 L306 200 L346 230 L326 262 L304 248 L304 326 Q256 340 208 326 L208 248 L186 262 L166 230 Z" fill="url(#cloth)" stroke="#ffe89a" stroke-width="5" stroke-linejoin="round"/>
+<path d="M234 190 Q256 214 278 190" fill="none" stroke="#ffe89a" stroke-width="5"/>
+<rect x="208" y="284" width="96" height="16" fill="url(#belt)" stroke="#ffe89a" stroke-width="3"/>
+<rect x="246" y="281" width="20" height="22" rx="3" fill="none" stroke="#ffe89a" stroke-width="4"/>
+<path d="M256 212 V280" stroke="#ffe89a" stroke-width="3" opacity=".6"/>
+</g>
+<path d="M64 372 h384 l-26 36 26 36 h-384 l26 -36 z" fill="#8b1e1e" stroke="url(#gold)" stroke-width="6" stroke-linejoin="round"/>
+<text x="256" y="424" text-anchor="middle" font-family="DejaVu Serif" font-weight="bold" font-size="40" fill="#ffe89a" letter-spacing="2">OUTFITTER</text></svg>

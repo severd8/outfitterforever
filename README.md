@@ -1,3 +1,5 @@
+<p align="center"><img src="art/logo.png" width="200" alt="Outfitter Forever"></p>
+
 # Outfitter Forever
 
 **Outfitter, ported to World of Warcraft: Forever.**
