@@ -337,10 +337,10 @@ function Outfitter:GenerateSmartUnequipScript(pEventID, pDescription, pUnequipDe
 
 -- Unequip and return if they're not in an enabled spec
 if Outfitter.IsMainline then
-  if not setting.Tree1 and GetSpecialization() == 1
-  or not setting.Tree2 and GetSpecialization() == 2
-  or not setting.Tree3 and GetSpecialization() == 3
-  or not setting.Tree4 and GetSpecialization() == 4 then
+  if not setting.Tree1 and Outfitter:GetSpecialization() == 1
+  or not setting.Tree2 and Outfitter:GetSpecialization() == 2
+  or not setting.Tree3 and Outfitter:GetSpecialization() == 3
+  or not setting.Tree4 and Outfitter:GetSpecialization() == 4 then
       equip = false
       return
   end
@@ -394,10 +394,10 @@ end
 
 -- Return if they're not in an enabled spec
 if Outfitter.IsMainline then
-  if not setting.Tree1 and GetSpecialization() == 1
-  or not setting.Tree2 and GetSpecialization() == 2
-  or not setting.Tree3 and GetSpecialization() == 3
-  or not setting.Tree4 and GetSpecialization() == 4 then
+  if not setting.Tree1 and Outfitter:GetSpecialization() == 1
+  or not setting.Tree2 and Outfitter:GetSpecialization() == 2
+  or not setting.Tree3 and Outfitter:GetSpecialization() == 3
+  or not setting.Tree4 and Outfitter:GetSpecialization() == 4 then
       return
   end
 end
@@ -449,10 +449,10 @@ end
 
 -- Return if they're not in an enabled spec
 if Outfitter.IsMainline then
-  if not setting.Tree1 and GetSpecialization() == 1
-  or not setting.Tree2 and GetSpecialization() == 2
-  or not setting.Tree3 and GetSpecialization() == 3
-  or not setting.Tree4 and GetSpecialization() == 4 then
+  if not setting.Tree1 and Outfitter:GetSpecialization() == 1
+  or not setting.Tree2 and Outfitter:GetSpecialization() == 2
+  or not setting.Tree3 and Outfitter:GetSpecialization() == 3
+  or not setting.Tree4 and Outfitter:GetSpecialization() == 4 then
       return
   end
 end
@@ -692,7 +692,7 @@ end
 
 if setting.Buffcheck and #setting.Buffcheck > 0 then
   for j=1,#setting.Buffcheck,1 do
-    if C_UnitAuras.GetAuraDataBySpellName("player", setting.Buffcheck[j]) then
+    if Outfitter:PlayerHasAuraNamed(setting.Buffcheck[j]) then
       return
     end
   end
@@ -1100,10 +1100,10 @@ end
 
 -- Return if they're not in an enabled spec
 if Outfitter.IsMainline then
-  if not setting.Tree1 and GetSpecialization() == 1
-  or not setting.Tree2 and GetSpecialization() == 2
-  or not setting.Tree3 and GetSpecialization() == 3
-  or not setting.Tree4 and GetSpecialization() == 4 then
+  if not setting.Tree1 and Outfitter:GetSpecialization() == 1
+  or not setting.Tree2 and Outfitter:GetSpecialization() == 2
+  or not setting.Tree3 and Outfitter:GetSpecialization() == 3
+  or not setting.Tree4 and Outfitter:GetSpecialization() == 4 then
       return
   end
 end
@@ -1251,11 +1251,11 @@ end
 		Script = Outfitter:GenerateScriptHeader("PLAYER_ENTERING_WORLD UNIT_AURA UPDATE_SHAPESHIFT_COOLDOWN", Outfitter.cWarriorBattleStanceDescription)..
 [[
 -- 71/2, 73/2
-if not Outfitter.IsMainline and (GetShapeshiftForm() == 1) then
+if not Outfitter.IsRetail and (GetShapeshiftForm() == 1) then
   equip = true
-elseif Outfitter.IsMainline and
-    (GetSpecializationInfo(GetSpecialization()) == 71
-     or GetSpecializationInfo(GetSpecialization()) == 73)
+elseif Outfitter.IsRetail and
+    (Outfitter:GetSpecializationInfo(Outfitter:GetSpecialization()) == 71
+     or Outfitter:GetSpecializationInfo(Outfitter:GetSpecialization()) == 73)
      and GetShapeshiftForm() == 2 then
   equip = true
 elseif didEquip then
@@ -1270,9 +1270,9 @@ end
 		Script = Outfitter:GenerateScriptHeader("PLAYER_ENTERING_WORLD UNIT_AURA UPDATE_SHAPESHIFT_COOLDOWN", Outfitter.cWarriorDefensiveStanceDescription)..
 [[
 -- 71/1, 72/1, 73/1
-if (not Outfitter.IsMainline) and (GetShapeshiftForm() == 2) then
+if (not Outfitter.IsRetail) and (GetShapeshiftForm() == 2) then
   equip = true
-elseif Outfitter.IsMainline and (GetShapeshiftForm() == 1) then
+elseif Outfitter.IsRetail and (GetShapeshiftForm() == 1) then
   equip = true
 elseif didEquip then
   equip = false
@@ -1286,9 +1286,9 @@ end
 		Script = Outfitter:GenerateScriptHeader("PLAYER_ENTERING_WORLD UNIT_AURA UPDATE_SHAPESHIFT_COOLDOWN", Outfitter.cWarriorBerserkerStanceDescription)..
 [[
 -- 72/2,
-if not Outfitter.IsMainline and (GetShapeshiftForm() == 3) then
+if not Outfitter.IsRetail and (GetShapeshiftForm() == 3) then
   equip = true
-elseif Outfitter.IsMainline and (GetSpecializationInfo(GetSpecialization()) == 72) and (GetShapeshiftForm() == 2) then
+elseif Outfitter.IsRetail and (Outfitter:GetSpecializationInfo(Outfitter:GetSpecialization()) == 72) and (GetShapeshiftForm() == 2) then
   equip = true
 elseif didEquip then
   equip = false
@@ -1358,9 +1358,13 @@ end
 -- $SETTING Health="number"
 -- $SETTING Mana="number"
 
+-- Your health and mana are hidden from addons on Forever; nothing changes then
+local health, mana = UnitHealth("player"), UnitPower("player")
+if Outfitter.IsSecret(health) or Outfitter.IsSecret(mana) then return end
+
 if select(1, ...) == "player"
-and (UnitHealth("player") < setting.Health
- or (UnitPowerType("player") == 0 and UnitPower("player") < setting.Mana)) then
+and (health < setting.Health
+ or (UnitPowerType("player") == 0 and mana < setting.Mana)) then
    equip = true
 elseif didEquip then
    equip = false
@@ -1380,7 +1384,7 @@ end
 
 if select(1, ...) ~= "player" then return end
 
-if C_UnitAuras.GetAuraDataBySpellName("player", setting.buffName) then
+if Outfitter:PlayerHasAuraNamed(setting.buffName) then
     equip = true
 end
 
@@ -1440,7 +1444,9 @@ if equip == nil and didEquip then equip = false end
 -- $SETTING targetName = {type="string", label="Target name"}
 
 -- Equip if it's the specified target
-if UnitName("target"):lower() == setting.targetName:lower() then
+local targetName = UnitName("target")
+if targetName and not Outfitter.IsSecret(targetName)
+and targetName:lower() == setting.targetName:lower() then
     equip = true
 end
 ]],

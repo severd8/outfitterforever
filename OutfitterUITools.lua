@@ -48,7 +48,7 @@ function Outfitter._ButtonBar:SetDimensions(pNumColumns, pNumRows)
 	for vIndex = #self.BackgroundTextures, vTotalTextures do
 		local vTexture = self:CreateTexture(nil, "BACKGROUND")
 
-		vTexture:SetTexture("Interface\\Addons\\Outfitter\\Textures\\QuickSlotsBackground")
+		vTexture:SetTexture("Interface\\AddOns\\OutfitterForever\\Textures\\QuickSlotsBackground")
 		vTexture:SetHeight(Outfitter.Style.ButtonBar.BackgroundHeight)
 		vTexture:Hide()
 

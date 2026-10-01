@@ -1,16 +1,13 @@
 ---
 name: Bug report
-about: Report a bug (WoW and Outfitter versions required)
+about: Report a bug (Outfitter Forever version required)
 title: ''
 labels: ''
 
 ---
 
-**Outfitter Version**
-(e.g., 5.5.3.12)
-
-**WoW Version**
-(Retail/Mists/TBC/Era)
+**Outfitter Forever Version**
+(e.g., v1.0.0)
 
 **Describe the bug**
 A clear and concise description of what the bug is.

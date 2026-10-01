@@ -23,7 +23,7 @@ function Outfitter.LDB:OutfitEvent(pEvent, pOutfitName, pOutfit)
 		self.DataObj.icon = Outfitter.OutfitBar:GetOutfitTexture(vOutfit)
 	else
 		self.DataObj.text = Outfitter.cTitle
-		self.DataObj.icon = "Interface\\AddOns\\Outfitter\\Textures\\Icon"
+		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Icon"
 	end
 end
 

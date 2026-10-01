@@ -1,4 +1,4 @@
-Outfitter.cVersion = C_AddOns.GetAddOnMetadata("Outfitter", "Version")
+Outfitter.cVersion = C_AddOns.GetAddOnMetadata(Outfitter.AddonName, "Version") or ""
 
 Outfitter.cTitle = "Outfitter"
 Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion

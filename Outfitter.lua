@@ -17,9 +17,11 @@ local IsClassicCataclysm = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM
 local IsClassicWrath = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WRATH_OF_THE_LICH_KING
 local IsClassicTBC = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE
 local IsClassicEra = WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+local IsForever = Outfitter.IsForever
 local NUM_BANKBAGSLOTS = NUM_BANKBAGSLOTS or 98
 
 Outfitter.IsMainline = IsMainline
+Outfitter.IsRetail = IsMainline and not IsForever -- Mainline client running retail gameplay (not Forever)
 Outfitter.IsClassicPandaria = IsClassicPandaria
 Outfitter.IsClassicTBC = IsClassicTBC
 Outfitter.IsClassicEra = IsClassicEra
@@ -1216,7 +1218,11 @@ Outfitter.cShapeshiftIDInfo = {
 --[[--
 	Modify entries for a specific version (i.e. Add RangedSlot for non-retail)
 --]]--
-if not IsMainline then
+if IsForever then
+	-- Forever has a ranged slot (bows, guns, wands, thrown, relics)
+	table.insert(Outfitter.cSlotNames, 11, "RangedSlot")
+	Outfitter.cSlotDisplayNames.RangedSlot = RANGEDSLOT
+elseif not IsMainline then
 	if not IsClassicPandaria then
 		table.insert(Outfitter.cSlotNames, 11, "RangedSlot")
 		Outfitter.cSlotDisplayNames.RangedSlot = RANGEDSLOT
@@ -1241,6 +1247,22 @@ for vIndex, vSlotName in ipairs(Outfitter.cSlotNames) do
 	Outfitter.cSlotOrder[vSlotName] = vIndex
 end
 function Outfitter:OutfitterButtonAdjust()
+	-- Forever's character window has a collapsible stats pane and a column of
+	-- tabs down its right edge. Put the button beside the pane's collapse arrow
+	-- and open the Outfitter window to the right of those tabs.
+	if IsForever then
+		local vToggleButton = CharacterFrame and CharacterFrame.RightPaneToggleButton
+		if vToggleButton then
+			OutfitterButton:ClearAllPoints()
+			OutfitterButton:SetPoint("RIGHT", vToggleButton, "LEFT", 2, 0)
+		end
+		local vModeTab = _G["CharacterFrameModeTab1"]
+		if vModeTab then
+			OutfitterFrame:ClearAllPoints()
+			OutfitterFrame:SetPoint("TOPLEFT", vModeTab, "TOPRIGHT", 2, 0)
+		end
+		return
+	end
 	if IsClassicEra then
 		OutfitterButton:SetPoint("TOPRIGHT", PaperDollFrame, "TOPRIGHT", -28, -40)
 	end
@@ -1282,7 +1304,7 @@ function Outfitter_OnAddonCompartmentClick(addonName, buttonName)
 		Outfitter:ToggleOutfitterFrame()
 	else
 		--[[-- Not sure why this is needed. Pulled from Blizzard forums --]]--
-		if not CharacterFrameTab3:GetRight() then
+		if CharacterFrameTab3 and not CharacterFrameTab3:GetRight() then
 			CharacterFrame:SetPoint("TOPLEFT", 20, -100)
 		end
 		Outfitter:OpenUI()
@@ -1637,7 +1659,17 @@ function Outfitter:UnitHealthOrManaChanged(pUnitID)
 
 	local vPlayerMana = UnitPower("player")
 
-	if vPlayerMana and (not self.PreviousManaLevel or vPlayerMana < self.PreviousManaLevel) then
+	-- Mana is hidden from addons on Forever, so a spell cast followed by a mana
+	-- change is taken as mana spent
+	local vManaDropped
+	if Outfitter.IsSecret(vPlayerMana) then
+		vPlayerMana = nil
+		vManaDropped = true
+	else
+		vManaDropped = vPlayerMana and (not self.PreviousManaLevel or vPlayerMana < self.PreviousManaLevel)
+	end
+
+	if vManaDropped then
 		local vTime = GetTime()
 
 		if self.SpellcastSentTime and vTime < self.SpellcastSentTime + 10 then
@@ -1744,7 +1776,12 @@ function Outfitter:PlayerIsFull()
 		return true
 	end
 
-	return UnitPower("player") > (UnitPowerMax("player") * 0.85)
+	local vMana, vMaxMana = UnitPower("player"), UnitPowerMax("player")
+	if Outfitter.IsSecret(vMana) or Outfitter.IsSecret(vMaxMana) then
+		return true
+	end
+
+	return vMana > (vMaxMana * 0.85)
 end
 
 function Outfitter:UnitInventoryChanged(pUnitID)
@@ -2063,7 +2100,9 @@ function Outfitter:DeleteSelectedOutfit()
 end
 
 function Outfitter:TalentsChanged()
-	if _G["GetSpecialization"] then
+	if IsForever then
+		self.CanDualWield2H = false -- No Titan's Grip on Forever
+	elseif _G["GetSpecialization"] then
 		self.CanDualWield2H = self.PlayerClass == "WARRIOR" and GetSpecialization() == 2
 	elseif IsClassicPandaria then
 		self.CanDualWield2H = self.PlayerClass == "WARRIOR" and GetPrimaryTalentTree() == 2
@@ -3184,7 +3223,7 @@ function Outfitter:UpdateSlotEnables(pOutfit, pInventoryCache)
 				vCheckbox:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
 				vCheckbox.IsUnknown = false
 			else
-				vCheckbox:SetCheckedTexture("Interface\\Addons\\Outfitter\\Textures\\CheckboxUnknown")
+				vCheckbox:SetCheckedTexture("Interface\\AddOns\\OutfitterForever\\Textures\\CheckboxUnknown")
 				vCheckbox.IsUnknown = true
 			end
 			vCheckbox:GetCheckedTexture():Show() -- Grabbed from retail (not sure if it's needed)
@@ -4470,7 +4509,9 @@ function Outfitter:GetPlayerAuraStates()
 
 	while true do
 		--local vName, vTexture, _, _, _, _, _, _, _, vSpellID = UnitBuff("player", vBuffIndex)
-		local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", vBuffIndex)
+		-- Forever throws an error instead of returning nil when auras are hidden
+		local vSucceeded, auraInfo = pcall(C_UnitAuras.GetBuffDataByIndex, "player", vBuffIndex)
+		if not vSucceeded then return self.AuraStates end
 
 		-- Bail out if we can't use the value (not combat, just 'secret')
 		--if canaccessvalue and not canaccessvalue(auraInfo) then return self.AuraStates end
@@ -4482,7 +4523,7 @@ function Outfitter:GetPlayerAuraStates()
 			vName, vTexture, vSpellID = auraInfo.name, auraInfo.icon, auraInfo.spellId
 		end
 
-		if not vName then
+		if not vName or Outfitter.IsSecret(vName) then
 			return self.AuraStates
 		end
 
@@ -4504,6 +4545,16 @@ function Outfitter:GetPlayerAuraStates()
 
 		vBuffIndex = vBuffIndex + 1
 	end
+end
+
+-- True if the player has a buff or debuff with this name. Auras can't be read
+-- in combat on Forever (the call throws), so this returns false then.
+function Outfitter:PlayerHasAuraNamed(pName)
+	if not pName or pName == "" then
+		return false
+	end
+	local vSucceeded, vAuraData = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", pName)
+	return vSucceeded and type(vAuraData) == "table"
 end
 
 function Outfitter:GetBuffTooltipText(pBuffIndex)
@@ -5110,8 +5161,8 @@ function Outfitter:Initialize()
 		self.cSlotIDs[vInventorySlot] = vSlotID
 		self.cSlotIDToInventorySlot[vSlotID] = vInventorySlot
 	end
-	-- Make sure the ranged slot checkbox is not visible in classic pandaria/mainline
-	if IsMainline or IsClassicPandaria then
+	-- Make sure the ranged slot checkbox is not visible in classic pandaria/mainline (Forever has the slot)
+	if (IsMainline and not IsForever) or IsClassicPandaria then
 		if _G["OutfitterEnableRangedSlot"] then
 			OutfitterEnableRangedSlot:Hide()
 		end
@@ -5165,7 +5216,7 @@ function Outfitter:Initialize()
 	Outfitter:ShowMinimapButton(self.Settings.Options.MinimapButton.ShowButton)
 
 	-- Adjust the Blizzard UI and Outfitter frames
-	if IsMainline or IsClassicCataclysm or IsClassicPandaria then
+	if (IsMainline and not IsForever) or IsClassicCataclysm or IsClassicPandaria then
 		PaperDollSidebarTabs:SetPoint("BOTTOMRIGHT", CharacterFrameInsetRight, "TOPRIGHT", -30, -1)
 	end
 	if IsClassicCataclysm or IsClassicPandaria then
@@ -7712,6 +7763,14 @@ function Outfitter:CallCompanionByName(pName)
 end
 
 function Outfitter:PlayerIsOnQuestID(pQuestID)
+	-- Modern clients (Forever included) use C_QuestLog
+	if not _G["GetNumQuestLogEntries"] then
+		if not (C_QuestLog and C_QuestLog.IsOnQuest and C_QuestLog.IsOnQuest(pQuestID)) then
+			return false
+		end
+		return true, C_QuestLog.IsComplete and C_QuestLog.IsComplete(pQuestID)
+	end
+
 	local vNumQuests = GetNumQuestLogEntries()
 
 	for vQuestIndex = 1, vNumQuests do
@@ -8341,9 +8400,9 @@ function Outfitter:SynchronizeCompanionState()
 end
 
 function Outfitter:GetTalentTreeName(pIndex)
-	-- Retail shortcut
-	if _G["GetSpecializationInfo"] then
-		local _, vName = GetSpecializationInfo(pIndex)
+	-- Retail and Forever shortcut
+	if (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo) or _G["GetSpecializationInfo"] then
+		local _, vName = self:GetSpecializationInfo(pIndex or self:GetSpecialization())
 		return vName
 	end
 
@@ -8534,7 +8593,7 @@ function Outfitter._ListItem:SetToOutfit(pOutfit, pCategoryID, pOutfitIndex, pIn
 
 	-- Turn off the server storage icon for classic
 	--if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
-	if LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_WRATH_OF_THE_LICH_KING then
+	if LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_WRATH_OF_THE_LICH_KING and not IsForever then
 		----[[--
 		local vScriptIcon = _G[vOutfitFrameName.."ScriptIcon"]
 		local vServerButton = _G[vOutfitFrameName.."ServerButton"]
@@ -8558,7 +8617,7 @@ function Outfitter._ListItem:SetToOutfit(pOutfit, pCategoryID, pOutfitIndex, pIn
 	local vScriptIcon = _G[vOutfitFrameName.."ScriptIcon"]
 
 	if pOutfit.ScriptID or pOutfit.Script then
-		vScriptIcon:SetTexture("Interface\\Addons\\Outfitter\\Textures\\Gear")
+		vScriptIcon:SetTexture("Interface\\AddOns\\OutfitterForever\\Textures\\Gear")
 
 		if Outfitter.Settings.Options.DisableAutoSwitch or pOutfit.Disabled then
 			vScriptIcon:SetVertexColor(0.4, 0.4, 0.4)
@@ -8748,7 +8807,7 @@ function Outfitter._ListItem:OnEnter()
 			end
 
 			GameTooltip:SetInventoryItem("player", self.outfitItem.Location.SlotID)
-		elseif self.outfitItem.Location.BagIndex == -1 then
+		elseif self.outfitItem.Location.BagIndex == -1 and BankButtonIDToInvSlotID then
 			GameTooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(self.outfitItem.Location.BagSlotIndex))
 		else
 			vHasCooldown, vRepairCost = GameTooltip:SetBagItem(self.outfitItem.Location.BagIndex, self.outfitItem.Location.BagSlotIndex)

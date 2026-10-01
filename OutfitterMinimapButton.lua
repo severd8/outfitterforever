@@ -1,7 +1,8 @@
 local addonName, addon  = ...
 local OUTFITTER_MINIMAP_BUTTON_RADIUS_LENGTH = 80
 
-if LE_EXPANSION_LEVEL_CURRENT > 0 and LE_EXPANSION_LEVEL_CURRENT >= LE_EXPANSION_DRAGONFLIGHT then
+if Outfitter.IsForever -- Forever uses the modern minimap
+or LE_EXPANSION_LEVEL_CURRENT > 0 and LE_EXPANSION_LEVEL_CURRENT >= LE_EXPANSION_DRAGONFLIGHT then
 	OUTFITTER_MINIMAP_BUTTON_RADIUS_LENGTH = 105
 end
 
@@ -14,7 +15,7 @@ local function CreateMinimapButton()
 	OutfitterMinimapButton:EnableMouse(true)
 
 	-- Textures
-	OutfitterMinimapButton:SetNormalTexture("Interface\\Addons\\Outfitter\\Textures\\MinimapButton")
+	OutfitterMinimapButton:SetNormalTexture("Interface\\AddOns\\OutfitterForever\\Textures\\MinimapButton")
 	local overlayTexture = OutfitterMinimapButton:CreateTexture(nil, "OVERLAY")
 	overlayTexture:SetSize(53, 53)
 	overlayTexture:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")

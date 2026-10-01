@@ -18,21 +18,33 @@ end
 -- Escape key handling for dialogs
 ----------------------------------------
 
+-- Escape cancels the open dialogs. Blizzard's Escape handling hides any shown
+-- frame listed in UISpecialFrames, so a hidden stand-in frame is listed there
+-- and shown while a dialog is open; hiding it cancels the dialogs. (Replacing
+-- Blizzard's StaticPopup_EscapePressed would taint Blizzard's code, and on
+-- WoW: Forever the Escape key no longer goes through that function anyway.)
+
 function Addon.UIElementsLib:BeginDialog(pDialog)
 	if not self.OpenDialogs then
 		self.OpenDialogs = {}
 
-		self.OrigStaticPopup_EscapePressed = StaticPopup_EscapePressed
-		StaticPopup_EscapePressed = function (...) return self:StaticPopup_EscapePressed(...) end
+		self.EscapeFrame = CreateFrame("Frame", "MC2UIElementsLibDialogEscape", UIParent)
+		self.EscapeFrame:Hide()
+		self.EscapeFrame:SetScript("OnHide", function () self:CancelDialogs() end)
+		table.insert(UISpecialFrames, self.EscapeFrame:GetName())
 	end
 
 	table.insert(self.OpenDialogs, pDialog)
+	self.EscapeFrame:Show()
 end
 
 function Addon.UIElementsLib:EndDialog(pDialog)
 	for vIndex, vDialog in ipairs(self.OpenDialogs) do
 		if vDialog == pDialog then
 			table.remove(self.OpenDialogs, vIndex)
+			if #self.OpenDialogs == 0 and self.EscapeFrame:IsShown() then
+				self.EscapeFrame:Hide()
+			end
 			return
 		end
 	end
@@ -40,17 +52,16 @@ function Addon.UIElementsLib:EndDialog(pDialog)
 	Addon:ErrorMessage("DialogClosed called on an unknown dialog: %s", tostring(pDialog:GetName()))
 end
 
-function Addon.UIElementsLib:StaticPopup_EscapePressed(...)
-	local vClosed = self.OrigStaticPopup_EscapePressed(...)
+function Addon.UIElementsLib:CancelDialogs()
 	local vNumDialogs = #self.OpenDialogs
 
 	for vIndex = 1, vNumDialogs do
 		local vDialog = self.OpenDialogs[1]
+		if not vDialog then
+			break
+		end
 		vDialog:Cancel()
-		vClosed = 1
 	end
-
-	return vClosed
 end
 
 

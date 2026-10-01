@@ -332,6 +332,19 @@ Outfitter.SimpleStatCategories =
 	To use only the ones for this expansion, we remove any that aren't relevent
 --]]--
 do -- editor collapse hack
+	-- Forever plays like the original game, so it gets the original stats
+	-- (plus spell power, which Forever items can have)
+	local LE_EXPANSION_LEVEL_CURRENT = LE_EXPANSION_LEVEL_CURRENT
+	if Outfitter.IsForever then
+		LE_EXPANSION_LEVEL_CURRENT = LE_EXPANSION_CLASSIC or 0
+		for _, category in ipairs(Outfitter.SimpleStatCategories) do
+			for _, stat in ipairs(category.Stats) do
+				if stat.ID ~= nil and stat.ID == ITEM_MOD_SPELL_POWER_SHORT then
+					stat.ExpansionMin = LE_EXPANSION_CLASSIC or 0
+				end
+			end
+		end
+	end
 	local markedForRemoval = {}
 	for category = 1, #Outfitter.SimpleStatCategories do
 		-- Check all the categories for appopriate stats
@@ -698,7 +711,10 @@ function Outfitter.TankPoints_New()
 	vTankPointData.BaseStats.Parry = GetParryChance()
 	vTankPointData.BaseStats.Block = GetBlockChance()
 
-	local vBaseDefense, vBuffDefense = UnitDefense("player")
+	local vBaseDefense, vBuffDefense = 0, 0
+	if UnitDefense then -- Not on Forever
+		vBaseDefense, vBuffDefense = UnitDefense("player")
+	end
 	Outfitter.Stats_AddStatValue(vTankPointData.BaseStats, "Defense", vBaseDefense + vBuffDefense)
 
 	-- Replace the armor with the current value since that already includes various factors

@@ -1,6 +1,6 @@
 -- Global Backdrops
 BACKDROP_OUTFITTER_DIALOG_32_32 = {
-	bgFile = "Interface\\Addons\\Outfitter\\Textures\\DialogBox-Background",
+	bgFile = "Interface\\AddOns\\OutfitterForever\\Textures\\DialogBox-Background",
 	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
 	tile = true,
 	tileSize = 32,
@@ -422,6 +422,10 @@ function Outfitter.OutfitBar:GetCursorTexture()
 	end
 
 	if vType == "spell" then
+		if C_Spell and C_Spell.GetSpellTexture then
+			local vSpellID = select(4, GetCursorInfo())
+			return vSpellID and C_Spell.GetSpellTexture(vSpellID)
+		end
 		return GetSpellTexture(vParam1, vParam2)
 
 	elseif vType == "item" then
@@ -926,7 +930,7 @@ function Outfitter.OutfitBar._ChooseIconDialog:Construct()
 	end)
 
 	self:SetBackdrop({
-		bgFile = "Interface\\Addons\\Outfitter\\Textures\\DialogBox-Background",
+		bgFile = "Interface\\AddOns\\OutfitterForever\\Textures\\DialogBox-Background",
 		edgeFile ="Interface\\DialogFrame\\UI-DialogBox-Border",
 		tile = true,
 		tileEdge = true,
@@ -1272,6 +1276,36 @@ function Outfitter.OutfitBar.TextureSets.Spellbook:Activate()
 				usedIconIDs[iconID] = true
 			end
 		end
+	end
+
+	-- Modern spellbook API (Forever)
+	if not _G["GetSpellTabInfo"] and C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
+		local vNumSkillLines = C_SpellBook.GetNumSpellBookSkillLines()
+
+		-- The category icons together
+		for vSkillLineIndex = 1, vNumSkillLines do
+			local vSkillLineInfo = C_SpellBook.GetSpellBookSkillLineInfo(vSkillLineIndex)
+			local vIconID = vSkillLineInfo and vSkillLineInfo.iconID
+			if vIconID and not usedIconIDs[vIconID] then
+				table.insert(self.TextureList, vIconID)
+				usedIconIDs[vIconID] = true
+			end
+		end
+
+		-- Then the icons from each category
+		for vSkillLineIndex = 1, vNumSkillLines do
+			local vSkillLineInfo = C_SpellBook.GetSpellBookSkillLineInfo(vSkillLineIndex)
+			if vSkillLineInfo then
+				for vSpellIndex = vSkillLineInfo.itemIndexOffset + 1, vSkillLineInfo.itemIndexOffset + vSkillLineInfo.numSpellBookItems do
+					local vIconID = C_SpellBook.GetSpellBookItemTexture(vSpellIndex, Enum.SpellBookSpellBank.Player)
+					if vIconID and not usedIconIDs[vIconID] then
+						table.insert(self.TextureList, vIconID)
+						usedIconIDs[vIconID] = true
+					end
+				end
+			end
+		end
+		return
 	end
 
 	-- Insert the spellbook category icons together
@@ -1708,7 +1742,7 @@ function Outfitter.OutfitBar._DragBar:SetVerticalOrientation(pVertical)
 		self.DragTexture:SetPoint("TOPLEFT", self, "TOPLEFT", self.TextureOffsetX, self.TextureOffsetY)
 		self.DragTexture:SetPoint("TOPRIGHT", self, "TOPRIGHT", self.TextureOffsetX - 3, self.TextureOffsetY)
 
-		self.DragTexture:SetTexture("Interface\\Addons\\Outfitter\\Textures\\TopDragHandle")
+		self.DragTexture:SetTexture("Interface\\AddOns\\OutfitterForever\\Textures\\TopDragHandle")
 		self.DragTexture:SetTexCoord(0, 0.78125, 0, 0.46875)
 	else
 		self:SetWidth(10)
@@ -1721,7 +1755,7 @@ function Outfitter.OutfitBar._DragBar:SetVerticalOrientation(pVertical)
 		self.DragTexture:SetPoint("TOPLEFT", self, "TOPLEFT", self.TextureOffsetX, self.TextureOffsetY - 1)
 		self.DragTexture:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", self.TextureOffsetX, self.TextureOffsetY + 4)
 
-		self.DragTexture:SetTexture("Interface\\Addons\\Outfitter\\Textures\\LeftDragHandle")
+		self.DragTexture:SetTexture("Interface\\AddOns\\OutfitterForever\\Textures\\LeftDragHandle")
 		self.DragTexture:SetTexCoord(0, 0.46875, 0, 0.75)
 	end
 end

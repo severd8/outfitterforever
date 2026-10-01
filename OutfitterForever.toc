@@ -1,20 +1,18 @@
-## Interface: 120007
-## Author: GovtGeek
+## Interface: 16001
+## Title: Outfitter Forever
+## Notes: Clothing and weapon management and automated equipment changes. Outfitter, ported to WoW: Forever.
+## Author: severd8
 ## X-Original-Author: John Stephen
-## X-Credits: Mundocani, Miv, Gogo, LemonDrake
-## Title: Outfitter
-## Version: 5.5.4.3
-## Notes: Clothing and weapon management and automated equipment changes
+## X-Credits: GovtGeek (Outfitter Retrofit), Mundocani, Miv, Gogo, LemonDrake
+## Version: @project-version@
+## X-Outfitter-Base: 5.5.4.3
 ## AddonCompartmentFunc: Outfitter_OnAddonCompartmentClick
-#### AddonCompartmentFuncOnEnter:
-#### AddonCompartmentFuncOnLeave:
 ## IconTexture: Interface/Icons/INV_Chest_Cloth_21
-## OptionalDeps:
-## RequiredDeps:
 ## SavedVariablesPerCharacter: gOutfitter_Settings
 ## SavedVariables: gOutfitter_GlobalSettings
-## X-ReloadTag: 2
-## X-Curse-Project-ID: 1011204
+## X-License: MIT
+## X-Curse-Project-ID: CURSEFORGE_PROJECT_ID
+## X-Category: Inventory
 
 Libraries/UTF8/utf8data.lua
 Libraries/UTF8/utf8.lua
@@ -64,6 +62,5 @@ OutfitterAbout.lua
 
 OutfitterLDB.lua
 
-# Fundamental differences between UIs require these
-Mainline/Outfitter.xml
+Outfitter.xml
 OutfitterBar.xml

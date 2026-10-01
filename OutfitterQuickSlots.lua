@@ -49,7 +49,11 @@ function Outfitter._FlyoutQuickSlots:PostClick(pButton, ...)
 	elseif CursorHasItem() or not vSlotItemLink then
 		pButton.popoutButton.flyoutLocked = true
 		EquipmentFlyout_Show(pButton)
-		EquipmentFlyoutPopoutButton_SetReversed(pButton.popoutButton, true)
+		if EquipmentFlyoutPopoutButton_SetReversed then
+			EquipmentFlyoutPopoutButton_SetReversed(pButton.popoutButton, true)
+		elseif EquipmentFlyoutPopoutButton_RefreshVisualState then -- Forever
+			EquipmentFlyoutPopoutButton_RefreshVisualState(pButton.popoutButton)
+		end
 	end
 end
 

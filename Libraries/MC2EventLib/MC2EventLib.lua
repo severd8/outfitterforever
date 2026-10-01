@@ -85,7 +85,9 @@ function Addon.EventLib:RegisterEvent(eventID, handlerFunction, refParam, blind,
 		self.Events[eventID] = event
 		
 		if self.EventFrame and not isCustomEvent then
-			self.EventFrame:RegisterEvent(eventID)
+			-- Registering an event the client doesn't have is an error on modern
+			-- clients (WoW: Forever lacks some). Skip it instead of breaking.
+			pcall(self.EventFrame.RegisterEvent, self.EventFrame, eventID)
 		end
 	end
 	
@@ -134,7 +136,7 @@ function Addon.EventLib:UnregisterEvent(eventID, handlerFunction, refParam)
 		self.Events[eventID] = nil
 		
 		if self.EventFrame and not event.IsCustomEvent then
-			self.EventFrame:UnregisterEvent(eventID)
+			pcall(self.EventFrame.UnregisterEvent, self.EventFrame, eventID)
 		end
 	end
 	
