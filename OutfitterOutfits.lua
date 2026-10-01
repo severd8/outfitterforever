@@ -243,7 +243,7 @@ function Outfitter._OutfitMethods:CheckOutfit(pCategoryID)
 		self.Items = {}
 	end
 
-	if LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_CATACLYSM and not Outfitter.IsForever then -- Forever has a ranged slot
+	if not Outfitter.IsForever and LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_CATACLYSM then -- Forever has a ranged slot
 		self.Items.RangedSlot = nil
 	end
 	if LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_WRATH_OF_THE_LICH_KING then

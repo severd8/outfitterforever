@@ -26,9 +26,11 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 - `LE_EXPANSION_LEVEL_CURRENT` on Forever isn't known, so nothing depends on it for Forever. The tests run with both 0 and 11.
 - Removed globals: `GetSpellInfo`, `GetItemInfo`, `GetSpecialization`, `GetSpecializationInfo`, `GetTalentInfo`, `GetTalentTabInfo`, `GetNumSkillLines`, `GetSpellTabInfo`, `GetSpellTexture`, `GetNumQuestLogEntries`, `UnitDefense`, `GetMouseFocus`, `BankButtonIDToInvSlotID`, `EquipmentFlyoutPopoutButton_SetReversed`, `EquipmentManager_UnpackLocation`. Use the `C_*` versions.
 - **Secret values**: your own health, mana (`UnitPower`, `UnitPowerMax`), and some names are hidden from addons. Comparing, doing math on or concatenating one throws. Check `Outfitter.IsSecret(v)` first.
-- **Auras throw in combat** ("Auras cannot be accessed when secret while tainted"). Call `C_UnitAuras` through `pcall` (`Outfitter:PlayerHasAuraNamed`).
+- **Auras throw in combat** ("Auras cannot be accessed when secret while tainted"). Call `C_UnitAuras` through `pcall`. `Outfitter:PlayerHasAuraNamed(name, filter)` returns `nil` when auras can't be read, and scripts must then change nothing. `canaccesssecrets()` isn't used on Forever (its value for addons is unknown).
 - Registering an event the client doesn't have throws. MC2EventLib registers through `pcall`.
-- **Taint**: never assign one of Blizzard's globals (even to wrap it). Adding to Blizzard tables (`UISpecialFrames`, `StaticPopupDialogs[key]`) and `hooksecurefunc` / `HookScript` are fine. The tests fail if a Blizzard global is replaced.
+- **Taint**: never assign one of Blizzard's globals (even to wrap it), and never `SetScript` on Blizzard's frames (`MC2AddonLib`'s `hookScript` always uses `HookScript` on Forever). Adding to Blizzard tables (`UISpecialFrames`, `StaticPopupDialogs[key]`) and `hooksecurefunc` / `HookScript` are fine. The tests fail if a Blizzard global or a Blizzard frame's script is replaced.
+- Don't register addon functions with `RegisterGameMenuEscHandler`: Blizzard's Escape loop would read the addon's entry and run the rest of Escape (game menu included) tainted.
+- Removed or changed on the Mainline API that Outfitter used: `UnitDebuff`, `GetTradeSkillLine` (now `C_TradeSkillUI.GetBaseProfessionInfo`), `C_Minimap.GetTrackingInfo` returns a table (`Outfitter:GetTrackingInfo` handles both).
 
 ## Forever changes (search for `IsForever`, `IsRetail`, `IsSecret`)
 
@@ -36,11 +38,14 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 - **Character window** (`OutfitterButtonAdjust`): the button goes left of `CharacterFrame.RightPaneToggleButton`; `OutfitterFrame` opens right of `CharacterFrameModeTab1` (Forever has a column of tabs down the window's right edge). The retail `PaperDollSidebarTabs` nudge is skipped. Tab templates use `PanelTabButtonTemplate` (Forever has no `CharacterFrameTabTemplate`).
 - **Specializations**: `TalentsChanged` (no Titan's Grip), `GetTalentTreeName`, and the preset scripts use `Outfitter:GetSpecialization()`.
 - **Warrior stances**: the stance scripts use `Outfitter.IsRetail` (Mainline client *and* not Forever) instead of `IsMainline`, so Forever gets stance forms 1/2/3.
-- **Secrets**: spirit regen (`UnitHealthOrManaChanged`), dining (`PlayerIsFull`), the Low Health and Equip on Target scripts, aura scanning.
+- **Secrets**: spirit regen (`UnitHealthOrManaChanged`), dining (`PlayerIsFull` is false while health is hidden, so Dining ends with the food buff), the Low Health and Equip on Target scripts, aura scanning. Your own `UnitHealth` and `UnitPower` are always secret; `UnitHealthMax` and `UnitPowerMax` aren't.
+- **Auras in scripts**: Has Buff, Has Debuff (`"HARMFUL"` filter) and the Trinket Queue buff check do nothing when auras can't be read.
+- **Helm and cloak display**: Forever has `ShowHelm` / `ShowCloak`, so outfits apply them (`OutfitterEquipment.lua`).
+- **Cooking / Fishing scripts**: `Outfitter:TradeSkillIsCooking()` and `Outfitter:GetTrackingInfo()`.
 - **Stats** (`OutfitterItemStats.lua`): Forever uses the original game's stat list, plus spell power.
 - **Minimap button** radius is the modern minimap's.
 - **Icon picker / cursor icons** (`OutfitterBar.lua`): `C_SpellBook` and `C_Spell`.
-- **Escape** (`MC2UIElementsLib.lua`): a hidden frame in `UISpecialFrames` stands in for open dialogs instead of replacing `StaticPopup_EscapePressed`.
+- **Escape** (`MC2UIElementsLib.lua`): a hidden, parentless frame (`OutfitterForeverDialogEscape`) in `UISpecialFrames` stands in for open dialogs instead of replacing `StaticPopup_EscapePressed`. Forever's Escape runs `CloseAllWindows`, so the character window closes on the same press.
 - **Folder name**: textures point at `Interface\AddOns\OutfitterForever\`; the version comes from `Outfitter.AddonName`.
 
 ## Testing
@@ -50,8 +55,8 @@ Run from the repo root before every commit:
     lua5.1 tests/run.lua
 
 - `tests/wow.lua` — a fake Forever client. Globals resolve against `tests/forever_api.lua`; anything Forever doesn't have is nil, so calling a removed API fails like it would in game. Frame methods are checked against Forever's widget API. Loads the `.toc`, builds the XML (templates, `$parent` names, scripts, OnLoad order) and runs events and `OnUpdate`.
-- `tests/fakes.lua` — the game state: a level 60 character, gear, bags, a cursor that moves items like the real one (including two-handers pushing off-hands into bags, and no armor changes in combat), auras that throw in combat, secret health and mana, Forever's character window frames.
-- `tests/run_tests.lua` — the scenarios: load and log in, button/window placement, saving and wearing outfits, the ranged slot, combat, stance and other scripts, slash commands, minimap menu, tooltips, riding, options, Escape, and that no Blizzard global is replaced.
+- `tests/fakes.lua` — the game state: a level 60 character, gear, bags, a cursor that moves items like the real one (including two-handers pushing off-hands into bags, and no armor changes in combat), auras (buffs and debuffs) that throw in combat, secret health and mana, minimap tracking, the trade skill window, Forever's character window frames.
+- `tests/run_tests.lua` — the scenarios: load and log in, button/window placement, saving and wearing outfits, the ranged slot, combat, stance and other scripts (buffs, debuffs, dining, cooking, fishing), helm display, slash commands, minimap menu, tooltips, riding, options, Escape, and that no Blizzard global or frame script is replaced. A fake the addon uses that Forever doesn't have also fails.
 - `tests/forever_api.lua` is generated by `tests/tools/make_forever_api.py` from Blizzard's Forever UI source (https://github.com/Gethe/wow-ui-source, `forever` branch) and the client's API reference (https://github.com/imperial64/forever-addon-dev). Rerun it after using a new API or Blizzard frame (instructions at the top of the script).
 
 Only testable in game: layout and looks, real item swapping timing, Forever's exact secret and taint rules.

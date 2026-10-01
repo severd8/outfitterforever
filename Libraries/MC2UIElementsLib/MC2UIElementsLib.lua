@@ -22,13 +22,16 @@ end
 -- frame listed in UISpecialFrames, so a hidden stand-in frame is listed there
 -- and shown while a dialog is open; hiding it cancels the dialogs. (Replacing
 -- Blizzard's StaticPopup_EscapePressed would taint Blizzard's code, and on
--- WoW: Forever the Escape key no longer goes through that function anyway.)
+-- WoW: Forever the Escape key no longer goes through that function anyway.
+-- Forever closes the character window on the same key press.)
 
 function Addon.UIElementsLib:BeginDialog(pDialog)
 	if not self.OpenDialogs then
 		self.OpenDialogs = {}
 
-		self.EscapeFrame = CreateFrame("Frame", "MC2UIElementsLibDialogEscape", UIParent)
+		-- No parent, so hiding the UI (Alt-Z) doesn't cancel the dialogs; the name
+		-- is per addon, since other addons may carry this library too
+		self.EscapeFrame = CreateFrame("Frame", tostring(Addon.AddonName or "MC2UIElementsLib").."DialogEscape")
 		self.EscapeFrame:Hide()
 		self.EscapeFrame:SetScript("OnHide", function () self:CancelDialogs() end)
 		table.insert(UISpecialFrames, self.EscapeFrame:GetName())

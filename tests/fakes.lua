@@ -197,7 +197,7 @@ F.ITEM_INVENTORY_LOCATION_BAGS = 0x00200000
 F.ITEM_INVENTORY_LOCATION_BANK = 0x00400000
 F.ITEM_INVENTORY_BANK_BAG_OFFSET = 4
 F.ITEM_INVENTORY_BAG_BIT_OFFSET = 8
-F.EQUIPMENTFLYOUT_PLACEINBAGS_LOCATION = 0xFFFFFFFC
+F.EQUIPMENTFLYOUT_PLACEINBAGS_LOCATION = 0xFFFFFFFF
 F.INV_MISC_QUESTIONMARK = 134400
 
 F.StaticPopupDialogs = {}
@@ -267,7 +267,7 @@ function F.InRepairMode() return false end
 function F.UnitHealth(unit) return W.secretHealthAndMana and W.Secret(2500) or 2500 end
 function F.UnitHealthMax(unit) return 3000 end
 function F.UnitPower(unit) return W.secretHealthAndMana and W.Secret(500) or 500 end
-function F.UnitPowerMax(unit) return W.secretHealthAndMana and W.Secret(1000) or 1000 end
+function F.UnitPowerMax(unit) return 1000 end -- your own maximums stay readable on Forever
 function F.UnitPowerType(unit) return W.player.class == "WARRIOR" and 1 or 0, "RAGE" end
 function F.UnitStat(unit, index) return 100, 100, 0, 0 end
 function F.UnitArmor() return 3000, 3000, 3000, 0, 0 end
@@ -316,12 +316,21 @@ W.auras = W.auras or {}
 local function AuraCheck()
 	if W.combat then error("Auras cannot be accessed when secret while tainted by 'OutfitterForever'", 3) end
 end
+-- An aura with harmful = true is a debuff
+local function AuraList(harmful)
+	local list = {}
+	for _, aura in ipairs(W.auras) do
+		if (aura.harmful or false) == harmful then list[#list + 1] = aura end
+	end
+	return list
+end
+local function IsHarmfulFilter(filter) return type(filter) == "string" and filter:find("HARMFUL") ~= nil end
 F.C_UnitAuras = {
-	GetBuffDataByIndex = function(unit, index) AuraCheck() return unit == "player" and W.auras[index] or nil end,
-	GetAuraDataByIndex = function(unit, index) AuraCheck() return unit == "player" and W.auras[index] or nil end,
-	GetAuraDataBySpellName = function(unit, name)
+	GetBuffDataByIndex = function(unit, index) AuraCheck() return unit == "player" and AuraList(false)[index] or nil end,
+	GetAuraDataByIndex = function(unit, index, filter) AuraCheck() return unit == "player" and AuraList(IsHarmfulFilter(filter))[index] or nil end,
+	GetAuraDataBySpellName = function(unit, name, filter)
 		AuraCheck()
-		for _, aura in ipairs(W.auras) do if aura.name == name then return aura end end
+		for _, aura in ipairs(AuraList(IsHarmfulFilter(filter))) do if aura.name == name then return aura end end
 		return nil
 	end,
 	GetPlayerAuraBySpellID = function(id)
@@ -677,7 +686,36 @@ F.C_Map = {
 F.C_PvP = { IsWarModeDesired = function() return false end, IsPVPMap = function() return false end, IsBattleground = function() return false end, IsArena = function() return false end }
 F.C_MountJournal = { GetNumMounts = function() return 0 end, GetNumDisplayedMounts = function() return 0 end, GetMountIDs = function() return {} end }
 F.C_PetJournal = { GetNumPets = function() return 0, 0 end, GetSummonedPetGUID = function() return nil end }
-F.C_Minimap = { GetNumTrackingTypes = function() return 0 end, GetTrackingInfo = function() return nil end }
+-- Minimap tracking: Forever returns a table per entry
+W.tracking = {
+	{ name = "Find Herbs", texture = 133939, active = false, type = "spell", subType = -1, spellID = 2383 },
+	{ name = "Find Fish", texture = 133888, active = false, type = "spell", subType = -1, spellID = 43308 },
+}
+F.C_Minimap = {
+	GetNumTrackingTypes = function() return #W.tracking end,
+	GetTrackingInfo = function(index)
+		local t = W.tracking[index]
+		if not t then return nil end
+		return { name = t.name, texture = t.texture, active = t.active, type = t.type, subType = t.subType, spellID = t.spellID }
+	end,
+	SetTracking = function(index, on)
+		assert(W.tracking[index], "SetTracking: bad index " .. tostring(index))
+		W.tracking[index].active = on and true or false
+	end,
+}
+-- The open trade skill window (C_TradeSkillUI.GetBaseProfessionInfo)
+W.tradeSkill = nil
+F.C_TradeSkillUI = {
+	GetBaseProfessionInfo = function()
+		return W.tradeSkill or { professionID = 0, sourceCounter = 0, professionName = "", expansionName = "",
+			skillLevel = 0, maxSkillLevel = 0, skillModifier = 0, isPrimaryProfession = false }
+	end,
+}
+F.PROFESSIONS_COOKING = "Cooking"
+-- Helm and cloak display
+W.showHelm, W.showCloak = true, true
+function F.ShowHelm(on) W.showHelm = on and true or false end
+function F.ShowCloak(on) W.showCloak = on and true or false end
 F.C_TooltipInfo = setmetatable({}, { __index = function() return function() return { lines = {} } end end })
 F.C_Calendar = { GetDate = function() return { year = 2026, month = 10, monthDay = 1, weekday = 5 } end }
 function F.GetNumCompanions() return 0 end

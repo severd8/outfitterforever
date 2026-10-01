@@ -692,7 +692,7 @@ end
 
 if setting.Buffcheck and #setting.Buffcheck > 0 then
   for j=1,#setting.Buffcheck,1 do
-    if Outfitter:PlayerHasAuraNamed(setting.Buffcheck[j]) then
+    if Outfitter:PlayerHasAuraNamed(setting.Buffcheck[j]) ~= false then -- has it, or can't tell
       return
     end
   end
@@ -1384,7 +1384,9 @@ end
 
 if select(1, ...) ~= "player" then return end
 
-if Outfitter:PlayerHasAuraNamed(setting.buffName) then
+local hasAura = Outfitter:PlayerHasAuraNamed(setting.buffName)
+if hasAura == nil then return end -- can't read auras right now (combat on Forever)
+if hasAura then
     equip = true
 end
 
@@ -1416,7 +1418,9 @@ if equip == nil and didEquip then equip = false end
 
 if select(1, ...) ~= "player" then return end
 
-if UnitDebuff("player", setting.debuffName) then
+local hasAura = Outfitter:PlayerHasAuraNamed(setting.debuffName, "HARMFUL")
+if hasAura == nil then return end -- can't read auras right now (combat on Forever)
+if hasAura then
     equip = true
 end
 
@@ -1734,8 +1738,7 @@ end
 -- $EVENTS TRADE_SKILL_SHOW TRADE_SKILL_CLOSE
 
 if event == "TRADE_SKILL_SHOW" then
-	local skillLineID, _, _, _ = GetTradeSkillLine()
-	if skillLineID == "Cooking" then
+	if Outfitter:TradeSkillIsCooking() then
 		equip = true
 	end
 elseif event == "TRADE_SKILL_CLOSE" then
@@ -1743,8 +1746,7 @@ elseif event == "TRADE_SKILL_CLOSE" then
 		equip = false
 	end
 elseif event == "TRADE_SKILL_UPDATE" then
-	local skillLineID, _, _, _ = GetTradeSkillLine()
-	if skillLineID == "Cooking" then
+	if Outfitter:TradeSkillIsCooking() then
 		equip = true
 	elseif didEquip then
 		equip = false

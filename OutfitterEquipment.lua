@@ -1307,8 +1307,8 @@ function Outfitter.OutfitStack:UpdateOutfitDisplay()
 		end
 	end -- for
 
-	--[[-- Helm and Cloak visibility only available in Vanilla and Wrath --]]--
-	if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then
+	--[[-- Helm and Cloak visibility only available in Vanilla and Wrath (and Forever) --]]--
+	if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE or (Outfitter.IsForever and ShowHelm and ShowCloak) then
 		if vShowHelm == true then
 			ShowHelm(true)
 		elseif vShowHelm == false then

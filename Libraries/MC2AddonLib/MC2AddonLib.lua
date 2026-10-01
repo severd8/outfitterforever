@@ -92,7 +92,9 @@ function Addon:recycleTable(table)
 end
 
 function Addon:hookScript(frame, scriptID, func)
-	if not frame:GetScript(scriptID) then
+	-- Forever: setting a script on one of Blizzard's frames taints it, and
+	-- HookScript works there even when the frame has no script yet
+	if not frame:GetScript(scriptID) and not (Addon.IsForever and frame.HookScript) then
 		frame:SetScript(scriptID, func)
 	else
 		frame:HookScript(scriptID, func)

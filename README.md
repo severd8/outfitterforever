@@ -35,6 +35,7 @@ This is the same Outfitter you know, with the same windows, menus, outfits and s
 - **Talent trees.** Scripts that can be limited to some specializations use your talent trees.
 - **Character window.** The Outfitter button sits at the top right of your character, beside the arrow that hides the stats pane. The Outfitter window opens to the right of the character window's tabs.
 - **Escape** closes Outfitter's dialogs without touching Blizzard's code (so it can't cause "action blocked" errors).
+- **Cooking and fish tracking** use Forever's trade skill and minimap tracking API.
 
 ### Limits on Forever
 
@@ -42,7 +43,9 @@ Forever hides some things from addons. These work a little differently because o
 
 - **Low Health / Low Mana outfit** can't tell your health or mana, so it never changes your gear.
 - **Spirit regen (five-second rule)** can't read your mana, so it treats any spell cast followed by a mana change as mana spent.
-- **Buffs can't be read in combat.** Outfits that depend on a buff (riding, dining, Has Buff, ...) update when combat ends.
+- **Buffs can't be read in combat.** Outfits that depend on a buff or debuff (riding, dining, Has Buff, ...) stay as they are during combat and catch up afterwards.
+- **Dining** can't tell when your health and mana are full, so the outfit stays on until the food or drink buff ends.
+- **Escape** closes the character window along with an open Outfitter dialog, because Forever closes every window on the same key press.
 - **Armor can't be changed in combat** (the game's rule, as always). Outfitter puts the outfit on as soon as combat ends.
 
 ## Installation

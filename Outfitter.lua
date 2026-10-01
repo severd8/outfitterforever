@@ -1766,6 +1766,10 @@ end
 -- This is currently only used for a dining outfit check
 -- Default to "full enough" when values are inaccessible
 function Outfitter:PlayerIsFull()
+	-- Forever always hides your health and mana, so you're never known to be full;
+	-- the Dining outfit comes off when the food or drink buff ends
+	if Outfitter.IsForever and Outfitter.IsSecret(UnitHealth("player")) then return false end
+
 	if canaccessvalue and not canaccessvalue(UnitHealth("player")) then return true end
 
 	if UnitHealth("player") < (UnitHealthMax("player") * 0.85) then
@@ -4515,7 +4519,8 @@ function Outfitter:GetPlayerAuraStates()
 
 		-- Bail out if we can't use the value (not combat, just 'secret')
 		--if canaccessvalue and not canaccessvalue(auraInfo) then return self.AuraStates end
-		if canaccesssecrets and not canaccesssecrets() then return self.AuraStates end
+		-- (Forever: the pcall above and the secret-name check below already cover this)
+		if not Outfitter.IsForever and canaccesssecrets and not canaccesssecrets() then return self.AuraStates end
 
 
 		local vName, vTexture, vSpellID
@@ -4547,14 +4552,38 @@ function Outfitter:GetPlayerAuraStates()
 	end
 end
 
--- True if the player has a buff or debuff with this name. Auras can't be read
--- in combat on Forever (the call throws), so this returns false then.
-function Outfitter:PlayerHasAuraNamed(pName)
+-- True if the open trade skill window is Cooking. GetTradeSkillLine is gone on
+-- newer clients (including Forever), which use C_TradeSkillUI instead.
+function Outfitter:TradeSkillIsCooking()
+	if GetTradeSkillLine then
+		return (GetTradeSkillLine()) == "Cooking"
+	end
+	if not (C_TradeSkillUI and C_TradeSkillUI.GetBaseProfessionInfo) then
+		return false
+	end
+	local vSucceeded, vInfo = pcall(C_TradeSkillUI.GetBaseProfessionInfo)
+	if not vSucceeded or type(vInfo) ~= "table" then
+		return false
+	end
+	local cCookingSkillLine = 185
+	return vInfo.professionID == cCookingSkillLine
+	    or vInfo.parentProfessionID == cCookingSkillLine
+	    or vInfo.professionName == PROFESSIONS_COOKING
+	    or vInfo.professionName == "Cooking"
+end
+
+-- True if the player has an aura with this name (a buff, or a debuff with the
+-- filter "HARMFUL"). Auras can't be read in combat on Forever (the call throws),
+-- so this returns nil then, meaning "unknown": callers should change nothing.
+function Outfitter:PlayerHasAuraNamed(pName, pFilter)
 	if not pName or pName == "" then
 		return false
 	end
-	local vSucceeded, vAuraData = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", pName)
-	return vSucceeded and type(vAuraData) == "table"
+	local vSucceeded, vAuraData = pcall(C_UnitAuras.GetAuraDataBySpellName, "player", pName, pFilter)
+	if not vSucceeded then
+		return nil
+	end
+	return type(vAuraData) == "table"
 end
 
 function Outfitter:GetBuffTooltipText(pBuffIndex)
@@ -7790,6 +7819,17 @@ function Outfitter:PlayerIsOnQuestID(pQuestID)
 	return false
 end
 
+-- C_Minimap.GetTrackingInfo returns a table on newer clients (including Forever)
+-- and separate values on older ones; this always returns name, texture, active, type
+function Outfitter:GetTrackingInfo(pIndex)
+	local vName, vTexture, vActive, vType = C_Minimap.GetTrackingInfo(pIndex)
+	if type(vName) == "table" then
+		local vInfo = vName
+		return vInfo.name, vInfo.texture, vInfo.active, vInfo.type
+	end
+	return vName, vTexture, vActive, vType
+end
+
 -- Overloaded this function
 function Outfitter:GetTrackingEnabled(pTexture)
 	local vNumTypes = C_Minimap.GetNumTrackingTypes()
@@ -7797,7 +7837,7 @@ function Outfitter:GetTrackingEnabled(pTexture)
 	-- A nil texture means we want to know what spell we're tracking and just return the texture
 	if not pTexture then
 		for vIndex = 1, vNumTypes do
-			local vName, vTexture, vActive, vType = C_Minimap.GetTrackingInfo(vIndex);
+			local vName, vTexture, vActive, vType = Outfitter:GetTrackingInfo(vIndex);
 			if vActive and vType == "spell" then
 				return vTexture;
 			end
@@ -7805,7 +7845,7 @@ function Outfitter:GetTrackingEnabled(pTexture)
 	end
 
 	for vIndex = 1, vNumTypes do
-		local vName, vTexture, vActive = C_Minimap.GetTrackingInfo(vIndex)
+		local vName, vTexture, vActive = Outfitter:GetTrackingInfo(vIndex)
 		if vTexture == pTexture then
 			return vActive, vIndex
 		end
@@ -7817,7 +7857,7 @@ function Outfitter:SetTrackingEnabled(pTexture, pEnabled)
 	if not pTexture then return end
 	local vActive, vIndex = self:GetTrackingEnabled(pTexture)
 	if pEnabled == 1 or pEnabled then pEnabled = true else pEnabled = false end
-	if vActive ~= pEnabled then
+	if vActive ~= pEnabled and vIndex and vIndex > 0 then
 		C_Minimap.SetTracking(vIndex, pEnabled)
 	end
 end
@@ -8593,7 +8633,7 @@ function Outfitter._ListItem:SetToOutfit(pOutfit, pCategoryID, pOutfitIndex, pIn
 
 	-- Turn off the server storage icon for classic
 	--if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
-	if LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_WRATH_OF_THE_LICH_KING and not IsForever then
+	if not IsForever and LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_WRATH_OF_THE_LICH_KING then
 		----[[--
 		local vScriptIcon = _G[vOutfitFrameName.."ScriptIcon"]
 		local vServerButton = _G[vOutfitFrameName.."ServerButton"]

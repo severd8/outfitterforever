@@ -20,6 +20,7 @@ local W = {
 	errors = {},      -- Lua errors the addon raised (through geterrorhandler)
 	printed = {},     -- chat output
 	unstubbed = {},   -- Forever API functions called that have no fake here
+	fakeNotOnForever = {}, -- fakes the addon used that Forever doesn't have
 	frames = {},      -- every frame, in creation order
 	cvars = { equipmentManager = "1", autoLootDefault = "0", nameplateShowEnemies = "1", autointeract = "0" },
 	secretHealthAndMana = true, -- Forever hides your own health and mana from addons
@@ -214,7 +215,14 @@ local function CheckScriptType(scriptType)
 		error("unknown script type " .. tostring(scriptType), 3)
 	end
 end
-function Frame:SetScript(scriptType, fn) CheckScriptType(scriptType) self.__scripts[scriptType] = fn end
+function Frame:SetScript(scriptType, fn)
+	CheckScriptType(scriptType)
+	-- Setting a script on one of Blizzard's frames taints it (HookScript doesn't)
+	if self.__blizzard and W.addonLoaded then
+		W.replacedBlizzardScripts[tostring(self.__name) .. ":" .. scriptType] = true
+	end
+	self.__scripts[scriptType] = fn
+end
 function Frame:GetScript(scriptType) return self.__scripts[scriptType] end
 function Frame:HasScript(scriptType) return ScriptTypes[scriptType] == true end
 function Frame:HookScript(scriptType, fn)
@@ -799,7 +807,13 @@ setmetatable(env, {
 			return namespaces[name]
 		end
 		local fake = Fakes[name]
-		if fake ~= nil then return fake end
+		if fake ~= nil then
+			-- A fake function must stand for something Forever really has
+			if type(fake) == "function" and type(name) == "string" and not (API.globals[name] or API.ui_funcs[name]) then
+				W.fakeNotOnForever[name] = true
+			end
+			return fake
+		end
 		if WowLuaAliases[name] then return WowLuaAliases[name] end
 		if type(name) ~= "string" then return nil end
 		if API.namespaces[name] then
@@ -813,7 +827,9 @@ setmetatable(env, {
 			end
 		end
 		if API.ui_frames[name] then
-			return NewFrame("Frame", name, env.UIParent)
+			local frame = NewFrame("Frame", name, env.UIParent)
+			frame.__blizzard = true
+			return frame
 		end
 		if API.ui_globals[name] then
 			W.Warn("the addon read Blizzard's " .. name .. ", which the tests don't fake")
@@ -839,6 +855,7 @@ setmetatable(env, {
 	end,
 })
 W.replacedBlizzardGlobals = {}
+W.replacedBlizzardScripts = {}
 W.globalStrings = {}
 for _, name in ipairs(LuaGlobals) do
 	rawset(env, name, _G[name])
@@ -869,6 +886,9 @@ function W.LoadLua(path)
 end
 
 function W.LoadToc(path)
+	-- Frames that exist before the addon loads are Blizzard's
+	for _, frame in ipairs(W.frames) do frame.__blizzard = true end
+	W.addonLoaded = true
 	for line in io.lines(path) do
 		line = line:gsub("\r", "")
 		if line ~= "" and not line:match("^#") then

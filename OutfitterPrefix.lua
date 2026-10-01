@@ -60,5 +60,9 @@ function Outfitter:GetSpecializationInfo(pIndex)
 	if not vGetSpecializationInfo or not pIndex then
 		return nil
 	end
-	return vGetSpecializationInfo(pIndex)
+	local vResults = {pcall(vGetSpecializationInfo, pIndex)}
+	if not vResults[1] then
+		return nil -- no such tree (classes have three, some scripts ask for a fourth)
+	end
+	return select(2, unpack(vResults, 1, table.maxn(vResults)))
 end

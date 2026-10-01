@@ -229,6 +229,120 @@ W.Fire("PLAYER_TARGET_CHANGED")
 W.Tick(3)
 Check(W.equipped[8] == 1006, "Equip on target works with a readable name")
 
+local function StopScript(outfit)
+	O:SetScriptEnabled(outfit, false)
+	O:RemoveOutfit(outfit)
+	W.Tick(3)
+end
+StopScript(onTarget)
+StopScript(hasBuff)
+StopScript(lowHealth)
+W.target = nil
+
+----------------------------------------
+Step("aura outfits keep their state when auras can't be read")
+W.auras = { { name = "Battle Shout", icon = 132333, spellId = 6673 } }
+O:SetScriptEnabled(hasBuff, true)
+O:ActivateScript(hasBuff)
+W.Fire("UNIT_AURA", "player")
+W.Tick(3)
+Check(W.equipped[8] == 1006, "Has Buff outfit on (feet have " .. tostring(W.equipped[8]) .. ")")
+W.combat = true
+W.Fire("PLAYER_REGEN_DISABLED")
+W.Fire("UNIT_AURA", "player")
+W.Tick(1)
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+W.Tick(3)
+Check(W.equipped[8] == 1006, "Has Buff outfit stays on through combat (feet have " .. tostring(W.equipped[8]) .. ")")
+W.auras = {}
+W.Fire("UNIT_AURA", "player")
+W.Tick(3)
+Check(W.equipped[8] == 1005, "Has Buff outfit comes off when the buff ends (feet have " .. tostring(W.equipped[8]) .. ")")
+StopScript(hasBuff)
+
+local hasDebuff = MakeOutfit("Debuffed", { FeetSlot = 1006 })
+O:SetScriptID(hasDebuff, "HAS_DEBUFF")
+hasDebuff.ScriptSettings = { debuffName = "Hamstring" }
+O:SetScriptEnabled(hasDebuff, true)
+O:ActivateScript(hasDebuff)
+W.auras = { { name = "Hamstring", icon = 132316, spellId = 1715 } } -- a buff with that name doesn't count
+W.Fire("UNIT_AURA", "player")
+W.Tick(3)
+Check(W.equipped[8] == 1005, "Has Debuff ignores buffs")
+W.auras = { { name = "Hamstring", icon = 132316, spellId = 1715, harmful = true } }
+W.Fire("UNIT_AURA", "player")
+W.Tick(3)
+Check(W.equipped[8] == 1006, "Has Debuff outfit on with the debuff (feet have " .. tostring(W.equipped[8]) .. ")")
+W.auras = {}
+W.Fire("UNIT_AURA", "player")
+W.Tick(3)
+Check(W.equipped[8] == 1005, "Has Debuff outfit off when it ends")
+StopScript(hasDebuff)
+
+----------------------------------------
+Step("dining with hidden health")
+local dining = MakeOutfit("Dining", { HeadSlot = 1002 })
+O:SetScriptID(dining, "Dining")
+O:SetScriptEnabled(dining, true)
+O:ActivateScript(dining)
+Check(O.IsSecret(env.UnitHealth("player")), "the test client hides your health")
+W.auras = { { name = "Food", icon = 134062, spellId = 433 } }
+W.Fire("UNIT_AURA", "player")
+W.Fire("UNIT_HEALTH", "player")
+W.Tick(3)
+Check(W.equipped[1] == 1002, "Dining outfit on while eating (head has " .. tostring(W.equipped[1]) .. ")")
+W.auras = {}
+W.Fire("UNIT_AURA", "player")
+W.Tick(3)
+Check(W.equipped[1] == 1001, "Dining outfit off when the food buff ends")
+StopScript(dining)
+
+----------------------------------------
+Step("cooking, fish tracking and helm display")
+local cooking = MakeOutfit("Chef", { HeadSlot = 1002 })
+O:SetScriptID(cooking, "COOKING")
+O:SetScriptEnabled(cooking, true)
+O:ActivateScript(cooking)
+W.tradeSkill = { professionID = 185, sourceCounter = 0, professionName = "Cooking", expansionName = "", skillLevel = 100,
+	maxSkillLevel = 150, skillModifier = 0, isPrimaryProfession = false }
+W.Fire("TRADE_SKILL_SHOW")
+W.Tick(3)
+Check(W.equipped[1] == 1002, "chef's hat on with the Cooking window (head has " .. tostring(W.equipped[1]) .. ")")
+W.Fire("TRADE_SKILL_CLOSE")
+W.Tick(3)
+Check(W.equipped[1] == 1001, "chef's hat off when it closes")
+W.tradeSkill = { professionID = 164, sourceCounter = 0, professionName = "Blacksmithing", expansionName = "", skillLevel = 100,
+	maxSkillLevel = 150, skillModifier = 0, isPrimaryProfession = true }
+W.Fire("TRADE_SKILL_SHOW")
+W.Tick(3)
+Check(W.equipped[1] == 1001, "other trade skills leave it alone")
+W.Fire("TRADE_SKILL_CLOSE")
+W.tradeSkill = nil
+StopScript(cooking)
+
+local fisher = MakeOutfit("Angler", { MainHandSlot = 1011 })
+O:SetScriptID(fisher, "Fishing")
+O:SetScriptEnabled(fisher, true)
+O:ActivateScript(fisher)
+O:WearOutfit(fisher)
+W.Tick(3)
+Check(W.tracking[2].active == true, "Find Fish is turned on with the fishing outfit")
+O:RemoveOutfit(fisher)
+W.Tick(3)
+Check(W.tracking[2].active == false, "Find Fish goes back off")
+StopScript(fisher)
+
+local bareHead = MakeOutfit("Bare head", { HeadSlot = 1002 })
+bareHead.ShowHelm = false
+O:WearOutfit(bareHead)
+W.Tick(3)
+Check(W.showHelm == false, "an outfit can hide the helm")
+O:RemoveOutfit(bareHead)
+W.Tick(3)
+O:DeleteOutfit(bareHead)
+W.Tick(1)
+
 ----------------------------------------
 Step("menus and dialogs open")
 O:OpenUI()
@@ -379,6 +493,13 @@ Check(not PressEscape(), "a cancelled dialog leaves nothing for Escape")
 Step("Blizzard's globals are left alone")
 for name in pairs(W.replacedBlizzardGlobals) do
 	Fail("the addon replaced Blizzard's " .. name)
+end
+
+for name in pairs(W.replacedBlizzardScripts) do
+	Fail("the addon set (instead of hooking) the script " .. name .. " on Blizzard's frame")
+end
+for name in pairs(W.fakeNotOnForever) do
+	Fail("the addon used " .. name .. ", which the tests fake but Forever doesn't have")
 end
 
 local missing = {}
