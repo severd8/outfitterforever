@@ -12,22 +12,20 @@ This is the same Outfitter you know, with the same windows, menus, outfits and s
 
 ## Features
 
-- **Outfits.** Save any set of gear as an outfit and put it on with one click. Outfits come in four kinds:
-  - **Complete wardrobes** have an item for every slot and replace whatever you're wearing.
-  - **Mix-n-match** outfits cover some slots and go on top of your complete wardrobe.
-  - **Accessories** cover some slots, and you can wear as many as you like at once (fishing pole, Carrot on a Stick, ...).
-  - **Special occasions** go on by themselves at the right time.
-- **Ready-made outfits.** On first use Outfitter saves your current gear as **Normal**, makes a **Birthday Suit**, and builds outfits from items it finds in your bags.
-- **Automatic outfits.** Riding, swimming, fishing, dining, spirit regen, cities, battlegrounds, dungeons, PvP flagged, resting, falling, warrior stances, druid forms, rogue stealth, Feign Death, and more. Each is just a script, and you can turn any of them off.
+- **Outfits.** Save any set of gear as an outfit and put it on with one click. Outfits come in two kinds:
+  - **Complete outfits** have an item for every slot and replace whatever you're wearing.
+  - **Accessories** cover some slots and go on top, and you can wear as many as you like at once (fishing pole, Carrot on a Stick, ...).
+- **Ready-made outfits.** On first use, Outfitter saves your current gear as **Normal**, makes a **Birthday Suit**, and adds empty outfits for your class's stances and forms, ready to fill.
+- **Automatic outfits.** Give any outfit a script and it goes on and comes off by itself: riding, swimming, cooking, dining, spirit regen, cities, battlegrounds, dungeons, PvP flagged, resting, falling, warrior stances, druid forms, rogue stealth, Feign Death, buffs and debuffs, zones, and more. You can turn any of them off.
+- **Fishing.** A Fishing outfit turns on fish tracking, auto loot and other fishing settings while you wear it.
 - **Scripts.** Attach a ready-made script to an outfit, or write your own, to decide when it goes on and comes off.
-- **Outfit bar.** An icon bar for one-click access, horizontal or vertical, that expands away from the nearest screen corner.
-- **Minimap menu.** Every outfit from the minimap button.
-- **Generate outfits.** Build an outfit that maximizes a stat or a combination of stats, or uses your Pawn weights (needs Pawn).
+- **Outfit bar.** An icon bar for one-click access, horizontal or vertical. Turn it on with **Show outfit bar** in the options.
+- **Minimap menu.** Left-click the minimap button for your outfits; right-click opens Outfitter.
+- **Generate outfits.** Build an outfit that maximizes a stat or a mix of stats, or uses your Pawn weights (needs Pawn).
 - **Icon picker.** Search thousands of icons for your outfits.
-- **QuickSlots.** Click an inventory slot to see the items in your bags that fit it.
-- **Item comparisons and tooltips.** Item tooltips show which outfits use the item.
+- **Tooltips and comparisons.** Item tooltips show which outfits use the item, and outfit items can be included in item comparisons.
+- **Titles, helm and cloak.** Each outfit can set your title and show or hide your helm and cloak.
 - **Key bindings and macros.** Bind outfits to keys, or use `/outfitter` commands in macros.
-- **Equipment Manager.** Store outfits on the server with Blizzard's Equipment Manager.
 - **LibDataBroker** support.
 
 ## What's different on Forever
@@ -45,7 +43,7 @@ Forever hides some things from addons. These work a little differently because o
 
 - **Low Health / Low Mana outfit** can't tell your health or mana, so it never changes your gear.
 - **Spirit regen (five-second rule)** can't read your mana, so it treats any spell cast followed by a mana change as mana spent.
-- **Buffs can't be read in combat.** Outfits that depend on a buff or debuff (riding, dining, Has Buff, ...) stay as they are during combat and catch up afterwards.
+- **Buffs can't be read in combat.** Has Buff and Has Debuff outfits stay as they are during combat and update on the next buff change. Outfits that follow a buff (dining, Feign Death, Ghost Wolf, Hunter aspects) can come off when combat starts.
 - **Dining** can't tell when your health and mana are full, so the outfit stays on until the food or drink buff ends.
 - **Escape** closes the character window along with an open Outfitter dialog, because Forever closes every window on the same key press.
 - **Armor can't be changed in combat** (the game's rule, as always). Outfitter puts the outfit on as soon as combat ends.
