@@ -5,7 +5,7 @@ function Outfitter.LDB:Initialize()
 	self.DataObj = self.LDB:NewDataObject(Outfitter.cTitle,
 	{
 		type = "data source",
-		icon = "Interface\\Icons\\INV_Chest_Cloth_21",
+		icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo", -- Forever: the Outfitter Forever logo
 		text = "Outfitter",
 		OnClick = function(pFrame, pButton) self:OnClick(pFrame, pButton) end,
 	})
@@ -23,7 +23,7 @@ function Outfitter.LDB:OutfitEvent(pEvent, pOutfitName, pOutfit)
 		self.DataObj.icon = Outfitter.OutfitBar:GetOutfitTexture(vOutfit)
 	else
 		self.DataObj.text = Outfitter.cTitle
-		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Icon"
+		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo"
 	end
 end
 

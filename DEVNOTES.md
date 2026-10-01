@@ -46,6 +46,7 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 - **Minimap button** radius is the modern minimap's.
 - **Icon picker / cursor icons** (`OutfitterBar.lua`): `C_SpellBook` and `C_Spell`.
 - **Escape** (`MC2UIElementsLib.lua`): a hidden, parentless frame (`OutfitterForeverDialogEscape`) in `UISpecialFrames` stands in for open dialogs instead of replacing `StaticPopup_EscapePressed`. Forever's Escape runs `CloseAllWindows`, so the character window closes on the same press.
+- **Logo**: `Textures/Logo.tga` (64×64, made from `art/icon.svg`) is the addon list / compartment icon and the broker icon when no outfit is worn. Outfit icons, the minimap button and the window backgrounds are unchanged. `art/logo.svg` / `logo.png` are the CurseForge logo.
 - **Folder name**: textures point at `Interface\AddOns\OutfitterForever\`; the version comes from `Outfitter.AddonName`.
 
 ## Testing

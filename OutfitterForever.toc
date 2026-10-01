@@ -7,11 +7,11 @@
 ## Version: @project-version@
 ## X-Outfitter-Base: 5.5.4.3
 ## AddonCompartmentFunc: Outfitter_OnAddonCompartmentClick
-## IconTexture: Interface/Icons/INV_Chest_Cloth_21
+## IconTexture: Interface\AddOns\OutfitterForever\Textures\Logo
 ## SavedVariablesPerCharacter: gOutfitter_Settings
 ## SavedVariables: gOutfitter_GlobalSettings
 ## X-License: MIT
-## X-Curse-Project-ID: CURSEFORGE_PROJECT_ID
+## X-Curse-Project-ID: 1721014
 ## X-Category: Inventory
 
 Libraries/UTF8/utf8data.lua

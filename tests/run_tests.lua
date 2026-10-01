@@ -495,6 +495,18 @@ for name in pairs(W.replacedBlizzardGlobals) do
 	Fail("the addon replaced Blizzard's " .. name)
 end
 
+-- Every texture of ours that the addon points at is in the folder
+for _, file in ipairs({ "OutfitterForever.toc", "Outfitter.xml", "OutfitterBar.xml", "Outfitter.lua", "OutfitterLDB.lua",
+		"OutfitterMinimapButton.lua", "OutfitterBar.lua", "OutfitterUITools.lua" }) do
+	local text = io.open(file):read("*a")
+	for path in text:gmatch("[Ii]nterface[\\/]+[Aa]dd[Oo]ns[\\/]+OutfitterForever[\\/]+([%w_%-\\/]+)") do
+		path = path:gsub("\\\\", "/"):gsub("\\", "/")
+		local found = io.open(path .. ".tga") or io.open(path .. ".blp")
+		Check(found ~= nil, file .. " uses " .. path .. ", which isn't in the addon")
+		if found then found:close() end
+	end
+end
+
 for name in pairs(W.replacedBlizzardScripts) do
 	Fail("the addon set (instead of hooking) the script " .. name .. " on Blizzard's frame")
 end

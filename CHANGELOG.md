@@ -15,4 +15,5 @@ First release: Outfitter on WoW: Forever. Based on Outfitter (Retrofit) 5.5.4.3.
 - The Has Debuff and Cooking outfits, fish tracking, and helm and cloak display work on Forever.
 - Buff and debuff outfits keep their state in combat instead of coming off.
 - The Dining outfit stays on until the food or drink buff ends.
+- The Outfitter Forever logo in the addon list, the addon compartment and broker displays.
 - Outfitter hooks Blizzard's frames instead of replacing their scripts.
