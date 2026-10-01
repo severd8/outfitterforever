@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Outfits that follow a buff (Hunter aspects, Ghost Wolf, dining, ...) no longer come off when combat starts. Buffs can't be read in combat, so they keep their state until after it.
+
 ## 1.0.0
 
 First release: Outfitter on WoW: Forever. Based on Outfitter (Retrofit) 5.5.4.3.

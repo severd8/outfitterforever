@@ -43,7 +43,7 @@ Forever hides some things from addons. These work a little differently because o
 
 - **Low Health / Low Mana outfit** can't tell your health or mana, so it never changes your gear.
 - **Spirit regen (five-second rule)** can't read your mana, so it treats any spell cast followed by a mana change as mana spent.
-- **Buffs can't be read in combat.** Has Buff and Has Debuff outfits stay as they are during combat and update on the next buff change. Outfits that follow a buff (dining, Feign Death, Ghost Wolf, Hunter aspects) can come off when combat starts.
+- **Buffs can't be read in combat.** Outfits that follow a buff or debuff (aspects, Ghost Wolf, Has Buff, ...) stay as they were when combat started and update after combat on the next buff change. A buff you gain in combat, like Feign Death, doesn't put its outfit on.
 - **Dining** can't tell when your health and mana are full, so the outfit stays on until the food or drink buff ends.
 - **Escape** closes the character window along with an open Outfitter dialog, because Forever closes every window on the same key press.
 - **Armor can't be changed in combat** (the game's rule, as always). Outfitter puts the outfit on as soon as combat ends.

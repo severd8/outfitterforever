@@ -4501,6 +4501,14 @@ Outfitter.AuraStates =
 function Outfitter:GetPlayerAuraStates()
 	local vBuffIndex = 1
 
+	-- As of 12.0, getting aura states in combat is banned by Blizzard.
+	-- Forever: keep the last states read before combat, so outfits that follow
+	-- a buff (aspects, Ghost Wolf, ...) aren't taken off when combat starts.
+	if IsForever and (Outfitter.InCombat or InCombatLockdown()) then
+		Outfitter.InCombat = true
+		return self.AuraStates
+	end
+
 	for vKey, _ in pairs(self.AuraStates) do
 		self.AuraStates[vKey] = false
 	end

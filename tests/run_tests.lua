@@ -292,6 +292,15 @@ W.Fire("UNIT_AURA", "player")
 W.Fire("UNIT_HEALTH", "player")
 W.Tick(3)
 Check(W.equipped[1] == 1002, "Dining outfit on while eating (head has " .. tostring(W.equipped[1]) .. ")")
+-- Buffs can't be read in combat; the outfit keeps its last state
+W.combat = true
+W.Fire("PLAYER_REGEN_DISABLED")
+W.Fire("UNIT_AURA", "player")
+W.Tick(3) -- Outfitter re-reads auras 2 seconds after a change in combat
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+W.Tick(3)
+Check(W.equipped[1] == 1002, "a buff outfit stays on through combat (head has " .. tostring(W.equipped[1]) .. ")")
 W.auras = {}
 W.Fire("UNIT_AURA", "player")
 W.Tick(3)

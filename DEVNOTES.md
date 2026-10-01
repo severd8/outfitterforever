@@ -39,6 +39,7 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 - **Specializations**: `TalentsChanged` (no Titan's Grip), `GetTalentTreeName`, and the preset scripts use `Outfitter:GetSpecialization()`.
 - **Warrior stances**: the stance scripts use `Outfitter.IsRetail` (Mainline client *and* not Forever) instead of `IsMainline`, so Forever gets stance forms 1/2/3.
 - **Secrets**: spirit regen (`UnitHealthOrManaChanged`), dining (`PlayerIsFull` is false while health is hidden, so Dining ends with the food buff), the Low Health and Equip on Target scripts, aura scanning. Your own `UnitHealth` and `UnitPower` are always secret; `UnitHealthMax` and `UnitPowerMax` aren't.
+- **Aura states in combat**: `GetPlayerAuraStates` keeps the last states read before combat on Forever (upstream clears them, which took buff outfits off when combat started).
 - **Auras in scripts**: Has Buff, Has Debuff (`"HARMFUL"` filter) and the Trinket Queue buff check do nothing when auras can't be read.
 - **Helm and cloak display**: Forever has `ShowHelm` / `ShowCloak`, so outfits apply them (`OutfitterEquipment.lua`).
 - **Cooking / Fishing scripts**: `Outfitter:TradeSkillIsCooking()` and `Outfitter:GetTrackingInfo()`.
