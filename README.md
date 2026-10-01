@@ -72,9 +72,18 @@ Don't install another copy of Outfitter alongside it.
 | `/outfitter unwear Name` | Takes the outfit off |
 | `/outfitter toggle Name` | Puts it on or takes it off |
 
-## Feedback
+## Feedback and bug reports
 
-Found a bug or have an idea? Open an issue on GitHub.
+Found a bug or have an idea? Please [submit it on GitHub](https://github.com/severd8/outfitterforever/issues/new/choose). A short form asks for your class, the outfit or script involved and any error message. You'll need a free GitHub account. Otherwise, feel free to leave a comment on the CurseForge page.
+
+## Support the addon
+
+Outfitter Forever is free. If it has saved you some gear juggling, you can [leave a small tip on Ko-fi](https://ko-fi.com/tauntmasterforever). Thank you!
+
+## Also by me
+
+- **TauntMaster Forever**: one-click taunts off your healers and DPS, for tanks. Free on CurseForge.
+- **ToppedOff Forever**: reminds you when buffs, food, reagents, ammo or gear need topping off. Free on CurseForge.
 
 ## Credits
 
@@ -84,4 +93,4 @@ Found a bug or have an idea? Open an issue on GitHub.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
