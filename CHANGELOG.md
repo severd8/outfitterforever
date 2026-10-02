@@ -2,6 +2,7 @@
 
 ## 1.0.1
 
+- Fixed for the latest WoW: Forever update (build 70170). The game now identifies itself differently to addons, and Outfitter stopped recognising it: Lua errors every time a tooltip closed, and Forever's own handling (ranged slot, stances, talent trees, the button by the character window) switched off. Outfitter recognises both the old and the new client now.
 - Outfits that follow a buff (Hunter aspects, Ghost Wolf, dining, ...) no longer come off when combat starts. Buffs can't be read in combat, so they keep their state until after it.
 
 ## 1.0.0

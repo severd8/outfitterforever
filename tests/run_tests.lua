@@ -1,10 +1,11 @@
 -- The scenarios. Loaded fresh for each expansion level by tests/run.lua.
-local expansionLevel = ...
+local expansionLevel, projectId = ...
 
 -- Each run gets a clean client
 _G.W = nil
 local W = dofile("tests/wow.lua")
 W.expansionLevel = expansionLevel
+W.projectId = projectId
 dofile("tests/fakes.lua")
 local env = W.env
 
@@ -12,7 +13,7 @@ local failures = 0
 local currentStep = "start"
 local function Fail(message)
 	failures = failures + 1
-	print(string.format("FAIL [LE %d] %s: %s", expansionLevel, currentStep, message))
+	print(string.format("FAIL [LE %d, project %d] %s: %s", expansionLevel, projectId or 18, currentStep, message))
 end
 local function Check(condition, message)
 	if not condition then Fail(message) end

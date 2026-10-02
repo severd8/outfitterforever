@@ -9,7 +9,9 @@ local F = W.Fakes
 ----------------------------------------
 -- Client
 ----------------------------------------
-F.WOW_PROJECT_ID = 1
+-- Forever's own project ID (since build 70170; before that the client reported Mainline's)
+F.WOW_PROJECT_ID = W.projectId or 18
+if F.WOW_PROJECT_ID == 18 then F.WOW_PROJECT_CAMELOT = 18 end
 F.WOW_PROJECT_MAINLINE = 1
 F.WOW_PROJECT_CLASSIC = 2
 F.LE_EXPANSION_CLASSIC = 0

@@ -11,7 +11,7 @@ Outfitter.Debug =
 	Optimize = false,
 }
 ----------------------------------------
-local IsMainline = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+local IsMainline = Outfitter.IsMainlineClient
 local IsClassicPandaria = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_MISTS_OF_PANDARIA
 local IsClassicCataclysm = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CATACLYSM
 local IsClassicWrath = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WRATH_OF_THE_LICH_KING
@@ -5316,7 +5316,7 @@ function Outfitter:Initialize()
 	self.EventLib:RegisterEvent("BANKFRAME_CLOSED", self.PlayerInteractionManagerFrameHide, self)
 
 	-- For monitoring void storage
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+	if Outfitter.IsMainlineClient then
 		self.EventLib:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", self.PlayerInteractionManagerFrameShow, self)
 		self.EventLib:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", self.PlayerInteractionManagerFrameHide, self)
 	end
@@ -5362,7 +5362,7 @@ function Outfitter:Initialize()
 	--
 
 	self.EventLib:RegisterEvent("CHARACTER_POINTS_CHANGED", self.TalentsChanged, self) -- Classic
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+	if Outfitter.IsMainlineClient then
 		self.EventLib:RegisterEvent("PLAYER_TALENT_UPDATE", self.TalentsChanged, self) -- Wrath/Retail
 	end
 
@@ -7875,6 +7875,10 @@ Outfitter._ExtendedCompareTooltip = {}
 ----------------------------------------
 
 function Outfitter._ExtendedCompareTooltip:Construct()
+	self.Tooltips = {}
+	self.NumTooltipsShown = 0
+	self.MaxTooltipsShown = 5
+
 	hooksecurefunc("GameTooltip_ShowCompareItem", function (pShift)
 		if not pShift then return end -- Not sure how a nil tooltip is getting passed, but bail out if so
 		if not Outfitter.Settings.Options.DisableItemComparisons then
@@ -7890,7 +7894,7 @@ function Outfitter._ExtendedCompareTooltip:Construct()
 		self:HideCompareItems()
 	end)
 
-	if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+	if Outfitter.IsMainlineClient then
 		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function ()
 			if not IsModifiedClick("COMPAREITEMS") then
 				self:HideCompareItems()
@@ -7905,10 +7909,6 @@ function Outfitter._ExtendedCompareTooltip:Construct()
 		end)
 		--]]--
 	end
-
-	self.Tooltips = {}
-	self.NumTooltipsShown = 0
-	self.MaxTooltipsShown = 5
 end
 
 function Outfitter._ExtendedCompareTooltip:ShowCompareItem()

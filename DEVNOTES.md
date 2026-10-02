@@ -15,13 +15,13 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 
 - `OutfitterForever.toc` — upstream's Mainline TOC with interface 16001, the folder name `OutfitterForever` and `@project-version@` (filled in by the packager from the git tag).
 - `Outfitter.xml` — upstream's `Mainline/Outfitter.xml` (Forever uses the Mainline UI). The Vanilla XML and the old `Mainline/*.lua` copies upstream no longer loads were removed.
-- `OutfitterPrefix.lua` — `Outfitter.IsForever`, `Outfitter.IsSecret`, `Outfitter:GetSpecialization()`, `Outfitter:GetSpecializationInfo()`.
+- `OutfitterPrefix.lua` — `Outfitter.IsForever`, `Outfitter.IsMainlineClient`, `Outfitter.IsSecret`, `Outfitter:GetSpecialization()`, `Outfitter:GetSpecializationInfo()`.
 - Everything else is upstream's code with the Forever changes below.
 - `tests/` — offline tests (not shipped). See Testing.
 
 ## What Forever is
 
-- The **Mainline client and UI** (Midnight 12.x API, "Camelot" variant of Blizzard's UI), so `WOW_PROJECT_ID` is Mainline (1) and Outfitter takes its Mainline paths. `Outfitter.IsForever` is true when the interface number is below 20000.
+- The **Mainline client and UI** (Midnight 12.x API, "Camelot" variant of Blizzard's UI). Until build 70170 `WOW_PROJECT_ID` was Mainline's (1); since then the client reports its own, `WOW_PROJECT_CAMELOT` (18). `Outfitter.IsForever` (in `OutfitterPrefix.lua`) is true for either: the Camelot ID, or the Mainline ID with an interface number below 20000. `Outfitter.IsMainlineClient` is true on retail and on Forever. **Never compare `WOW_PROJECT_ID` with `WOW_PROJECT_MAINLINE` directly**: upstream does that to pick its Mainline code paths, and on Forever it's now false. Use `Outfitter.IsMainlineClient` (the file-local `IsMainline` in `Outfitter.lua` is set from it). The tests run under both project IDs.
 - The **game is classic**: a ranged slot (and ammo slot, which Outfitter never managed), three warrior stances, talent trees reported as specializations (`C_SpecializationInfo`).
 - `LE_EXPANSION_LEVEL_CURRENT` on Forever isn't known, so nothing depends on it for Forever. The tests run with both 0 and 11.
 - Removed globals: `GetSpellInfo`, `GetItemInfo`, `GetSpecialization`, `GetSpecializationInfo`, `GetTalentInfo`, `GetTalentTabInfo`, `GetNumSkillLines`, `GetSpellTabInfo`, `GetSpellTexture`, `GetNumQuestLogEntries`, `UnitDefense`, `GetMouseFocus`, `BankButtonIDToInvSlotID`, `EquipmentFlyoutPopoutButton_SetReversed`, `EquipmentManager_UnpackLocation`. Use the `C_*` versions.

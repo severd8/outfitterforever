@@ -60,7 +60,7 @@ Outfitter.OutfitBar.cDefaultScriptIcons =
 	COOKING = 133971,
 }
 -- Give the birthday suit a special icon (no birthday cake icon in Vanilla)
-if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+if Outfitter.IsMainlineClient then
 	Outfitter.OutfitBar.cDefaultScriptIcons[Outfitter.cNakedOutfit] = 237360
 else
 	Outfitter.OutfitBar.cDefaultScriptIcons[Outfitter.cNakedOutfit] = 134140
@@ -885,7 +885,7 @@ function Outfitter.OutfitBar._ChooseIconDialog:Construct()
 
 	-- Adjust the button width/height (there's a difference between retail and vanill/wrath?)
 	offset = 0
-	if WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then offset = 5 end
+	if not Outfitter.IsMainlineClient then offset = 5 end
 
 	local h, w = vButton:GetHeight() + offset, vButton:GetWidth() + offset
 	self.NumRows = math.floor(sChild:GetHeight() / (h or 1))

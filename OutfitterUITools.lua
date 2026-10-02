@@ -169,7 +169,7 @@ function Outfitter._ButtonBar:SetDimensions(pNumColumns, pNumRows)
 				vTexture:SetPoint("TOP", vPrevRowFirstTexture, "BOTTOM")
 			else
 				--vTexture:SetPoint("TOPLEFT", self, "TOPLEFT") -- DAC orig
-				if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then -- GovtGeek (a hack I don't like, but it's quicker)
+				if Outfitter.IsMainlineClient then -- GovtGeek (a hack I don't like, but it's quicker)
 					vTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 3, -3)
 				else
 					vTexture:SetPoint("TOPLEFT", self, "TOPLEFT", 5, -5)

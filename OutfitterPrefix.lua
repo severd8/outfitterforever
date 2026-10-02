@@ -28,12 +28,17 @@ Outfitter.NUM_TOTAL_EQUIPPED_BAG_SLOTS = _G["NUM_TOTAL_EQUIPPED_BAG_SLOTS"] or N
 ----------------------------------------
 -- WoW: Forever
 ----------------------------------------
--- Forever runs the modern (Mainline) client and UI, so WOW_PROJECT_ID reports
--- Mainline, but the game itself is classic: ranged slot, three warrior stances,
--- talent trees as specializations. Its interface number is 1xxxx (16001).
+-- Forever runs the modern (Mainline) client and UI, but the game itself is
+-- classic: ranged slot, three warrior stances, talent trees as specializations.
+-- Its interface number is 1xxxx (16001). Since build 70170 the client reports its
+-- own project ID (WOW_PROJECT_CAMELOT); before that it reported Mainline's.
 
 Outfitter.AddonName = select(1, ...)
-Outfitter.IsForever = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and (select(4, GetBuildInfo()) or 0) < 20000
+Outfitter.IsForever = (WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT)
+	or (WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and (select(4, GetBuildInfo()) or 0) < 20000)
+-- The modern (Mainline) client, whatever game it's running: retail, or Forever.
+-- Use this wherever the code asks "is this the Mainline client?"
+Outfitter.IsMainlineClient = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE or Outfitter.IsForever
 
 -- Some values are hidden from addons on Forever (your own mana and health, for
 -- example). Comparing or doing math on one throws an error, so check first.
