@@ -37,254 +37,6 @@ function Outfitter:IsClassicEra()
 	return WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
 end
 ]]
-----------------------------------------
-Outfitter.CreditPlayersByRealm =
---
--- 0 Friend
--- 1 Tester or developer (bugfixes, enhancements, etc.)
--- 2 Localizer
--- 3 Donor
-----------------------------------------
-{
-	[Outfitter.cDragonFlightCompatiblity] = {
-		["GovtGeek\nVersion Unifier"] = 1,
-		["Nulian.. We applaude you!"] = 1,
-		["Coremeeko2"] = 1,
-	},
-	["Ace Library"] = {
-		["LibBabble"] = 2,
-		["LibBabble-Zone"] = 2,
-		["LibBabble-SubZone"] = 2,
-		["LibBabble-Inventory"] = 2,
-		["LibDataBroker"] = 2,
-		["LibTipHooker"] = 2,
-		["LibDropdown"] = 2,
-	},
-	[Outfitter.cGermanLocalization] =
-	{
-		["Ani"] = 2,
-		["Zokrym"] = 2,
-		["Dessa"] = 2,
-	},
-	[Outfitter.cChineseLocalization] =
-	{
-		["AndyAska"] = 2,
-		["xingdvd"] = 2,
-	},
-	[Outfitter.cFrenchLocalization] =
-	{
-		["Jullye"] = 2,
-		["Quetzaco"] = 2,
-		["Ekhurr"] = 2,
-		["Negwe"] = 2,
-	},
-	[Outfitter.cSpanishLocalization] =
-	{
-		["Marutak"] = 2,
-		["Marosth"] = 2,
-	},
-	[Outfitter.cRussianLocalization] =
-	{
-		["Delika"] = 2,
-	},
-	[Outfitter.cKoreanLocalization] =
-	{
-		["Unknown"] = 2,
-	},
-	[Outfitter.cContributingDeveloper] =
-	{
-		["GovtGeek"] = 1,
-		["Miv\n\"Restoshaman\"\n<Onslaught>"] = 1,
-		["Dridzt"] = 1,
-		["Bruce Quinton"] = 1,
-		["Kal_Zakath13"] = 1,
-		["Smurfy"] = 1,
-		["XMinionX"] = 1,
-		["Dussander"] = 1,
-		["Echobravo"] = 1,
-		["MacGregor"] = 1,
-		["LaoTseu"] = 1,
-		["Irozal"] = 1,
-		["EmForAce"] = 1,
-		["durandal42"] = 1,
-		["Dicebar"] = 1,
-		["Silarn"] = 1,
-		["slippycheeze"] = 1,
-		["binul"] = 1,
-		["elaundar"] = 1,
-		["Bodar"] = 1,
-		["chullah"] = 1,
-		["AoR_Derangement"] = 1,
-	},
-	["Tester"] =
-	{
-		["Whishann"] = 1,
-		["HunterZ"] = 1,
-		["docthis"] = 1,
-		["Irdx"] = 1,
-		["TigaFIN"] = 1,
-		["iceeagle"] = 1,
-		["Denrax"] = 1,
-		["rasmoe"] = 1,
-		["Katlefiya"] = 1,
-		["gtmsece"] = 1,
-		["Militis"] = 1,
-		["Casard"] = 1,
-		["saltorio"] = 1,
-		["elusif"] = 1,
-		["DanoPDX"] = 1,
-	},
-	[""] =
-	{
-		["Kristi H."] = 3,
-		["Lawrence C."] = 3,
-		["Hellrush"] = 3,
-		["Fusyion"] = 3,
-		["Matt R."] = 3,
-		["Richard F.\n<Greatest Addon Supporter>"] = 3,
-	},
-	["Alterac Mountains"] =
-	{
-		["Asgeirr\n<The Stone Council>"] = 3,
-	},
-	["Aman'Thul"] =
-	{
-		["Blessmie\n<Chairman of the Horde>"] = 3,
-		["Zanoroy\n<The Mighty Few>"] = 3,
-	},
-	["Antonidas"] =
-	{
-		["Colina\n<Drunken Monkey Brigade>"] = 3,
-	},
-	["Anvilmar"] =
-	{
-		["Droodwrmycar"] = 3,
-	},
-	["Azgalore"] =
-	{
-		["Dankris\n<Caligula's Pleasures>"] = 3,
-	},
-	["Azjol-Nerub"] =
-	{
-		["Mythris"] = 3,
-	},
-	["Blackwater Raiders"] =
-	{
-		["Maumau\n<No Quarter>"] = 3,
-	},
-	["Bronzebeard"] =
-	{
-		["Jiminimonka\n<Go Rin No Sho>"] = 3,
-	},
-	["Dalaran"] =
-	{
-		["Y C\n<Blurred Reality>"] = 3,
-	},
-	["Defias Brotherhood"] =
-	{
-		["Maelmoor"] = 3,
-	},
-	["Draenor"] =
-	{
-		["Emmerald\n<Adept>"] = 3,
-	},
-	["Draka"] =
-	{
-		["Nagem\n<Loch Modan Yacht Club"] = 3,
-	},
-	["Durotar"] =
-	{
-		["Haguen"] = 3,
-	},
-	Ghostlands =
-	{
-		Nounchok = 3,
-	},
-	["Gnomeregan"] =
-	{
-		["Calind\n<Swords of the Alliance>"] = 3,
-	},
-	["Jubei'Thos"] =
-	{
-		["Thoresen\n<Verb>"] = 3,
-		["Thorgils"] = 3,
-	},
-	["Kargath"] =
-	{
-		["Leara"] = 3,
-		["Burnaron\nLiga of Faliviens"] = 3,
-	},
-	["Khaz Modan"] =
-	{
-		["Faizal"] = 3,
-	},
-	["Khaz'goroth"] =
-	{
-		["Xentric\n<Cult of the Nuzzled Nark>"] = 3,
-	},
-	["Kul'Tiras"] =
-	{
-		["Tharca"] = 3,
-	},
-	["Lightbringer"] =
-	{
-		["Teldra\n<The Trust>"] = 3,
-	},
-	["Llane"] =
-	{
-		["Chirily"] = 3,
-	},
-	["Malfurion"] =
-	{
-		["Zetac\n<Hold Fast>"] = 3,
-	},
-	["Moonglade"] =
-	{
-		["Ciev"] = 3,
-	},
-	["Rexxar"] =
-	{
-		["Blitzi\n<Absolution>"] = 3,
-	},
-	["Scilla"] =
-	{
-		["Blam\n<Syndicate>"] = 3,
-	},
-	["Sentinels"] =
-	{
-		["Dhaktar"] = 3,
-	},
-	["Skywall"] =
-	{
-		["Valerya"] = 3,
-	},
-	["Suramar"] =
-	{
-		["Zendex"] = 3,
-		["Klaxon\n<Forbidden Planet"] = 3,
-	},
-	["Terrokkar"] =
-	{
-		["Extropianus\n<The First Immortals>"] = 3,
-	},
-	["Thorium Brotherhood"] =
-	{
-		["Pitchifus\n<Bloodforged>"] = 0,
-		Tiae = 0,
-		Airmid = 0,
-		Pistachio = 0,
-		Fizzlebang = 0,
-		[Outfitter.cGuildCreditFormat:format("Bloodforged")] = 1,
-	},
-	["Ysondre"] =
-	{
-		["Steikfrit"] = 3,
-	},
-	["Zangarmarsh"] =
-	{
-		["Feliany"] = 3,
-	},
-}
 
 Outfitter.BannedCharacters = {
 }
@@ -416,7 +168,6 @@ Outfitter_cCreateUsingTitle = Outfitter.cCreateUsingTitle
 Outfitter_cAutomationLabel = Outfitter.cAutomationLabel
 Outfitter_cOutfitterTabTitle = Outfitter.cOutfitterTabTitle
 Outfitter_cOptionsTabTitle = Outfitter.cOptionsTabTitle
-Outfitter_cAboutTabTitle = Outfitter.cAboutTabTitle
 
 Outfitter_cNewOutfit = Outfitter.cNewOutfit
 Outfitter_cNameAlreadyUsedError = Outfitter.cNameAlreadyUsedError
@@ -1195,7 +946,6 @@ Outfitter.cPanelFrames =
 {
 	"OutfitterMainFrame",
 	"OutfitterOptionsFrame",
-	"OutfitterAboutFrame",
 }
 
 Outfitter.cShapeshiftIDInfo = {
@@ -1532,8 +1282,9 @@ end
 
 function Outfitter:UpdateCurrentOutfitIcon()
 	if not OutfitterMinimapButton then return end
-	local _, vOutfit = self:GetCurrentOutfitInfo()
-	local vTexture = self.OutfitBar:GetOutfitTexture(vOutfit)
+	-- Outfitter Forever: the minimap button always shows the Outfitter Forever
+	-- logo (upstream shows the icon of the outfit you're wearing)
+	local vTexture = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo"
 	if OutfitterMinimapButton.CurrentOutfitTexture and vTexture then
 		if type(vTexture) == "number" then
 			vTexture = 	self:ConvertTextureIDToPath(vTexture)
@@ -2189,12 +1940,6 @@ function Outfitter:ShowPanel(pPanelIndex)
 	elseif pPanelIndex == 2 then
 		-- Options panel
 
-	elseif pPanelIndex == 3 then
-		-- About panel
-
-		if not self.AboutView then
-			self.AboutView = self:New(self._AboutView)
-		end
 	else
 		self:ErrorMessage("Unknown index (%d) in ShowPanel()", pPanelIndex)
 	end

@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------------
 
 if GetLocale() == "zhTW" then
-	Outfitter.cTitle = "換裝管理"
+	Outfitter.cTitle = "Outfitter Forever"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -18,7 +18,6 @@ if GetLocale() == "zhTW" then
 
 	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "選項"
-	Outfitter.cAboutTabTitle = "關於"
 
 	Outfitter.cNewOutfit = "新配裝"
 	Outfitter.cRenameOutfit = "變更配裝名稱"
@@ -175,7 +174,6 @@ if GetLocale() == "zhTW" then
 	Outfitter.cEquipOutfitMessageFormat = "換裝管理: %s 裝上"
 	Outfitter.cUnequipOutfitMessageFormat = "換裝管理: %s 卸下"
 
-	Outfitter.cAboutTitle = "關於 換裝管理"
 	Outfitter.cAuthor = "作者: John Stephen, contributions 及其他參與者 %s"
 	Outfitter.cTestersTitle = "換裝管理測試者"
 	Outfitter.cTestersNames = "%s"

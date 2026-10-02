@@ -1,5 +1,5 @@
 if GetLocale() == "koKR" then	
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Forever"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -13,7 +13,6 @@ if GetLocale() == "koKR" then
 
 	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "옵션"
-	Outfitter.cAboutTabTitle = "정보"
 
 	Outfitter.cNewOutfit = "신규 장비 세트"
 	Outfitter.cRenameOutfit = "장비 세트 이름 변경"
@@ -83,7 +82,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cTotalStatsName = "모든 능력치"
 	Outfitter.cItemLevelName = "Item Level"
 
-	Outfitter.cOptionsTitle = "Outfitter 옵션"
+	Outfitter.cOptionsTitle = "Outfitter Forever 옵션"
 	Outfitter.cShowMinimapButton = "미니맵 버튼 표시"
 	Outfitter.cShowMinimapButtonOnDescription = "미니맵 버튼을 사용하지 않으려면 이 설정을 끄십시오."
 	Outfitter.cShowMinimapButtonOffDescription = "미니맵 버튼을 사용하려면 이 설정을 켜십시오."
@@ -98,16 +97,15 @@ if GetLocale() == "koKR" then
 	Outfitter.cShowHotkeyMessagesOnDescription = "단축키로 세트를 변경할때 메시지를 보지 않으려면 이 설정을 끄십시오."
 	Outfitter.cShowHotkeyMessagesOffDescription = "단축키로 세트를 변경할때 메시지를 보려면 이 설정을 켜십시오."
 
-	Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s 장비됨"
-	Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s 해제됨"
+	Outfitter.cEquipOutfitMessageFormat = "Outfitter Forever: %s 장비됨"
+	Outfitter.cUnequipOutfitMessageFormat = "Outfitter Forever: %s 해제됨"
 
-	Outfitter.cAboutTitle = "Outfitter 정보"
 	Outfitter.cAuthor = "Designed and written by John Stephen and Bruce Quinton with contributions by %s"
 	Outfitter.cTestersTitle = "Outfitter testers"
 	Outfitter.cSpecialThanksTitle = "Special thanks to"
 	Outfitter.cTranslationCredit = "Translations by %s"
 
-	Outfitter.cOpenOutfitter = "Outfitter 열기"
+	Outfitter.cOpenOutfitter = "Outfitter Forever 열기"
 
 	Outfitter.cArgentDawnOutfitDescription = "이 세트는 역병지대에 있을 때 자동으로 착용 됩니다."
 	Outfitter.cRidingOutfitDescription = "이 세트는 탈것을 탈 때 자동으로 착용 됩니다."
@@ -123,7 +121,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cKeyBinding = "단축키"
 
 	BINDING_HEADER_OUTFITTER_TITLE = Outfitter.cTitle
-	BINDING_NAME_OUTFITTER_OUTFIT = "Outfitter 열기"
+	BINDING_NAME_OUTFITTER_OUTFIT = "Outfitter Forever 열기"
 
 	BINDING_NAME_OUTFITTER_OUTFIT1  = "세트 1"
 	BINDING_NAME_OUTFITTER_OUTFIT2  = "세트 2"
@@ -264,7 +262,7 @@ if GetLocale() == "koKR" then
 	
 	-- OutfitterFu strings
 	
-	Outfitter.cFuHint = "Outfitter 창을 열려면 좌-클릭하세요."
+	Outfitter.cFuHint = "Outfitter Forever 창을 열려면 좌-클릭하세요."
 	Outfitter.cFuHideMissing = "불일치 숨기기"
 	Outfitter.cFuHideMissingDesc = "일치 하지 않는 아이템을 숨깁니다."
 	Outfitter.cFuRemovePrefixes = "접두사 제거"
@@ -272,7 +270,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cFuMaxTextLength = "최대 글자 길이"
 	Outfitter.cFuMaxTextLengthDesc = "FuBar에 표시할 글자의 최대 길이입니다."
 	Outfitter.cFuHideMinimapButton = "Hide minimap button"
-	Outfitter.cFuHideMinimapButtonDesc = "Hide Outfitter's minimap button."
+	Outfitter.cFuHideMinimapButtonDesc = "Hide Outfitter Forever's minimap button."
 	Outfitter.cFuInitializing = "초기화"
 
 	Outfitter.cStoreOnServer = "Store outfit on server"

@@ -1,6 +1,6 @@
 Outfitter.cVersion = C_AddOns.GetAddOnMetadata(Outfitter.AddonName, "Version") or ""
 
-Outfitter.cTitle = "Outfitter"
+Outfitter.cTitle = "Outfitter Forever"
 Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 Outfitter.cSingleItemFormat = "%s"
@@ -17,9 +17,8 @@ Outfitter.cUseCurrentOutfit = "Use Current Outfit"
 Outfitter.cUseEmptyOutfit = "Create Empty Outfit"
 Outfitter.cAutomationLabel = "Automation:"
 
-Outfitter.cOutfitterTabTitle = "Outfitter"
+Outfitter.cOutfitterTabTitle = "Outfits"
 Outfitter.cOptionsTabTitle = "Options"
-Outfitter.cAboutTabTitle = "About"
 
 Outfitter.cNewOutfit = "New Outfit"
 Outfitter.cRenameOutfit = "Rename Outfit"
@@ -163,10 +162,10 @@ Outfitter.cItemLevelName = "Item Level"
 Outfitter.cCombatManaRegenStatName = "Mana per 5 (combat)"
 Outfitter.cCombatHealthRegenStatName = "Health per 5 (combat)"
 
-Outfitter.cOptionsTitle = "Outfitter Options"
+Outfitter.cOptionsTitle = "Outfitter Forever Options"
 Outfitter.cShowMinimapButton = "Show Minimap Button"
-Outfitter.cShowMinimapButtonOnDescription = "Turn this off if you don't want the Outfitter button on your minimap cluster"
-Outfitter.cShowMinimapButtonOffDescription = "Turn this on if you want the Outfitter button on your minimap cluster"
+Outfitter.cShowMinimapButtonOnDescription = "Turn this off if you don't want the Outfitter Forever button on your minimap cluster"
+Outfitter.cShowMinimapButtonOffDescription = "Turn this on if you want the Outfitter Forever button on your minimap cluster"
 Outfitter.cAutoSwitch = "Disable all outfit scripts"
 Outfitter.cAutoSwitchOnDescription = "Turn this off to allow outfit scripts to run"
 Outfitter.cAutoSwitchOffDescription = "Turn this on to block all outfit scripts from running"
@@ -184,13 +183,9 @@ Outfitter.cShowHotkeyMessagesOnDescription = "Turn this off if you don't want to
 Outfitter.cShowHotkeyMessagesOffDescription = "Turn this on if you want to see a message when you change outfits using a key binding"
 Outfitter.cShowOutfitBar = "Show outfit bar"
 Outfitter.cShowOutfitBarDescription = "Shows a bar of icon buttons you can click to change outfits"
-Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s equipped"
-Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s unequipped"
+Outfitter.cEquipOutfitMessageFormat = "Outfitter Forever: %s equipped"
+Outfitter.cUnequipOutfitMessageFormat = "Outfitter Forever: %s unequipped"
 
-Outfitter.cAboutTitle = "About Outfitter %s"
-Outfitter.cAboutAuthor = "Unified by GovtGeek"
-Outfitter.cAboutCopyright = "Copyright 2006 - 2018 John Stephen"
-Outfitter.cAboutThanks = "Many thanks to all fans and supporters."
 
 Outfitter.cGermanLocalization = "German Localization"
 Outfitter.cChineseLocalization = "Chinese Localization"
@@ -203,13 +198,13 @@ Outfitter.cTester = "Tester"
 Outfitter.cGuildCreditFormat = "The guild of %s"
 Outfitter.cDragonFlightCompatiblity = "People that REALLY want to see this addon continued"
 
-Outfitter.cOpenOutfitter = "Open Outfitter"
-Outfitter.cOpenCharacterWindow = "Open your character window (%s) and Outfitter will open with it. On WoW: Forever an addon can't open that window for you."
+Outfitter.cOpenOutfitter = "Open Outfitter Forever"
+Outfitter.cOpenCharacterWindow = "Open your character window (%s) and Outfitter Forever will open with it. On WoW: Forever an addon can't open that window for you."
 
 Outfitter.cKeyBinding = "Key Binding"
 
 BINDING_HEADER_OUTFITTER_TITLE = Outfitter.cTitle
-BINDING_NAME_OUTFITTER_OUTFIT = "Open Outfitter"
+BINDING_NAME_OUTFITTER_OUTFIT = "Open Outfitter Forever"
 
 BINDING_NAME_OUTFITTER_OUTFIT1  = "Outfit 1"
 BINDING_NAME_OUTFITTER_OUTFIT2  = "Outfit 2"
@@ -252,7 +247,7 @@ Outfitter.cOutfitBar = "Outfit Bar"
 Outfitter.cShowInOutfitBar = "Show in outfit bar"
 Outfitter.cChangeIcon = "Choose icon..."
 
-Outfitter.cMinimapButtonTitle = "Outfitter Minimap Button"
+Outfitter.cMinimapButtonTitle = "Outfitter Forever Minimap Button"
 Outfitter.cMinimapButtonDescription = "Click to select a different outfit or drag to re-position this button."
 
 Outfitter.cBattleStance = "Battle Stance"
@@ -375,15 +370,15 @@ Outfitter.cUnequipOthers = "On equip, unequip other Accessory outfits"
 Outfitter.cIgnoreComparisons = "Ignore in comparison tooltips"
 Outfitter.cPreventUnequip = "Keep equipped until manually unequipped"
 
-Outfitter.cConfirmResetMsg = "Are you sure you want to reset Outfitter on this character?  All outfits will be deleted and the default outfits re-created."
+Outfitter.cConfirmResetMsg = "Are you sure you want to reset Outfitter Forever on this character?  All outfits will be deleted and the default outfits re-created."
 Outfitter.cReset = "Reset"
 
 Outfitter.cIconFilterLabel = "Search:"
 Outfitter.cIconSetLabel = "Icons:"
 
-Outfitter.cCantReloadUI = "You must completely restart WoW to upgrade to this version of Outfitter"
+Outfitter.cCantReloadUI = "You must completely restart WoW to upgrade to this version of Outfitter Forever"
 Outfitter.cChooseIconTitle = "Choose an icon for the %s outfit"
-Outfitter.cOutfitterDecides = "Outfitter will choose an icon for you"
+Outfitter.cOutfitterDecides = "Outfitter Forever will choose an icon for you"
 
 Outfitter.cSuggestedIcons = "Suggested/equipped icons"
 Outfitter.cSpellbookIcons = "Your Spellbook"
@@ -417,7 +412,7 @@ Outfitter.cAutoChangesEnabled = "Automated changes are now enabled"
 
 -- OutfitterFu strings
 
-Outfitter.cFuHint = "Left-click to toggle Outfitter window."
+Outfitter.cFuHint = "Left-click to toggle Outfitter Forever window."
 Outfitter.cFuHideMissing = "Hide missing"
 Outfitter.cFuHideMissingDesc = "Hide outfits with missing items."
 Outfitter.cFuRemovePrefixes = "Remove prefixes"
@@ -425,7 +420,7 @@ Outfitter.cFuRemovePrefixesDesc = "Remove outfit name prefixes to shorten the te
 Outfitter.cFuMaxTextLength = "Max text length"
 Outfitter.cFuMaxTextLengthDesc = "The maximum length of the text displayed in FuBar."
 Outfitter.cFuHideMinimapButton = "Hide minimap button"
-Outfitter.cFuHideMinimapButtonDesc = "Hide Outfitter's minimap button."
+Outfitter.cFuHideMinimapButtonDesc = "Hide Outfitter Forever's minimap button."
 Outfitter.cFuInitializing = "Initializing"
 
 Outfitter.cStoreOnServer = "Store outfit on server"

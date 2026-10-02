@@ -98,7 +98,7 @@ function Addon.DebugLib:AddDebugMessage(pPrefix, pMessage, ...)
 		self:Initialize()
 	end
 
-	local vMessage = (pPrefix or "")..Addon.DebugColorCode..string.format("[%s] ", AddonName)..FONT_COLOR_CODE_CLOSE..HIGHLIGHT_FONT_COLOR_CODE..pMessage..FONT_COLOR_CODE_CLOSE
+	local vMessage = (pPrefix or "")..Addon.DebugColorCode..string.format("[%s] ", Addon.cTitle or AddonName)..FONT_COLOR_CODE_CLOSE..HIGHLIGHT_FONT_COLOR_CODE..pMessage..FONT_COLOR_CODE_CLOSE
 
 	if true then -- set to false to diagnose debug message problems
 		if select("#", ...) > 0 then

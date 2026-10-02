@@ -14,8 +14,7 @@ local function CreateMinimapButton()
 	OutfitterMinimapButton:SetMovable(true)
 	OutfitterMinimapButton:EnableMouse(true)
 
-	-- Textures
-	OutfitterMinimapButton:SetNormalTexture("Interface\\AddOns\\OutfitterForever\\Textures\\MinimapButton")
+	-- Textures: the Outfitter Forever logo inside the usual minimap button ring
 	local overlayTexture = OutfitterMinimapButton:CreateTexture(nil, "OVERLAY")
 	overlayTexture:SetSize(53, 53)
 	overlayTexture:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
@@ -32,8 +31,7 @@ local function CreateMinimapButton()
 	OutfitterMinimapButton.CurrentOutfitTexture:SetWidth(22)
 	OutfitterMinimapButton.CurrentOutfitTexture:SetHeight(22)
 	OutfitterMinimapButton.CurrentOutfitTexture:SetPoint("TOPLEFT", OutfitterMinimapButton, "TOPLEFT", 5, -4)
-	--SetPortraitToTexture(OutfitterMinimapButton.CurrentOutfitTexture, "Interface\\Icons\\INV_Chest_Cloth_21")
-	OutfitterMinimapButton.CurrentOutfitTexture:SetTexture("Interface\\Icons\\INV_Chest_Cloth_21")
+	OutfitterMinimapButton.CurrentOutfitTexture:SetTexture("Interface\\AddOns\\OutfitterForever\\Textures\\Logo")
 
 	OutfitterMinimapButton:RegisterForDrag("LeftButton")
 	OutfitterMinimapButton:RegisterForClicks("LeftButtonDown", "RightButtonDown")

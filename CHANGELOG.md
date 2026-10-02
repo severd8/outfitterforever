@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+- It's **Outfitter Forever** everywhere now: the window title, options, minimap menu, chat messages, tooltips and the keybindings group.
+- The minimap button shows the Outfitter Forever logo. (It used to show the icon of the outfit you were wearing.)
+- The Outfits and Options tabs have the logo as their faint background.
+- The About tab is gone. The first tab is now called Outfits.
+
 ## 1.0.2
 
 - Fixed: "Open Outfitter" from the minimap menu (or a right-click on the minimap button, or the keybinding) caused a Lua error, "attempt to compare a secret number value". On WoW: Forever an addon can't open or close the character window without breaking the game's own health and mana text. Outfitter now leaves that window to you: if it's closed, Outfitter asks you to open it and then opens along with it. Type `/reload` once after updating.

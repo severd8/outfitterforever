@@ -3,7 +3,7 @@
 -------------------------------------------------------------------------------
 
 if GetLocale() == "zhCN" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Forever"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -18,7 +18,6 @@ if GetLocale() == "zhCN" then
 
 	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "选项"
-	Outfitter.cAboutTabTitle = "关于"
 
 	Outfitter.cNewOutfit = "新套装"
 	Outfitter.cRenameOutfit = "重命名套装"
@@ -155,10 +154,10 @@ if GetLocale() == "zhCN" then
 	Outfitter.cCombatManaRegenStatName = "5秒回魔(战斗)"
 	Outfitter.cCombatHealthRegenStatName = "5秒回血(战斗)"
 
-	Outfitter.cOptionsTitle = "Outfitter 选项"
+	Outfitter.cOptionsTitle = "Outfitter Forever 选项"
 	Outfitter.cShowMinimapButton = "显示小地图按钮"
-	Outfitter.cShowMinimapButtonOnDescription = "禁用（在小地图上隐藏 Outfitter 按钮）"
-	Outfitter.cShowMinimapButtonOffDescription = "启用（在小地图上显示 Outfitter 按钮）"
+	Outfitter.cShowMinimapButtonOnDescription = "禁用（在小地图上隐藏 Outfitter Forever 按钮）"
+	Outfitter.cShowMinimapButtonOffDescription = "启用（在小地图上显示 Outfitter Forever 按钮）"
 	Outfitter.cAutoSwitch = "禁用套装自动切换"
 	Outfitter.cAutoSwitchOnDescription = "启用（装备不自动切换）"
 	Outfitter.cAutoSwitchOffDescription = "禁用（装备将自动切换）"
@@ -174,12 +173,9 @@ if GetLocale() == "zhCN" then
 	Outfitter.cShowHotkeyMessagesOffDescription = "启用（使用快捷键换装时显示信息）"
 	Outfitter.cShowOutfitBar = "显示装备条"
 	Outfitter.cShowOutfitBarDescription = "显示装备按钮条以便切换套装"
-	Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s 已装备"
-	Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s 未装备"
+	Outfitter.cEquipOutfitMessageFormat = "Outfitter Forever: %s 已装备"
+	Outfitter.cUnequipOutfitMessageFormat = "Outfitter Forever: %s 未装备"
 
-	Outfitter.cAboutTitle = "关于 Outfitter"
-	Outfitter.cAboutAuthor = "John Stephen 设计编写"
-	Outfitter.cAboutThanks = "非常感谢所有玩家及支持者！"
 
 	Outfitter.cGermanLocalization = "德语译者"
 	Outfitter.cChineseLocalization = "汉语译者"
@@ -191,12 +187,12 @@ if GetLocale() == "zhCN" then
 	Outfitter.cTester = "测试者"
 	Outfitter.cGuildCreditFormat = "%s 公会"
 
-	Outfitter.cOpenOutfitter = "打开 Outfitter"
+	Outfitter.cOpenOutfitter = "打开 Outfitter Forever"
 
 	Outfitter.cKeyBinding = "绑定于"
 
 	BINDING_HEADER_OUTFITTER_TITLE = Outfitter.cTitle
-	BINDING_NAME_OUTFITTER_OUTFIT = "打开 Outfitter"
+	BINDING_NAME_OUTFITTER_OUTFIT = "打开 Outfitter Forever"
 
 	BINDING_NAME_OUTFITTER_OUTFIT1  = "套装 1"
 	BINDING_NAME_OUTFITTER_OUTFIT2  = "套装 2"
@@ -234,7 +230,7 @@ if GetLocale() == "zhCN" then
 	Outfitter.cShowInOutfitBar = "在装备条上显示"
 	Outfitter.cChangeIcon = "选择图标..."
 
-	Outfitter.cMinimapButtonTitle = "Outfitter 小地图按钮"
+	Outfitter.cMinimapButtonTitle = "Outfitter Forever 小地图按钮"
 	Outfitter.cMinimapButtonDescription = "单击左键选择不同的套装或左键拖曳重新定位小地图按钮。"
 
 	Outfitter.cBattleStance = "战斗姿态"
@@ -351,9 +347,9 @@ if GetLocale() == "zhCN" then
 	Outfitter.cIconFilterLabel = "搜索："
 	Outfitter.cIconSetLabel = "图标："
 
-	Outfitter.cCantReloadUI = "你必须重新启动游戏来完成 Outfitter 的此次版本更新"
+	Outfitter.cCantReloadUI = "你必须重新启动游戏来完成 Outfitter Forever 的此次版本更新"
 	Outfitter.cChooseIconTitle = "为 %s 套装选择一个图标"
-	Outfitter.cOutfitterDecides = "Outfitter 将为你选择一个图标"
+	Outfitter.cOutfitterDecides = "Outfitter Forever 将为你选择一个图标"
 
 	Outfitter.cSuggestedIcons = "建议使用图标"
 	Outfitter.cSpellbookIcons = "你的技能书"
@@ -387,7 +383,7 @@ if GetLocale() == "zhCN" then
 
 	-- OutfitterFu strings
 
-	Outfitter.cFuHint = "左键：打开 Outfitter 设置窗口"
+	Outfitter.cFuHint = "左键：打开 Outfitter Forever 设置窗口"
 	Outfitter.cFuHideMissing = "隐藏遗失"
 	Outfitter.cFuHideMissingDesc = "隐藏遗失某物品的套装"
 	Outfitter.cFuRemovePrefixes = "移除前缀"
@@ -395,7 +391,7 @@ if GetLocale() == "zhCN" then
 	Outfitter.cFuMaxTextLength = "最大文本长度"
 	Outfitter.cFuMaxTextLengthDesc = "在 FuBar 上显示的最大文本长度"
 	Outfitter.cFuHideMinimapButton = "隐藏微缩地图按钮"
-	Outfitter.cFuHideMinimapButtonDesc = "隐藏 Outfitter 微缩地图按钮"
+	Outfitter.cFuHideMinimapButtonDesc = "隐藏 Outfitter Forever 微缩地图按钮"
 	Outfitter.cFuInitializing = "初始化"
 
 	Outfitter.cStoreOnServer = "装备管理"

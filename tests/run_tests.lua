@@ -84,10 +84,35 @@ W.PlayerTogglesCharacter()
 O:ToggleOutfitterFrame()
 W.Tick(1)
 Check(env.OutfitterFrame:IsVisible(), "Outfitter window is open")
-for panel = 1, 3 do
+for panel = 1, 2 do
 	O:ShowPanel(panel)
 	W.Tick(0.2)
 end
+
+----------------------------------------
+Step("it's Outfitter Forever everywhere, and there's no About tab")
+Check(O.cTitle == "Outfitter Forever", "the name is Outfitter Forever (is " .. tostring(O.cTitle) .. ")")
+Check(env.OutfitterFrameTitle:GetText() == "Outfitter Forever " .. tostring(O.cVersion), "window title (is " .. tostring(env.OutfitterFrameTitle:GetText()) .. ")")
+Check(env.BINDING_HEADER_OUTFITTER_TITLE == "Outfitter Forever", "keybindings group")
+Check(env.OutfitterFrameTab1 ~= nil and env.OutfitterFrameTab2 ~= nil, "Outfits and Options tabs")
+Check(env.OutfitterFrameTab3 == nil, "no third tab")
+Check(env.OutfitterAboutFrame == nil, "no About panel")
+Check(#O.cPanelFrames == 2, "two panels")
+Check(O.cAboutTitle == nil and O._AboutView == nil, "the About code is gone")
+do
+	local printedBefore = #W.printed
+	O:NoteMessage("hello")
+	local said = tostring(W.printed[#W.printed])
+	Check(#W.printed > printedBefore and said:find("[Outfitter Forever]", 1, true) ~= nil, "chat messages start with [Outfitter Forever] (said: " .. said .. ")")
+end
+local logo = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo"
+Check(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture() == logo,
+	"the minimap button shows the Outfitter Forever logo (shows " .. tostring(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture()) .. ")")
+Check(env.OutfitterMinimapButton:GetNormalTexture() == nil, "with no other art under it")
+O:UpdateCurrentOutfitIcon()
+W.Tick(0.5)
+Check(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture() == logo, "and keeps showing it whatever outfit is on")
+Check(O.LDB.DataObj.icon == logo, "the data broker icon is the logo too")
 O:ShowPanel(1)
 O:Update(true)
 W.Tick(0.5)

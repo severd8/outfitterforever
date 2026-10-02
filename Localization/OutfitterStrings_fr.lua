@@ -1,5 +1,5 @@
 if GetLocale() == "frFR" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Forever"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -13,7 +13,6 @@ if GetLocale() == "frFR" then
 
 	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "Options"
-	Outfitter.cAboutTabTitle = "A propos"
 
 	Outfitter.cNewOutfit = "Nouvelle tenue"
 	Outfitter.cRenameOutfit = "Renommer la tenue"
@@ -205,10 +204,10 @@ if GetLocale() == "frFR" then
 	Outfitter.cNatureResistStatName = "Résistance à la nature"
 	Outfitter.cShadowResistStatName = "Résistance à l'ombre"
 
-	Outfitter.cOptionsTitle = "Options de Outfitter"
+	Outfitter.cOptionsTitle = "Options de Outfitter Forever"
 	Outfitter.cShowMinimapButton = "Bouton Minimap"
-	Outfitter.cShowMinimapButtonOnDescription = "Désactivez si vous ne voulez pas le bouton d'Outfitter sur votre minimap"
-	Outfitter.cShowMinimapButtonOffDescription = "Activez pour afficher le bouton d'Outfitter sur la minimap"
+	Outfitter.cShowMinimapButtonOnDescription = "Désactivez si vous ne voulez pas le bouton d'Outfitter Forever sur votre minimap"
+	Outfitter.cShowMinimapButtonOffDescription = "Activez pour afficher le bouton d'Outfitter Forever sur la minimap"
 	Outfitter.cAutoSwitch = "Désactiver les modifications automatiques"
 	Outfitter.cAutoSwitchOnDescription = "Activez cette option pour désactiver le changement automatique de tenue"
 	Outfitter.cAutoSwitchOffDescription = "Activez cette option pour activer le changement automatique de tenue"
@@ -217,7 +216,6 @@ if GetLocale() == "frFR" then
 	Outfitter.cTooltipInfoOffDescription = "Activez cette option si vous souhaitez afficher les informations 'Utilisé par :' dans l'info-bulle"
 	Outfitter.cOutfitDisplay = "Outfit Affichage"
 
-	Outfitter.cAboutTitle = "A propos d'Outfitter"
 	Outfitter.cAuthor = "Designed et écrit par John Stephen avec les contributions de %s"
 	Outfitter.cTestersTitle = "Outfitter testers"
 	Outfitter.cTestersNames = "%s"
@@ -225,7 +223,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cSpecialThanksNames = "%s"
 	Outfitter.cTranslationCredit = "Traduction: %s"
 
-	Outfitter.cOpenOutfitter = "Ouvrir Outfitter"
+	Outfitter.cOpenOutfitter = "Ouvrir Outfitter Forever"
 
 	Outfitter.cArgentDawnOutfitDescription = "Cette tenue sera automatiquement équipée quand vous serez dans les Maleterres"
 	Outfitter.cRidingOutfitDescription = "Cette tenue sera automatiquement équipée quand vous serez sur votre monture"
@@ -269,7 +267,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cShowInOutfitBar = "Afficher dans la barre outfit"
 	Outfitter.cChangeIcon = "Choisissez l'icône..."
 
-	Outfitter.cMinimapButtonTitle = "Outfitter"
+	Outfitter.cMinimapButtonTitle = "Outfitter Forever"
 	Outfitter.cMinimapButtonDescription = "Cliquez pour séléctionner une autre tenue ou déplacez pour changer la position du bouton."
 
 	Outfitter.cBattleStance = "Posture de combat"
@@ -363,7 +361,7 @@ if GetLocale() == "frFR" then
 
 	-- OutfitterFu strings
 
-	Outfitter.cFuHint = "Cliquez avec le bouton gauche pour basculer la fenêtre Outfitter."
+	Outfitter.cFuHint = "Cliquez avec le bouton gauche pour basculer la fenêtre Outfitter Forever."
 	Outfitter.cFuHideMissing = "Masquer les items manquants"
 	Outfitter.cFuHideMissingDesc = "Cachez les tenues avec des objets manquants."
 	Outfitter.cFuRemovePrefixes = "enlever les prefixes"

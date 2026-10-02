@@ -1,5 +1,5 @@
 if GetLocale() == "deDE" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Forever"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -13,7 +13,6 @@ if GetLocale() == "deDE" then
 
 	Outfitter.cOutfitterTabTitle = "Outfitter"
 	Outfitter.cOptionsTabTitle = "Einstellungen"
-	Outfitter.cAboutTabTitle = "über"
 
 	Outfitter.cNewOutfit = "Neues Outfit"
 	Outfitter.cRenameOutfit = "Outfit umbenennen"
@@ -75,10 +74,10 @@ if GetLocale() == "deDE" then
 	Outfitter.cTotalStatsName = "Gesamt	werte"
 	Outfitter.cItemLevelName = "Item Level"
 	
-	Outfitter.cOptionsTitle = "Outfitter Einstellungen"
+	Outfitter.cOptionsTitle = "Outfitter Forever Einstellungen"
 	Outfitter.cShowMinimapButton = "Zeige Minimapbutton"
-	Outfitter.cShowMinimapButtonOnDescription = "Deaktivieren, um den Minimapbutton von Outfitter zu verstecken."
-	Outfitter.cShowMinimapButtonOffDescription = "Aktivieren, um den Minimapbutton von Outfitter zu zeigen."
+	Outfitter.cShowMinimapButtonOnDescription = "Deaktivieren, um den Minimapbutton von Outfitter Forever zu verstecken."
+	Outfitter.cShowMinimapButtonOffDescription = "Aktivieren, um den Minimapbutton von Outfitter Forever zu zeigen."
 
 	Outfitter.cAutoSwitch = "Outfit nicht automatisch umschalten"
 	Outfitter.cAutoSwitchOnDescription = "Abschalten um automatische Outfitwechsel zu aktivieren."
@@ -88,7 +87,6 @@ if GetLocale() == "deDE" then
 	Outfitter.cTooltipInfoOffDescription = "Einschalten, um 'Benutzt von:' in Tooltips anzuzeigen."
 	Outfitter.cOutfitDisplay = "Outfit display"
 
-	Outfitter.cAboutTitle = "über Outfitter"
 	Outfitter.cAuthor = "Designed and written by John Stephen with contributions by %s"
 	Outfitter.cTestersTitle = "Outfitter testers"
 	Outfitter.cTestersNames = "%s"
@@ -96,7 +94,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cSpecialThanksNames = "%s"
 	Outfitter.cTranslationCredit = "Übersetzung: %s"
 
-	Outfitter.cOpenOutfitter = "Outfitter öffnen"
+	Outfitter.cOpenOutfitter = "Outfitter Forever öffnen"
 
 	Outfitter.cArgentDawnOutfitDescription = "Dieses Outfit wird automatisch beim Betreten der Pestländer angelegt"
 	Outfitter.cRidingOutfitDescription = "Dieses Outfit wird automatisch beim Reiten angelegt"
@@ -141,7 +139,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cShowInOutfitBar = "Show in outfit bar"
 	Outfitter.cChangeIcon = "Choose icon..."
 
-	Outfitter.cMinimapButtonTitle = "Outfitter Minimapbutton"
+	Outfitter.cMinimapButtonTitle = "Outfitter Forever Minimapbutton"
 	Outfitter.cMinimapButtonDescription = "Klicken für eine Auswahl an Outfits oder gedrückt halten zum Bewegen des Buttons."
 
 	Outfitter.cBattleStance = "Kampfhaltung"
@@ -246,7 +244,7 @@ if GetLocale() == "deDE" then
 	
 	-- OutfitterFu strings
 
-	Outfitter.cFuHint = "Left-click to toggle Outfitter window."
+	Outfitter.cFuHint = "Left-click to toggle Outfitter Forever window."
 	Outfitter.cFuHideMissing = "Hide missing"
 	Outfitter.cFuHideMissingDesc = "Hide outfits with missing items."
 	Outfitter.cFuRemovePrefixes = "Remove prefixes"
@@ -254,7 +252,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cFuMaxTextLength = "Max text length"
 	Outfitter.cFuMaxTextLengthDesc = "The maximum length of the text displayed in FuBar."
 	Outfitter.cFuHideMinimapButton = "Hide minimap button"
-	Outfitter.cFuHideMinimapButtonDesc = "Hide Outfitter's minimap button."
+	Outfitter.cFuHideMinimapButtonDesc = "Hide Outfitter Forever's minimap button."
 	Outfitter.cFuInitializing = "Initializing"
 
 	Outfitter.cStoreOnServer = "Store outfit on server"

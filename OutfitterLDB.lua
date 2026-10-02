@@ -6,7 +6,7 @@ function Outfitter.LDB:Initialize()
 	{
 		type = "data source",
 		icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo", -- Forever: the Outfitter Forever logo
-		text = "Outfitter",
+		text = Outfitter.cTitle,
 		OnClick = function(pFrame, pButton) self:OnClick(pFrame, pButton) end,
 	})
 
@@ -20,7 +20,7 @@ function Outfitter.LDB:OutfitEvent(pEvent, pOutfitName, pOutfit)
 	
 	if vOutfit then
 		self.DataObj.text = vOutfitName
-		self.DataObj.icon = Outfitter.OutfitBar:GetOutfitTexture(vOutfit)
+		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo" -- always the logo (see UpdateCurrentOutfitIcon)
 	else
 		self.DataObj.text = Outfitter.cTitle
 		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo"

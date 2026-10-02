@@ -4,9 +4,9 @@
 
 **Outfitter, ported to World of Warcraft: Forever.**
 
-Outfitter is an equipment management addon that gives you fast access to multiple outfits to optimize your abilities in PvE and PvP, automated equip and unequip for convenience doing a variety of activities, or to enhance role-playing.
+Outfitter Forever is an equipment management addon that gives you fast access to multiple outfits to optimize your abilities in PvE and PvP, automated equip and unequip for convenience doing a variety of activities, or to enhance role-playing.
 
-This is the same Outfitter you know, with the same windows, menus, outfits and scripts. It's based on [Outfitter (Retrofit)](https://www.curseforge.com/wow/addons/outfitter-retrofit) 5.5.4.3 by GovtGeek, which continues [Outfitter](https://www.curseforge.com/wow/addons/outfitter) by John Stephen (Mundocani). The only changes are the ones Forever needs.
+It works like the Outfitter you know, with the same outfits, menus and scripts. It's based on [Outfitter (Retrofit)](https://www.curseforge.com/wow/addons/outfitter-retrofit) 5.5.4.3 by GovtGeek, which continues [Outfitter](https://www.curseforge.com/wow/addons/outfitter) by John Stephen (Mundocani). The changes are the ones Forever needs, plus its own name and logo.
 
 ---
 
@@ -15,12 +15,12 @@ This is the same Outfitter you know, with the same windows, menus, outfits and s
 - **Outfits.** Save any set of gear as an outfit and put it on with one click. Outfits come in two kinds:
   - **Complete outfits** have an item for every slot and replace whatever you're wearing.
   - **Accessories** cover some slots and go on top, and you can wear as many as you like at once (fishing pole, Carrot on a Stick, ...).
-- **Ready-made outfits.** On first use, Outfitter saves your current gear as **Normal**, makes a **Birthday Suit**, and adds empty outfits for your class's stances and forms, ready to fill.
+- **Ready-made outfits.** On first use, Outfitter Forever saves your current gear as **Normal**, makes a **Birthday Suit**, and adds empty outfits for your class's stances and forms, ready to fill.
 - **Automatic outfits.** Give any outfit a script and it goes on and comes off by itself: riding, swimming, cooking, dining, spirit regen, cities, battlegrounds, dungeons, PvP flagged, resting, falling, warrior stances, druid forms, rogue stealth, Feign Death, buffs and debuffs, zones, and more. You can turn any of them off.
 - **Fishing.** A Fishing outfit turns on fish tracking, auto loot and other fishing settings while you wear it.
 - **Scripts.** Attach a ready-made script to an outfit, or write your own, to decide when it goes on and comes off.
 - **Outfit bar.** An icon bar for one-click access, horizontal or vertical. Turn it on with **Show outfit bar** in the options.
-- **Minimap menu.** Left-click the minimap button for your outfits; right-click opens Outfitter.
+- **Minimap menu.** Left-click the minimap button for your outfits; right-click opens Outfitter Forever.
 - **Generate outfits.** Build an outfit that maximizes a stat or a mix of stats, or uses your Pawn weights (needs Pawn).
 - **Icon picker.** Search thousands of icons for your outfits.
 - **Tooltips and comparisons.** Item tooltips show which outfits use the item, and outfit items can be included in item comparisons.
@@ -33,9 +33,10 @@ This is the same Outfitter you know, with the same windows, menus, outfits and s
 - **The ranged slot.** Bows, guns, crossbows, wands, thrown weapons and relics are managed in their own slot, with an outfit checkbox on the character window.
 - **Warrior stances.** The Battle, Defensive and Berserker Stance outfits follow your three stances.
 - **Talent trees.** Scripts that can be limited to some specializations use your talent trees.
-- **Character window.** The Outfitter button sits at the top right of your character, beside the arrow that hides the stats pane. The Outfitter window opens to the right of the character window's tabs.
-- **Escape** closes Outfitter's dialogs without touching Blizzard's code (so it can't cause "action blocked" errors).
+- **Character window.** The Outfitter Forever button sits at the top right of your character, beside the arrow that hides the stats pane. The Outfitter Forever window opens to the right of the character window's tabs.
+- **Escape** closes Outfitter Forever's dialogs without touching Blizzard's code (so it can't cause "action blocked" errors).
 - **Cooking and fish tracking** use Forever's trade skill and minimap tracking API.
+- **Minimap button.** It shows the Outfitter Forever logo, not the icon of the outfit you're wearing.
 
 ### Limits on Forever
 
@@ -45,9 +46,9 @@ Forever hides some things from addons. These work a little differently because o
 - **Spirit regen (five-second rule)** can't read your mana, so it treats any spell cast followed by a mana change as mana spent.
 - **Buffs can't be read in combat.** Outfits that follow a buff or debuff (aspects, Ghost Wolf, Has Buff, ...) stay as they were when combat started and update after combat on the next buff change. A buff you gain in combat, like Feign Death, doesn't put its outfit on.
 - **Dining** can't tell when your health and mana are full, so the outfit stays on until the food or drink buff ends.
-- **Escape** closes the character window along with an open Outfitter dialog, because Forever closes every window on the same key press.
-- **Armor can't be changed in combat** (the game's rule, as always). Outfitter puts the outfit on as soon as combat ends.
-- **Outfitter can't open the character window for you.** "Open Outfitter" in the minimap menu, a right-click on the minimap button and the keybinding all work while the character window is open. When it's closed, Outfitter asks you to open it (`C`) and then opens along with it.
+- **Escape** closes the character window along with an open Outfitter Forever dialog, because Forever closes every window on the same key press.
+- **Armor can't be changed in combat** (the game's rule, as always). Outfitter Forever puts the outfit on as soon as combat ends.
+- **Outfitter Forever can't open the character window for you.** "Open Outfitter Forever" in the minimap menu, a right-click on the minimap button and the keybinding all work while the character window is open. When it's closed, Outfitter Forever asks you to open it (`C`) and then opens along with it.
 
 ## Installation
 
@@ -59,9 +60,9 @@ Don't install another copy of Outfitter alongside it.
 
 ## Using it
 
-- **Open Outfitter.** Open your character window (`C`) and click the Outfitter button at the top right of your character, or left-click the minimap button for the outfit menu.
+- **Open Outfitter Forever.** Open your character window (`C`) and click the Outfitter Forever button at the top right of your character, or left-click the minimap button for the outfit menu.
 - **Make an outfit.** Put on the gear, click **New Outfit**, and name it. Untick the slots the outfit shouldn't change.
-- **Wear an outfit.** Click it in the Outfitter window, the minimap menu or the outfit bar.
+- **Wear an outfit.** Click it in the Outfitter Forever window, the minimap menu or the outfit bar.
 - **Automatic outfits.** Use the menu to the right of an outfit to pick a script or turn it off.
 
 | Command | What it does |
@@ -87,7 +88,7 @@ Outfitter Forever is free. If it has saved you some gear juggling, you can [leav
 ## Credits
 
 - **John Stephen (Mundocani)**, who created Outfitter.
-- **GovtGeek**, for Outfitter (Retrofit), and everyone credited in the addon's About tab.
+- **GovtGeek**, for Outfitter (Retrofit), and **Miv**, **Gogo** and **LemonDrake**, credited there.
 - WoW: Forever port by **severd8**.
 
 ## License

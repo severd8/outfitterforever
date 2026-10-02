@@ -1,5 +1,5 @@
 if GetLocale() == "ruRU" then
-	Outfitter.cTitle = "Outfitter"
+	Outfitter.cTitle = "Outfitter Forever"
 	Outfitter.cTitleVersion = Outfitter.cTitle.." "..Outfitter.cVersion
 
 	Outfitter.cSingleItemFormat = "%s"
@@ -14,7 +14,6 @@ if GetLocale() == "ruRU" then
 
 	Outfitter.cOutfitterTabTitle = "Комплекты"
 	Outfitter.cOptionsTabTitle = "Настройки"
-	Outfitter.cAboutTabTitle = "О моде"
 
 	Outfitter.cNewOutfit = "Новый комплект"
 	Outfitter.cRenameOutfit = "Переименовать комплект"
@@ -153,8 +152,8 @@ if GetLocale() == "ruRU" then
 
 	Outfitter.cOptionsTitle = "Настройки"
 	Outfitter.cShowMinimapButton = "Иконка на мини-карте"
-	Outfitter.cShowMinimapButtonOnDescription = "Отлючичите, если не хотите видеть иконку Outfitter на мини-карте"
-	Outfitter.cShowMinimapButtonOffDescription = "Включие, если хотите видеть иконку Outfitter на мини-карте"
+	Outfitter.cShowMinimapButtonOnDescription = "Отлючичите, если не хотите видеть иконку Outfitter Forever на мини-карте"
+	Outfitter.cShowMinimapButtonOffDescription = "Включие, если хотите видеть иконку Outfitter Forever на мини-карте"
 	Outfitter.cAutoSwitch = "Отключить авто-смены"
 	Outfitter.cAutoSwitchOnDescription = "Включите, если не хотите автоматической смены комплектов"
 	Outfitter.cAutoSwitchOffDescription = "Отключите, если хотите автоматическую смену комплектов"
@@ -170,10 +169,9 @@ if GetLocale() == "ruRU" then
 	Outfitter.cShowHotkeyMessagesOffDescription = "Включите, если хотите показывать сообщения о смене комплекта по клавиатурным привязкам"
 	Outfitter.cShowOutfitBar = "Показывать комплект-панель"
 	Outfitter.cShowOutfitBarDescription = "Показывает комплект-панель Outfitter с клавишами всех комплектов"
-	Outfitter.cEquipOutfitMessageFormat = "Outfitter: %s одет"
-	Outfitter.cUnequipOutfitMessageFormat = "Outfitter: %s снят"
+	Outfitter.cEquipOutfitMessageFormat = "Outfitter Forever: %s одет"
+	Outfitter.cUnequipOutfitMessageFormat = "Outfitter Forever: %s снят"
 
-	Outfitter.cAboutTitle = "Об Outfitter"
 	Outfitter.cAuthor = "Designed and written by John Stephen with contributions by %s"
 	Outfitter.cTestersTitle = "Outfitter тестеры"
 	Outfitter.cTestersNames = "%s"
@@ -181,12 +179,12 @@ if GetLocale() == "ruRU" then
 	Outfitter.cSpecialThanksNames = "%s"
 	Outfitter.cTranslationCredit = "Переводы %s"
 
-	Outfitter.cOpenOutfitter = "Открыть Outfitter"
+	Outfitter.cOpenOutfitter = "Открыть Outfitter Forever"
 
 	Outfitter.cKeyBinding = "Клавиатурные привзяки"
 
 	BINDING_HEADER_OUTFITTER_TITLE = Outfitter.cTitle
-	BINDING_NAME_OUTFITTER_OUTFIT = "Открыть Outfitter"
+	BINDING_NAME_OUTFITTER_OUTFIT = "Открыть Outfitter Forever"
 
 	BINDING_NAME_OUTFITTER_OUTFIT1  = "Комплект 1"
 	BINDING_NAME_OUTFITTER_OUTFIT2  = "Комплект 2"
@@ -224,7 +222,7 @@ if GetLocale() == "ruRU" then
 	Outfitter.cShowInOutfitBar = "Показывать в комплект-панели"
 	Outfitter.cChangeIcon = "Выбрать иконку..."
 
-	Outfitter.cMinimapButtonTitle = "Значок Outfitter на мини-карте"
+	Outfitter.cMinimapButtonTitle = "Значок Outfitter Forever на мини-карте"
 	Outfitter.cMinimapButtonDescription = "Щелкните для выбора различных комплектов или тяните для перестаскивания иконки."
 
 	Outfitter.cBattleStance = "Боевая стойка"
@@ -335,15 +333,15 @@ if GetLocale() == "ruRU" then
 	Outfitter.cMissingItemsSeparator = ", "
 	Outfitter.cUnequipOthers = "При смене снимать другие комплекты Акссесуаров"
 
-	Outfitter.cConfirmResetMsg = "Вы правда хотите обнулить настройки Outfitter для этого персонажа?  Все комплекты будут удалены и созданы по умолчанию."
+	Outfitter.cConfirmResetMsg = "Вы правда хотите обнулить настройки Outfitter Forever для этого персонажа?  Все комплекты будут удалены и созданы по умолчанию."
 	Outfitter.cReset = "Сбросить"
 
 	Outfitter.cIconFilterLabel = "Поиск:"
 	Outfitter.cIconSetLabel = "Иконки:"
 
-	Outfitter.cCantReloadUI = "Вам необходимо перезапустить WoW для обновления Outfitter"
+	Outfitter.cCantReloadUI = "Вам необходимо перезапустить WoW для обновления Outfitter Forever"
 	Outfitter.cChooseIconTitle = "Выберите иконку для комплекта %s"
-	Outfitter.cOutfitterDecides = "Outfitter выбрал иконку за Вас"
+	Outfitter.cOutfitterDecides = "Outfitter Forever выбрал иконку за Вас"
 
 	Outfitter.cSuggestedIcons = "Предложенные иконки"
 	Outfitter.cSpellbookIcons = "Ваши заклинания"
@@ -385,7 +383,7 @@ if GetLocale() == "ruRU" then
 	Outfitter.cFuMaxTextLength = "Max длина текста"
 	Outfitter.cFuMaxTextLengthDesc = "Максимальная длина текста отображающегося в FuBar."
 	Outfitter.cFuHideMinimapButton = "Скрыть иконку у мини-карты"
-	Outfitter.cFuHideMinimapButtonDesc = "Скрыть иконку Outfitter'а у мини-карты."
+	Outfitter.cFuHideMinimapButtonDesc = "Скрыть иконку Outfitter Forever'а у мини-карты."
 	Outfitter.cFuInitializing = "Инициализирование"
 
 	Outfitter.cStoreOnServer = "Хранить наборы на сервере"

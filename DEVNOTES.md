@@ -32,6 +32,16 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 - Don't register addon functions with `RegisterGameMenuEscHandler`: Blizzard's Escape loop would read the addon's entry and run the rest of Escape (game menu included) tainted.
 - Removed or changed on the Mainline API that Outfitter used: `UnitDebuff`, `GetTradeSkillLine` (now `C_TradeSkillUI.GetBaseProfessionInfo`), `C_Minimap.GetTrackingInfo` returns a table (`Outfitter:GetTrackingInfo` handles both).
 
+## Branding (since 1.0.3)
+
+The addon calls itself **Outfitter Forever** everywhere a player can see it; "Outfitter" alone is only used for the original addon it's based on.
+
+- `Outfitter.cTitle` is "Outfitter Forever" in every language file. It's the window title, the minimap menu header, the keybindings group (`BINDING_HEADER_OUTFITTER_TITLE`, and `category` in `Bindings.xml`), the LibDataBroker object's name, and the `[Outfitter Forever]` prefix on chat messages (`MC2DebugLib`).
+- The other strings that name the addon were changed in `OutfitterStrings.lua` and `Localization/*.lua`. Slash commands stay `/outfitter`; saved variables, frame names and the folder name are unchanged.
+- **Logo**: `Textures/Logo.tga` (64×64) is the TOC icon, the LibDataBroker icon and the minimap button, which always shows it (`Outfitter:UpdateCurrentOutfitIcon`; upstream shows the current outfit's icon there). `Textures/LogoLarge.tga` (256×256) is the faint background of the Outfits and Options tabs. Both are made from `art/logo.png`.
+- **No About tab**: `OutfitterAbout.lua`, `OutfitterAboutFrame`, the third tab, the `cAbout*` strings and the `CreditPlayersByRealm` list were removed. Credits live in `README.md`, the `.toc` (`X-Credits`) and `LICENSE`. The first tab is "Outfits" (`cOutfitterTabTitle`, English only).
+- The character-window button (`Textures/Outfitter-Button.blp`) is upstream's art, unchanged.
+
 ## Forever changes (search for `IsForever`, `IsRetail`, `IsSecret`)
 
 - **Never open or close the character window from addon code** (`ToggleCharacter`, `ShowUIPanel(CharacterFrame)`, `CharacterFrame:Show()` / `:Hide()`). `CharacterFrameMixin:OnShow` and `OnHide` update the player frame's health and mana text (`ShowStatusBarText`, which compares the bar's values and writes `showNumeric` / `lockShow`). Those values are secret, so when the show was started by an addon the compare throws ("attempt to compare a secret number value (execution tainted by ...)"), and the fields it wrote stay tainted. `Outfitter:OpenUI` shows only `OutfitterFrame` when the window is already open; otherwise it prints `cOpenCharacterWindow` and sets `OpenWithCharacterWindow`, and `Outfitter:CharacterWindowShown` (hooked to `OutfitterButtonFrame`'s `OnShow`) opens Outfitter when the player opens the window within a minute. `ToggleUI` no longer closes the character window. The tests' fake client reports an error if the addon touches the window (`W.PlayerTogglesCharacter()` is the player doing it).
