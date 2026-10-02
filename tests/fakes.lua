@@ -757,16 +757,45 @@ function F.FauxScrollFrame_OnVerticalScroll(frame, value, itemHeight, update) fr
 function F.FauxScrollFrame_SetOffset(frame, offset) frame.offset = offset end
 function F.GetCoinTextureString(copper) return tostring(copper) .. "c" end
 function F.SecureCmdOptionParse(options) return (options:match("^([^;]*)")) end
+-- The character window may only be opened or closed by the player (their key
+-- press or click runs Blizzard's code untainted). When it opens or closes, the
+-- game updates the player frame's health and mana text, and those values are
+-- hidden from addons: started from addon code that's a Lua error ("attempt to
+-- compare a secret number value"), and it leaves the player frame tainted.
+-- The tests play the player with W.PlayerTogglesCharacter().
+local function CharacterWindowTouched(how)
+	if not W.playerAction then
+		table.insert(W.errors, "the addon " .. how .. " the character window: on Forever that's a Lua error in "
+			.. "Blizzard_TextStatusBar (attempt to compare a secret number value) and taints the player frame\n"
+			.. debug.traceback("", 3))
+	end
+end
 function F.ToggleCharacter(tab)
+	CharacterWindowTouched("toggled")
+	local was = W.playerAction
+	W.playerAction = true   -- the rest is Blizzard's own doing
 	if env.CharacterFrame:IsShown() and env[tab]:IsShown() then
 		env.CharacterFrame:Hide()
 	else
 		env.CharacterFrame:Show()
 		env.PaperDollFrame:Show()
 	end
+	W.playerAction = was
 end
-function F.ShowUIPanel(frame) frame:Show() end
-function F.HideUIPanel(frame) frame:Hide() end
+function W.PlayerTogglesCharacter()
+	W.playerAction = true
+	F.ToggleCharacter("PaperDollFrame")
+	W.playerAction = nil
+end
+function F.ShowUIPanel(frame)
+	if frame == env.CharacterFrame then CharacterWindowTouched("opened") end
+	frame:Show()
+end
+function F.HideUIPanel(frame)
+	if frame == env.CharacterFrame then CharacterWindowTouched("closed") end
+	frame:Hide()
+end
+function F.GetBindingKey(command) return command == "TOGGLECHARACTER0" and "C" or nil end
 
 ----------------------------------------
 -- Blizzard frames Outfitter uses (Forever's character window)
@@ -810,6 +839,12 @@ end
 
 F.CharacterFrame = New("Frame", "CharacterFrame", F.UIParent)
 F.CharacterFrame.__shown = false
+do
+	-- Showing or hiding it directly is the same as toggling it
+	local show, hide = F.CharacterFrame.Show, F.CharacterFrame.Hide
+	F.CharacterFrame.Show = function(self) if not W.playerAction then CharacterWindowTouched("showed") end return show(self) end
+	F.CharacterFrame.Hide = function(self) if not W.playerAction then CharacterWindowTouched("hid") end return hide(self) end
+end
 F.CharacterFrame.__width = 631
 F.CharacterFrame.LeftPaneHost = New("Frame", "CharacterFrameLeftPaneHost", F.CharacterFrame)
 F.CharacterFrame.RightPaneHost = New("Frame", "CharacterFrameRightPaneHost", F.CharacterFrame)

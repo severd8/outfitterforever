@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Fixed: "Open Outfitter" from the minimap menu (or a right-click on the minimap button, or the keybinding) caused a Lua error, "attempt to compare a secret number value". On WoW: Forever an addon can't open or close the character window without breaking the game's own health and mana text. Outfitter now leaves that window to you: if it's closed, Outfitter asks you to open it and then opens along with it. Type `/reload` once after updating.
+
 ## 1.0.1
 
 - Fixed for the latest WoW: Forever update (build 70170). The game now identifies itself differently to addons, and Outfitter stopped recognising it: Lua errors every time a tooltip closed, and Forever's own handling (ranged slot, stances, talent trees, the button by the character window) switched off. Outfitter recognises both the old and the new client now.

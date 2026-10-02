@@ -204,6 +204,7 @@ Outfitter.cGuildCreditFormat = "The guild of %s"
 Outfitter.cDragonFlightCompatiblity = "People that REALLY want to see this addon continued"
 
 Outfitter.cOpenOutfitter = "Open Outfitter"
+Outfitter.cOpenCharacterWindow = "Open your character window (%s) and Outfitter will open with it. On WoW: Forever an addon can't open that window for you."
 
 Outfitter.cKeyBinding = "Key Binding"
 

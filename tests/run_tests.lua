@@ -80,7 +80,7 @@ Check(env.OutfitterEnableRangedSlot and env.OutfitterEnableRangedSlot.SlotName =
 
 ----------------------------------------
 Step("open the character window and Outfitter")
-env.ToggleCharacter("PaperDollFrame")
+W.PlayerTogglesCharacter()
 O:ToggleOutfitterFrame()
 W.Tick(1)
 Check(env.OutfitterFrame:IsVisible(), "Outfitter window is open")
@@ -516,6 +516,53 @@ for _, file in ipairs({ "OutfitterForever.toc", "Outfitter.xml", "OutfitterBar.x
 		if found then found:close() end
 	end
 end
+
+----------------------------------------
+Step("Outfitter never opens or closes the character window itself")
+-- On Forever that's a Lua error in Blizzard's player frame code (and taints it),
+-- so only the player opens the window; Outfitter opens with it.
+local function LastPrinted() return tostring(W.printed[#W.printed] or "") end
+if env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end
+env.OutfitterFrame:Hide()
+W.Tick(0.2)
+Check(not env.CharacterFrame:IsShown(), "character window closed")
+local printedBefore = #W.printed
+O:OpenUI()   -- "Open Outfitter" in the minimap menu, or the keybinding
+W.Tick(0.2)
+Check(not env.CharacterFrame:IsShown(), "Open Outfitter leaves the character window closed")
+Check(not env.OutfitterFrame:IsVisible(), "and Outfitter isn't showing yet")
+Check(#W.printed > printedBefore and LastPrinted():find("character window (C)", 1, true) ~= nil,
+	"it says to open the character window, with the key for it (said: " .. LastPrinted() .. ")")
+W.PlayerTogglesCharacter()
+W.Tick(0.2)
+Check(env.OutfitterFrame:IsVisible(), "Outfitter opens when you open the character window")
+O:ToggleUI(true)   -- right-click on the minimap button
+W.Tick(0.2)
+Check(not env.OutfitterFrame:IsVisible(), "right-click closes Outfitter")
+Check(env.CharacterFrame:IsShown(), "and leaves the character window open")
+O:ToggleUI(true)
+W.Tick(0.2)
+Check(env.OutfitterFrame:IsVisible(), "right-click again opens Outfitter (the character window is open)")
+env.OutfitterFrame:Hide()
+W.PlayerTogglesCharacter()
+W.Tick(0.2)
+env.Outfitter_OnAddonCompartmentClick("OutfitterForever", "LeftButton")
+W.Tick(0.2)
+Check(not env.CharacterFrame:IsShown(), "the addon list button leaves the character window closed too")
+W.PlayerTogglesCharacter()
+W.Tick(0.2)
+Check(env.OutfitterFrame:IsVisible(), "and Outfitter opens with it")
+-- Asked a while ago and never opened the window: it doesn't pop open later
+env.OutfitterFrame:Hide()
+W.PlayerTogglesCharacter()
+O:OpenUI()
+W.Tick(90)
+W.PlayerTogglesCharacter()
+W.Tick(0.2)
+Check(not env.OutfitterFrame:IsVisible(), "an old request doesn't open Outfitter out of the blue")
+W.PlayerTogglesCharacter()
+W.Tick(0.2)
+NoErrors()
 
 for name in pairs(W.replacedBlizzardScripts) do
 	Fail("the addon set (instead of hooking) the script " .. name .. " on Blizzard's frame")

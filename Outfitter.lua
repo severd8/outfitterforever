@@ -1304,7 +1304,7 @@ function Outfitter_OnAddonCompartmentClick(addonName, buttonName)
 		Outfitter:ToggleOutfitterFrame()
 	else
 		--[[-- Not sure why this is needed. Pulled from Blizzard forums --]]--
-		if CharacterFrameTab3 and not CharacterFrameTab3:GetRight() then
+		if not IsForever and CharacterFrameTab3 and not CharacterFrameTab3:GetRight() then
 			CharacterFrame:SetPoint("TOPLEFT", 20, -100)
 		end
 		Outfitter:OpenUI()
@@ -5407,6 +5407,12 @@ function Outfitter:Initialize()
 		self:ActivateAllScripts()
 	end
 
+	-- Forever: Outfitter can't open the character window itself (see OpenUI),
+	-- so it opens along with it
+	if IsForever and OutfitterButtonFrame then
+		OutfitterButtonFrame:HookScript("OnShow", function () Outfitter:CharacterWindowShown() end)
+	end
+
 	-- Install the "Used by outfits" tooltip feature
 	hooksecurefunc(GameTooltip, "SetBagItem", self.GameTooltip_SetBagItem)
 	hooksecurefunc(GameTooltip, "SetInventoryItem", self.GameTooltip_SetInventoryItem)
@@ -6699,7 +6705,10 @@ function Outfitter:ToggleUI(pToggleCharWindow)
 		OutfitterFrame:Hide()
 
 		--Assume that if Outfitter is open, so is the PaperDollFrame
-		ToggleCharacter("PaperDollFrame")
+		-- (Forever: the character window is left alone, see OpenUI)
+		if not IsForever then
+			ToggleCharacter("PaperDollFrame")
+		end
 	else
 		self:OpenUI()
 	end
@@ -6708,10 +6717,31 @@ end
 function Outfitter:OpenUI()
 	-- Make sure the PaperDollFrame is visible
 	if not PaperDollFrame:IsVisible() then
+		if IsForever then
+			-- On Forever an addon must not open (or close) the character window.
+			-- The window updates the player frame's health and mana text as it
+			-- opens and closes, and that text is hidden from addons: started from
+			-- addon code it's a Lua error, and it leaves the player frame tainted.
+			-- So Outfitter opens with the window, next time you open it.
+			self.OpenWithCharacterWindow = GetTime()
+			local vKey = GetBindingKey and GetBindingKey("TOGGLECHARACTER0")
+			self:NoteMessage(self.cOpenCharacterWindow:format(vKey or "C"))
+			return
+		end
 		ToggleCharacter("PaperDollFrame")
 	end
 
 	OutfitterFrame:Show()
+end
+
+-- Forever: the character window was opened (by you). If you asked for Outfitter
+-- a moment ago, it opens now.
+function Outfitter:CharacterWindowShown()
+	local vAsked = self.OpenWithCharacterWindow
+	self.OpenWithCharacterWindow = nil
+	if vAsked and GetTime() - vAsked < 60 then
+		OutfitterFrame:Show()
+	end
 end
 
 function Outfitter:WearingOutfitName(pOutfitName)

@@ -47,6 +47,7 @@ Forever hides some things from addons. These work a little differently because o
 - **Dining** can't tell when your health and mana are full, so the outfit stays on until the food or drink buff ends.
 - **Escape** closes the character window along with an open Outfitter dialog, because Forever closes every window on the same key press.
 - **Armor can't be changed in combat** (the game's rule, as always). Outfitter puts the outfit on as soon as combat ends.
+- **Outfitter can't open the character window for you.** "Open Outfitter" in the minimap menu, a right-click on the minimap button and the keybinding all work while the character window is open. When it's closed, Outfitter asks you to open it (`C`) and then opens along with it.
 
 ## Installation
 
