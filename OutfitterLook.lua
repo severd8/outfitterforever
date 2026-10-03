@@ -39,4 +39,12 @@ function Outfitter:ApplyLook()
 	header.text:SetPoint("RIGHT", close, "LEFT", -4, 0)
 	OutfitterCloseButton:Hide()
 	frame.Look.Close = close
+
+	-- The outfit list's scroll track: flat and dark like the panel, in place of the stone art
+	local track = OutfitterMainFrameScrollbarTrench
+	for _, part in ipairs({ "Top", "Middle", "Bottom" }) do
+		_G[track:GetName() .. part]:Hide()
+	end
+	frame.Look.Track = T.Fill(track, C.side)
+	T.Border(track, C.line)
 end

@@ -128,6 +128,11 @@ do
 			Check(not piece:IsShown(), "the original frame art is hidden (" .. tostring(name) .. ")")
 		end
 		Check(look.Fill:IsShown(), "a flat panel is behind the window")
+		for _, part in ipairs({ "Top", "Middle", "Bottom" }) do
+			Check(not env["OutfitterMainFrameScrollbarTrench" .. part]:IsShown(), "the scroll track's stone art is hidden (" .. part .. ")")
+		end
+		Check(look.Track and look.Track:IsShown() and look.Track:GetParent() == env.OutfitterMainFrameScrollbarTrench,
+			"the scroll track is a flat strip instead")
 		-- The X closes Outfitter's window only; the character window is the player's to close
 		look.Close:Click()
 		Check(not frame:IsShown(), "the X in the header closes Outfitter")

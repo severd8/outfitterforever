@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- The scroll track beside the outfit list is flat and dark like the rest of the window. It was still the original stone art.
+
 ## 1.1.0
 
 One look for Outfitter Forever, TauntMaster Forever and ToppedOff Forever.
