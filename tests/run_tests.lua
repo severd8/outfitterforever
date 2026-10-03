@@ -103,8 +103,45 @@ do
 	local printedBefore = #W.printed
 	O:NoteMessage("hello")
 	local said = tostring(W.printed[#W.printed])
-	Check(#W.printed > printedBefore and said:find("[Outfitter Forever]", 1, true) ~= nil, "chat messages start with [Outfitter Forever] (said: " .. said .. ")")
+	Check(#W.printed > printedBefore
+		and said:find("|TInterface\\AddOns\\OutfitterForever\\Textures\\Logo:0|t |cffe8a040Outfitter Forever|r: ", 1, true) == 1,
+		"chat messages start with the logo and Outfitter Forever (said: " .. said .. ")")
+	O:ErrorMessage("oops")
+	said = tostring(W.printed[#W.printed])
+	Check(said:find("[ERROR]", 1, true) ~= nil and said:find("Outfitter Forever|r: ", 1, true) ~= nil and said:find("oops", 1, true) ~= nil,
+		"an error line keeps its [ERROR] mark (said: " .. said .. ")")
 end
+
+----------------------------------------
+Step("the window has the shared look: dark panel, red header bar with the logo")
+do
+	local frame, look = env.OutfitterFrame, env.OutfitterFrame.Look
+	Check(look ~= nil, "the look was applied")
+	if look then
+		local header = look.Header
+		Check(header:IsVisible(), "the header bar shows with the window")
+		Check(header.logo:GetTexture() == "Interface\\AddOns\\OutfitterForever\\Textures\\Logo", "the header bar has the logo")
+		Check(header.text:GetText() == "Outfitter Forever " .. tostring(O.cVersion), "then the name and version (is " .. tostring(header.text:GetText()) .. ")")
+		Check(not env.OutfitterFrameTitle:IsShown(), "the old title is hidden (the header shows it)")
+		Check(not env.OutfitterCloseButton:IsShown(), "the game's round close button is hidden")
+		for name, piece in pairs(frame.Background) do
+			Check(not piece:IsShown(), "the original frame art is hidden (" .. tostring(name) .. ")")
+		end
+		Check(look.Fill:IsShown(), "a flat panel is behind the window")
+		-- The X closes Outfitter's window only; the character window is the player's to close
+		look.Close:Click()
+		Check(not frame:IsShown(), "the X in the header closes Outfitter")
+		Check(env.CharacterFrame:IsShown(), "and leaves the character window open")
+		O:ToggleOutfitterFrame()
+		W.Tick(0.2)
+		Check(frame:IsVisible(), "Outfitter opens again")
+		Check(header:IsVisible() and not env.OutfitterCloseButton:IsShown() and not env.OutfitterFrameTitle:IsShown(),
+			"with the same look")
+		O:ApplyLook()
+		Check(frame.Look == look, "applying the look twice changes nothing")
+	end
+end
+NoErrors()
 local logo = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo"
 Check(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture() == logo,
 	"the minimap button shows the Outfitter Forever logo (shows " .. tostring(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture()) .. ")")

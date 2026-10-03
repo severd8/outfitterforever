@@ -4921,6 +4921,7 @@ function Outfitter:Initialize()
 
 	-- Initialize the main UI tabs
 	self._SidebarWindowFrame.Construct(OutfitterFrame)
+	self:ApplyLook() -- Forever: the shared look in place of the frame art just built (OutfitterLook.lua)
 
 	PanelTemplates_SetNumTabs(OutfitterFrame, #self.cPanelFrames)
 	OutfitterFrame.selectedTab = self.CurrentPanel

@@ -98,7 +98,8 @@ function Addon.DebugLib:AddDebugMessage(pPrefix, pMessage, ...)
 		self:Initialize()
 	end
 
-	local vMessage = (pPrefix or "")..Addon.DebugColorCode..string.format("[%s] ", Addon.cTitle or AddonName)..FONT_COLOR_CODE_CLOSE..HIGHLIGHT_FONT_COLOR_CODE..pMessage..FONT_COLOR_CODE_CLOSE
+	-- Forever: Addon.ChatPrefix (the logo and name, set in OutfitterLook.lua) replaces the "[Title] " prefix
+	local vMessage = (pPrefix or "")..(Addon.ChatPrefix or (Addon.DebugColorCode..string.format("[%s] ", Addon.cTitle or AddonName)..FONT_COLOR_CODE_CLOSE))..HIGHLIGHT_FONT_COLOR_CODE..pMessage..FONT_COLOR_CODE_CLOSE
 
 	if true then -- set to false to diagnose debug message problems
 		if select("#", ...) > 0 then

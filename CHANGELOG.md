@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+One look for Outfitter Forever, TauntMaster Forever and ToppedOff Forever.
+
+- The Outfitter Forever window is a flat dark panel with a red header bar: the logo, then the name and version, and a flat X to close it.
+- Chat lines start with the logo and "Outfitter Forever".
+- Nothing else changes: the outfit list, tabs, buttons and dialogs are as they were.
+
 ## 1.0.4
 
 Fixes from a code review. Nothing changes in how outfits work.

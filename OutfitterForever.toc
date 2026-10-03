@@ -58,6 +58,8 @@ OutfitterScriptDialog.lua
 OutfitterQuickSlots.lua
 OutfitterMinimapButton.lua
 OutfitterBar.lua
+Theme.lua
+OutfitterLook.lua
 
 OutfitterLDB.lua
 
