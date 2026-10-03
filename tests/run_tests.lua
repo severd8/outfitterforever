@@ -440,7 +440,20 @@ env.GameTooltip:SetOwner(env.UIParent, "ANCHOR_NONE")
 env.GameTooltip:SetBagItem(0, 3)
 env.GameTooltip:Show()
 env.ShoppingTooltip1:SetInventoryItem("player", 8)
+W.globalStrings.EQUIPMENT_SETS = "Equipment Sets: |cFFFFFFFF%s|r"
+env.ShoppingTooltip2:ClearLines()
+env.ShoppingTooltip2:Hide()
 W.SafeCall(env.GameTooltip_ShowCompareItem, env.GameTooltip)
+do
+	-- The comparison tooltip shows the boots you're wearing: it lists the outfits that
+	-- use those boots, not the outfits that use the item under the mouse
+	local function Lines(tooltip) return table.concat(tooltip.__lines or {}, " / ") end
+	Check(battle:GetItem("FeetSlot") and battle:GetItem("FeetSlot").Code == 1005, "(Battle Gear uses the worn boots)")
+	Check(Lines(env.ShoppingTooltip1):find("Battle Gear", 1, true) ~= nil,
+		"the comparison tooltip lists the outfits using the worn item (lines: " .. Lines(env.ShoppingTooltip1) .. ")")
+	Check(Lines(env.ShoppingTooltip2) == "" and not env.ShoppingTooltip2:IsShown(),
+		"a comparison tooltip the game isn't showing is left alone (lines: " .. Lines(env.ShoppingTooltip2) .. ")")
+end
 env.GameTooltip:Hide()
 W.Tick(0.5)
 
@@ -525,9 +538,109 @@ O.NameOutfitDialog:Cancel()
 Check(not PressEscape(), "a cancelled dialog leaves nothing for Escape")
 
 ----------------------------------------
-Step("Blizzard's globals are left alone")
+Step("error paths say what's wrong instead of breaking")
+do
+	local function Said(text)
+		local last = tostring(W.printed[#W.printed])
+		return last:find(text, 1, true) ~= nil, last
+	end
+	-- A menu click whose outfit can't be found
+	local orphan = { GetParent = function() return { GetParent = function() return { GetOutfit = function() return nil end } end } end }
+	W.SafeCall(O.OutfitItemSelected, orphan, { name = "Rename" })
+	Check(Said("Outfit for menu item Rename not found"), "a menu item without its outfit is reported (said: " .. select(2, Said("")) .. ")")
+	W.SafeCall(O.OutfitItemSelected, orphan, "DELETE")
+	Check(Said("Outfit for menu item DELETE not found"), "also when the item is just its action (said: " .. select(2, Said("")) .. ")")
+	-- A frame class that names a widget which doesn't exist
+	local frame = env.CreateFrame("Frame", "OutfitterTestWidgetFrame", env.UIParent)
+	W.SafeCall(O.InitializeFrame, frame, { Widgets = { "NoSuchWidget" } })
+	Check(Said("Couldn't find global OutfitterTestWidgetFrameNoSuchWidget"), "a missing widget is reported (said: " .. select(2, Said("")) .. ")")
+	-- A stat item without a slot or a stat
+	W.SafeCall(O.AddOutfitStatItem, O, {}, nil, { Name = "Test Helm" }, "Stamina", 5)
+	Check(Said("SlotName is nil for Test Helm"), "a stat item without a slot names the item (said: " .. select(2, Said("")) .. ")")
+	W.SafeCall(O.AddOutfitStatItem, O, {}, "HeadSlot", { Name = "Test Helm" }, nil, 5)
+	Check(Said("Stat is nil for Test Helm"), "a stat item without a stat names the item (said: " .. select(2, Said("")) .. ")")
+	-- The link of a worn item, looked up by its slot (the "bags are full" message uses it)
+	Check(O:GetItemLocationLink({ SlotName = "HeadSlot" }) == env.GetInventoryItemLink("player", 1),
+		"a worn item's link is found from its slot (got " .. tostring(O:GetItemLocationLink({ SlotName = "HeadSlot" })) .. ")")
+end
+NoErrors()
+
+----------------------------------------
+Step("an error during a gear change doesn't leave sound effects off")
+do
+	-- Outfitter mutes sound effects while it swaps gear (unless equip sounds are on)
+	-- and the game saves that setting, so it must come back whatever happens
+	local sounds = O.Settings.EnableEquipSounds
+	O.Settings.EnableEquipSounds = nil
+	W.cvars.Sound_EnableSFX = "1"
+	local mutedDuringSwap
+	local realEquip = W.Fakes.EquipCursorItem
+	W.Fakes.EquipCursorItem = function(...) mutedDuringSwap = W.cvars.Sound_EnableSFX == "0" return realEquip(...) end
+	O:WearOutfit(fishing)
+	W.Tick(1)
+	Check(mutedDuringSwap == true, "sound effects are muted during a swap")
+	Check(W.cvars.Sound_EnableSFX == "1", "and back on after it")
+	O:RemoveOutfit(fishing)
+	W.Tick(1)
+	NoErrors()
+	-- The game refuses an equip part way through
+	W.Fakes.EquipCursorItem = function() error("the game refused that") end
+	local errorsBefore = #W.errors
+	O:WearOutfit(fishing)
+	W.Tick(1)
+	Check(#W.errors > errorsBefore and tostring(W.errors[#W.errors]):find("the game refused that", 1, true) ~= nil,
+		"the error is still reported")
+	Check(W.cvars.Sound_EnableSFX == "1", "sound effects are back on after an error (Sound_EnableSFX is " .. tostring(W.cvars.Sound_EnableSFX) .. ")")
+	reportedErrors = #W.errors   -- that error was the point
+	W.Fakes.EquipCursorItem = realEquip
+	env.ClearCursor()
+	O:RemoveOutfit(fishing)
+	W.Tick(1)
+	O.Settings.EnableEquipSounds = sounds
+end
+NoErrors()
+
+----------------------------------------
+Step("the icon picker lists the icons of what you're wearing")
+do
+	local set = O.OutfitBar.TextureSets.Inventory
+	set:Activate()
+	local listed = {}
+	for index = 1, set:GetNumTextures() do listed[set:GetIndexedTexture(index)] = true end
+	Check(listed[env.GetInventoryItemTexture("player", 1)], "the helm's icon is offered")
+	Check(listed[env.GetInventoryItemTexture("player", 16)], "the weapon's icon is offered")
+	local bagItem = env.C_Container.GetContainerItemInfo(0, 1)
+	Check(bagItem and listed[bagItem.iconFileID], "and the icons of the items in the bags")
+	set:Deactivate()
+end
+NoErrors()
+
+----------------------------------------
+Step("Blizzard's globals are left alone, and the addon makes no stray globals")
 for name in pairs(W.replacedBlizzardGlobals) do
 	Fail("the addon replaced Blizzard's " .. name)
+end
+do
+	-- Exercise the code that used to leave globals behind
+	O:WearOutfitByName("Battle Gear")
+	W.Tick(1)
+	W.SafeCall(O.FindAndAddItemsToOutfit, O, O:NewEmptyOutfit("stray test"), nil, {}, O:GetInventoryCache())
+	W.SafeCall(O.CreateEmptySpecialOccasionOutfit, O, nil, "Battle Gear")
+	W.SafeCall(O.DebugStack, O)
+	-- A global with a name of the addon's own is fine: frames from the XML, saved
+	-- variables, slash commands, key binding names and the libraries it ships.
+	-- Anything else is a variable that was meant to be local (and "_" is the worst:
+	-- Blizzard's own code uses it too).
+	local own = { "^Outfitter", "^gOutfitter_", "^BINDING_", "^SLASH_", "^MC2UIElementsLib", "^BACKDROP_OUTFITTER_",
+		"^LibStub$", "^utf8_", "^tern$" }
+	local stray = {}
+	for name in pairs(W.addonGlobals) do
+		local mine = false
+		for _, pattern in ipairs(own) do mine = mine or name:match(pattern) ~= nil end
+		if not mine then stray[#stray + 1] = name end
+	end
+	table.sort(stray)
+	Check(#stray == 0, "stray globals: " .. table.concat(stray, ", "))
 end
 
 -- Every texture of ours that the addon points at is in the folder

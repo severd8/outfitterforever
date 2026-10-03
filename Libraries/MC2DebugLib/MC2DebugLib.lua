@@ -277,6 +277,7 @@ function Addon.DebugLib:GetCallStack(pPrefix, pDepth, pDepthOffset)
 		end
 
 		if not vFunction then
+			local vFunctionFile, vFunctionLine
 			_, _, vFile, vLine, vFunctionFile, vFunctionLine = string.find(vMessageLine, "([^:]+):(%d+): in function <([^:]+):(%d+)>")
 
 			if vFunctionLine then

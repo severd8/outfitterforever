@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.4
+
+Fixes from a code review. Nothing changes in how outfits work.
+
+- Fixed: Outfitter wrote throwaway values into the game's shared variables every time it looked at an item in your bags or on your character. That can make the game blame Outfitter for blocked actions. Those values now stay inside Outfitter.
+- Fixed: if something went wrong in the middle of a gear change, the game's sound effects could stay switched off (Outfitter mutes them while it swaps gear). They're now always switched back on.
+- Fixed: the comparison tooltip (the item you're wearing, shown next to the one under your mouse) listed the outfits that use the item under your mouse. It now lists the outfits that use the item it shows, and a comparison tooltip the game isn't showing is left alone.
+- Fixed: the icon picker's list of your items left out the items you're wearing.
+- Fixed: four error messages that caused a Lua error instead of being shown (a menu item without its outfit, a missing window part, a stat item without a slot, and "bags are full" for a worn item).
+
 ## 1.0.3
 
 - It's **Outfitter Forever** everywhere now: the window title, options, minimap menu, chat messages, tooltips and the keybindings group.

@@ -3012,7 +3012,7 @@ function Outfitter:FindOutfitItemIndex(pOutfit)
 end
 
 function Outfitter:WearOutfitByName(pOutfitName, pLayerID)
-	vOutfit = self:FindOutfitByName(pOutfitName)
+	local vOutfit = self:FindOutfitByName(pOutfitName)
 
 	if not vOutfit then
 		self:ErrorMessage("Couldn't find outfit named %s", pOutfitName)
@@ -3023,7 +3023,7 @@ function Outfitter:WearOutfitByName(pOutfitName, pLayerID)
 end
 
 function Outfitter:RemoveOutfitByName(pOutfitName, pLayerID)
-	vOutfit = self:FindOutfitByName(pOutfitName)
+	local vOutfit = self:FindOutfitByName(pOutfitName)
 
 	if not vOutfit then
 		self:ErrorMessage("Couldn't find outfit named %s", pOutfitName)
@@ -4787,7 +4787,7 @@ function Outfitter:FindMultipleItemLocation(pItems, pInventoryCache)
 end
 
 function Outfitter:FindAndAddItemsToOutfit(pOutfit, pSlotName, pItems, pInventoryCache)
-	vItemLocation, vItem = self:FindMultipleItemLocation(pItems, pInventoryCache)
+	local vItemLocation, vItem = self:FindMultipleItemLocation(pItems, pInventoryCache)
 
 	if vItemLocation then
 		local vInventorySlot = pSlotName
@@ -5415,7 +5415,7 @@ end
 
 function Outfitter:CreateEmptySpecialOccasionOutfit(pScriptID, pName, pAllowDuplicates)
 	-- Return the existing outfit if duplicates aren't allowed
-	vOutfit = self:GetOutfitByName(pName)
+	local vOutfit = self:GetOutfitByName(pName)
 	if vOutfit and not pAllowDuplicates then
 		-- Assign the script to the existing outfit if there isn't one already
 		if not vOutfit.ScriptID then
@@ -5931,7 +5931,7 @@ function Outfitter._NameOutfitDialog:Update(pCheckForStatOutfit)
 
 		if vStat
 		and not vStat.Complex then -- Don't attempt to test for iterative outfits
-			vOutfit = Outfitter:GenerateSmartOutfit("temp outfit", vStat, Outfitter:GetInventoryCache())
+			local vOutfit = Outfitter:GenerateSmartOutfit("temp outfit", vStat, Outfitter:GetInventoryCache())
 			if not vOutfit
 			or vOutfit:IsEmpty() then
 				vErrorMessage = Outfitter.cNoItemsWithStatError
@@ -6078,7 +6078,7 @@ function Outfitter._RebuildOutfitDialog:Update(pCheckForStatOutfit)
 
 		if vStat
 		and not vStat.Complex then -- Don't attempt to test for iterative outfits
-			vOutfit = Outfitter:GenerateSmartOutfit("temp outfit", vStat, Outfitter:GetInventoryCache())
+			local vOutfit = Outfitter:GenerateSmartOutfit("temp outfit", vStat, Outfitter:GetInventoryCache())
 			if not vOutfit
 			or vOutfit:IsEmpty() then
 				vErrorMessage = Outfitter.cNoItemsWithStatError
@@ -6370,7 +6370,7 @@ function Outfitter.OutfitItemSelected(dropdown, item)
 	local outfit = Outfitter:GetOutfitFromDropdown(dropdown)
 
 	if not outfit then
-		Outfitter:ErrorMessage("Outfit for menu item "..tostring(pItem.name).." not found")
+		Outfitter:ErrorMessage("Outfit for menu item "..tostring(type(item) == "table" and item.name or item).." not found")
 		return
 	end
 
@@ -6735,7 +6735,7 @@ function Outfitter:DepositOutfit(pOutfit, pUniqueItemsOnly)
 	local vNumChanges = #vEquipmentChangeList
 
 	while vChangeIndex <= vNumChanges do
-		vEquipmentChange = vEquipmentChangeList[vChangeIndex]
+		local vEquipmentChange = vEquipmentChangeList[vChangeIndex]
 
 		if self:IsBankBagIndex(vEquipmentChange.FromLocation.BagIndex) then
 			table.remove(vEquipmentChangeList, vChangeIndex)
@@ -6832,7 +6832,7 @@ function Outfitter:WithdrawOutfit(pOutfit)
 	local vNumChanges = #vEquipmentChangeList
 
 	while vChangeIndex <= vNumChanges do
-		vEquipmentChange = vEquipmentChangeList[vChangeIndex]
+		local vEquipmentChange = vEquipmentChangeList[vChangeIndex]
 
 		if not self:IsBankBagIndex(vEquipmentChange.FromLocation.BagIndex) then
 			table.remove(vEquipmentChangeList, vChangeIndex)
@@ -7329,7 +7329,7 @@ function Outfitter.InitializeFrame(pObject, ...)
 					local vValue = _G[vNamePrefix..vName]
 
 					if vValue == nil then
-						self:ErrorMessage("Couldn't find global "..vNamePrefix..vName)
+						Outfitter:ErrorMessage("Couldn't find global "..vNamePrefix..vName) -- no self here: called with a dot
 					else
 						vTable[vName] = vValue
 					end
@@ -8677,13 +8677,13 @@ end
 function Outfitter:GetLinkFromTooltip(vTooltip)
 	-- Classic version
 	if vTooltip.GetItem then
-		local _, vLink = GameTooltip:GetItem()
+		local _, vLink = vTooltip:GetItem() -- the tooltip asked about (was always GameTooltip)
 		return vLink
 	end
 	-- Wrath/Retail version
 	local tooltipData = vTooltip:GetTooltipData()
 	if tooltipData ~= nil and tooltipData.id then
-		_, itemLink = C_Item.GetItemInfo(tooltipData.id)
+		local _, itemLink = C_Item.GetItemInfo(tooltipData.id)
 		return itemLink
 	end
 	return nil -- nothing found at all

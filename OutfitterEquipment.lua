@@ -472,6 +472,10 @@ function Outfitter._EquipmentChanges:execute(emptyBagSlots, expectedInventoryCac
 	end
 
 	-- Process each change
+	-- Forever: run protected, so an error part way through can't leave the player's
+	-- sound effects switched off (the setting is saved by the game). The error is
+	-- raised again once they're back on. The loop keeps upstream's indentation.
+	local changesOK, changesError = pcall(function ()
 	for changeIndex, equipmentChange in ipairs(self) do
 		local swapItems, emptyThenEquip
 
@@ -529,6 +533,7 @@ function Outfitter._EquipmentChanges:execute(emptyBagSlots, expectedInventoryCac
 			--]]--
 		end
 	end
+	end)
 
 	-- Make sure nothing is left behind on the cursor
 	ClearCursor()
@@ -536,6 +541,10 @@ function Outfitter._EquipmentChanges:execute(emptyBagSlots, expectedInventoryCac
 	-- Restore the sound effects setting
 	if savedEnabledSFXValue then
 		SetCVar("Sound_EnableSFX", savedEnabledSFXValue)
+	end
+
+	if not changesOK then
+		error(changesError, 0)
 	end
 end
 

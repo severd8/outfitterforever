@@ -35,7 +35,7 @@ function Outfitter:GenerateSmartOutfit(pName, pStatConfig, pInventoryCache, pAll
 			local vStatIDItems = self.cStatIDItems[vStatID]
 			
 			if vStatIDItems then
-				vOutfit = self:NewEmptyOutfit(pName)
+				local vOutfit = self:NewEmptyOutfit(pName)
 				
 				self:FindAndAddItemsToOutfit(vOutfit, nil, vStatIDItems, pInventoryCache)
 				
@@ -190,12 +190,12 @@ end
 
 function Outfitter:AddOutfitStatItem(pOutfit, pSlotName, pItemInfo, pStat, pScore)
 	if not pSlotName then
-		Outfitter:ErrorMessage("AddOutfitStatItem: SlotName is nil for %s", tostring(pItemName))
+		Outfitter:ErrorMessage("AddOutfitStatItem: SlotName is nil for %s", tostring(pItemInfo and pItemInfo.Name))
 		return
 	end
 	
 	if not pStat then
-		Outfitter:ErrorMessage("AddOutfitStatItem: Stat is nil for %s", tostring(pItemName))
+		Outfitter:ErrorMessage("AddOutfitStatItem: Stat is nil for %s", tostring(pItemInfo and pItemInfo.Name))
 		return
 	end
 	
@@ -1005,7 +1005,7 @@ function Outfitter._MultiStatConfig:SetNumConfigLines(pNumLines)
 	while vNumConfigLines < pNumLines do
 		local vLineIndex = vNumConfigLines + 1
 		
-		vConfigLine = Outfitter:New(Outfitter._MultiStatConfigLine, self, vLineIndex, vLineIndex > 1)
+		local vConfigLine = Outfitter:New(Outfitter._MultiStatConfigLine, self, vLineIndex, vLineIndex > 1)
 		
 		vConfigLine.OnDelete = function ()
 			self:DeleteConfigLine(vLineIndex)

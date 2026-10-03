@@ -124,7 +124,7 @@ function Outfitter._EditScriptDialog:CheckScriptErrors()
 	local vScriptFields, vMessage = Outfitter:ParseScriptFields(vScript)
 	
 	if not vMessage then
-		_, vMessage = self:LoadScript(vScript)
+		vMessage = select(2, self:LoadScript(vScript))
 	end
 	
 	if vMessage then

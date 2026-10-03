@@ -2,6 +2,7 @@
 -- General
 ----------------------------------------
 local NUM_BANKBAGSLOTS = NUM_BANKBAGSLOTS or 98
+local _ -- throwaway results in this file stay local (they were being written to the global _ on every item scan)
 
 function Outfitter:FindNextCooldownItem(pItemCodes, pIgnoreSwapCooldown)
 	local vInventoryCache = self:GetInventoryCache()
@@ -146,7 +147,7 @@ function Outfitter:GetItemLocationLink(pItemLocation)
 	if pItemLocation.BagIndex then
 		return C_Container.GetContainerItemLink(pItemLocation.BagIndex, pItemLocation.BagSlotIndex)
 	elseif pItemLocation.SlotName then
-		return self:GetInventorySlotIDLink(pSlotID)
+		return self:GetInventorySlotIDLink(self.cSlotIDs[pItemLocation.SlotName]) -- was a variable that doesn't exist here
 	else
 		self:ErrorMessage("Unknown location in GetItemLocationLink")
 		return

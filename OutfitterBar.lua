@@ -543,8 +543,6 @@ function Outfitter.OutfitBar:UpdateBars2()
 					vBar:SetPoint("TOPRIGHT", vPreviousBar, "TOPLEFT")
 				end
 
-				vAnchorOffsetX, vAnchorOffsetY = nil, nil
-
 				vBar:Show()
 
 				vBarIndex = vBarIndex + 1
@@ -570,8 +568,6 @@ function Outfitter.OutfitBar:UpdateBars2()
 				else
 					vBar:SetPoint("TOPLEFT", vPreviousBar, "TOPRIGHT")
 				end
-
-				vAnchorOffsetX, vAnchorOffsetY = nil, nil
 
 				vBar:Show()
 
@@ -884,7 +880,7 @@ function Outfitter.OutfitBar._ChooseIconDialog:Construct()
 	sChild:SetHeight(OutfitterChooseIconDialogScrollFrame:GetHeight())
 
 	-- Adjust the button width/height (there's a difference between retail and vanill/wrath?)
-	offset = 0
+	local offset = 0
 	if not Outfitter.IsMainlineClient then offset = 5 end
 
 	local h, w = vButton:GetHeight() + offset, vButton:GetWidth() + offset
@@ -1370,7 +1366,7 @@ function Outfitter.OutfitBar.TextureSets.Inventory:Activate()
 		local	vSlotID = Outfitter.cSlotIDs[vInventorySlot]
 		local	vItemLink = Outfitter:GetInventorySlotIDLink(vSlotID)
 
-		if vItemLink == vParam2 then
+		if vItemLink then -- was compared with a variable that doesn't exist here, so worn items were never listed
 			local vTexture = GetInventoryItemTexture("player", vSlotID)
 
 			if vTexture and not vUsedTextures[vTexture] then

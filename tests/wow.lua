@@ -851,11 +851,13 @@ setmetatable(env, {
 			or API.ui_frames[name] or API.ui_globals[name] or API.namespaces[name]) then
 			W.replacedBlizzardGlobals[name] = true
 		end
+		if type(name) == "string" then W.addonGlobals[name] = true end
 		rawset(t, name, value)
 	end,
 })
 W.replacedBlizzardGlobals = {}
 W.replacedBlizzardScripts = {}
+W.addonGlobals = {}   -- every global the addon (or a library it ships) made
 W.globalStrings = {}
 for _, name in ipairs(LuaGlobals) do
 	rawset(env, name, _G[name])
