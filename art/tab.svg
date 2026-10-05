@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="101 80 310 310"><defs>
+<radialGradient id="bg" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#1d4436"/><stop offset="1" stop-color="#040d09"/></radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe89a"/><stop offset=".5" stop-color="#d9a531"/><stop offset="1" stop-color="#8a5a12"/></linearGradient>
+<linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a5bd6"/><stop offset="1" stop-color="#2a1d78"/></linearGradient>
+<linearGradient id="belt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8683a"/><stop offset="1" stop-color="#5a2f14"/></linearGradient>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".6"/></filter>
+</defs>
+<rect x="101" y="80" width="310" height="310" fill="url(#bg)"/>
+<g filter="url(#shadow)">
+<path d="M256 168 V150 a12 12 0 1 1 12 -12" fill="none" stroke="url(#gold)" stroke-width="9" stroke-linecap="round"/>
+<path d="M256 168 L176 204 H336 Z" fill="none" stroke="url(#gold)" stroke-width="9" stroke-linejoin="round"/>
+<path d="M206 200 L234 190 Q256 214 278 190 L306 200 L346 230 L326 262 L304 248 L304 326 Q256 340 208 326 L208 248 L186 262 L166 230 Z" fill="url(#cloth)" stroke="#ffe89a" stroke-width="6" stroke-linejoin="round"/>
+<path d="M234 190 Q256 214 278 190" fill="none" stroke="#ffe89a" stroke-width="6"/>
+<rect x="208" y="284" width="96" height="16" fill="url(#belt)" stroke="#ffe89a" stroke-width="3"/>
+<rect x="246" y="281" width="20" height="22" rx="3" fill="none" stroke="#ffe89a" stroke-width="4"/>
+<path d="M256 212 V280" stroke="#ffe89a" stroke-width="3" opacity=".6"/>
+</g>
+</svg>

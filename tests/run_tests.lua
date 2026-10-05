@@ -534,7 +534,8 @@ O:ShowPanel(2)
 W.Tick(0.2)
 for _, frame in ipairs(W.frames) do
 	local name = frame.__name
-	if name and frame.__type == "CheckButton" and name:match("^Outfitter") and frame:IsVisible() and not name:match("^OutfitterEnable") then
+	if name and frame.__type == "CheckButton" and name:match("^Outfitter") and frame:IsVisible() and not name:match("^OutfitterEnable")
+		and name ~= "OutfitterSidebarTab" then
 		frame:Click()
 		W.Tick(0.1)
 		frame:Click()
@@ -542,6 +543,233 @@ for _, frame in ipairs(W.frames) do
 end
 O:ShowPanel(1)
 W.Tick(0.5)
+
+----------------------------------------
+Step("the Equipment Manager tab opens Outfitter")
+do
+	if not env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end
+	W.PlayerCollapsesStatsPane(false)
+	local tab = env.OutfitterSidebarTab
+	Check(tab ~= nil, "Outfitter has its own tab button")
+	if tab then
+		Check(tab == O.SidebarTab, "it's the one Outfitter keeps")
+		Check(tab:GetParent() == env.PaperDollSidebarTabs, "it belongs to the tab strip, so it shows and hides with it")
+		Check(AnchoredTo(tab, env.PaperDollSidebarTab2), "it covers the Equipment Manager tab")
+		Check(tab:GetFrameLevel() > env.PaperDollSidebarTab2:GetFrameLevel(), "and sits above it, so it takes the clicks")
+		Check(tab.Icon and tostring(tab.Icon:GetTexture()):find("Textures\\Tab", 1, true), "it shows Outfitter's icon")
+		Check(tab.Ring and tab.Ring:GetAtlas() == "UI-Character-Info-StatTab", "inside the same ring as the game's tabs")
+
+		if not O:IsOpen() then O:ToggleOutfitterFrame() end
+		Check(tab:IsVisible(), "the tab is showing with the stats pane open")
+		Check(not env.OutfitterButton:IsShown(), "the small button is hidden while the tab is there")
+		Check(tab:GetChecked() and tab.Selected:IsShown(), "the tab is lit while Outfitter is open")
+
+		tab:Click()
+		Check(not O:IsOpen(), "clicking the tab closes Outfitter")
+		Check(not tab:GetChecked() and not tab.Selected:IsShown(), "and the tab goes dark")
+		tab:Click()
+		Check(O:IsOpen(), "clicking it again opens Outfitter")
+		Check(tab:GetChecked() and tab.Selected:IsShown(), "and the tab lights up")
+		Check(W.equipmentManagerClicks == nil, "the game's Equipment Manager tab was never clicked")
+
+		env.OutfitterFrame:Hide()
+		Check(not tab:GetChecked(), "closing Outfitter another way also darkens the tab")
+		env.OutfitterFrame:Show()
+		Check(tab:GetChecked(), "and opening it another way lights it")
+
+		-- Stats pane collapsed: the strip of tabs is gone, so the small button is back
+		W.PlayerCollapsesStatsPane(true)
+		Check(not tab:IsVisible(), "no tab while the stats pane is collapsed")
+		Check(env.OutfitterButton:IsShown() and env.OutfitterButton:IsVisible(), "the small button stands in")
+		W.PlayerCollapsesStatsPane(false)
+		Check(tab:IsVisible() and not env.OutfitterButton:IsShown(), "and steps aside when the pane opens again")
+
+		-- The character window closing and opening again
+		W.PlayerTogglesCharacter()
+		W.PlayerTogglesCharacter()
+		Check(tab:IsVisible() and not env.OutfitterButton:IsShown(), "still the tab after reopening the character window")
+		Check(not tab:GetChecked(), "and it isn't lit, because Outfitter is closed")
+		O:ToggleOutfitterFrame()
+
+		-- The option
+		O:ShowPanel(2)
+		W.Tick(0.2)
+		local box = env.OutfitterUseSidebarTab
+		Check(box ~= nil and box:IsVisible(), "Options has a checkbox for it")
+		Check(box and box:GetChecked(), "ticked to start with")
+		if box then
+			box:Click()
+			Check(O.Settings.Options.DisableSidebarTab == true, "unticking it is saved")
+			Check(env.gOutfitter_Settings.Options.DisableSidebarTab == true, "in this character's settings")
+			Check(not tab:IsShown(), "the tab is gone, uncovering the game's Equipment Manager tab")
+			Check(env.OutfitterButton:IsShown(), "and the small button is back")
+			W.PlayerTogglesCharacter()
+			W.PlayerTogglesCharacter()
+			Check(not tab:IsShown() and env.OutfitterButton:IsShown(), "it stays that way")
+			O:ToggleOutfitterFrame()
+			O:ShowPanel(2)
+			W.Tick(0.2)
+			Check(not box:GetChecked(), "the checkbox shows it's off")
+			box:Click()
+			Check(O.Settings.Options.DisableSidebarTab == false, "ticking it again is saved")
+			Check(tab:IsVisible() and not env.OutfitterButton:IsShown(), "and the tab is back")
+			Check(tab:GetChecked(), "lit, since Outfitter is open")
+		end
+		O:ShowPanel(1)
+		W.Tick(0.5)
+	end
+end
+
+----------------------------------------
+Step("outfits can be moved up and down, and the order is kept")
+do
+	local function Names(category)
+		local names = {}
+		for _, outfit in ipairs(O.Settings.Outfits[category]) do names[#names + 1] = outfit.Name end
+		return table.concat(names, ",")
+	end
+	-- A menu that just records what's put in it
+	local function Menu(outfit)
+		local items = {}
+		local menu = setmetatable({}, { __index = function() return function() end end })
+		function menu:AddFunction(title, func, disabled) items[title] = { func = func, disabled = disabled and true or false } end
+		O:AddOutfitMenu(menu, outfit)
+		return items
+	end
+
+	local quill = MakeOutfit("Quill", { Trinket0Slot = 1014 })
+	local anvil = MakeOutfit("Anvil", { Trinket0Slot = 1014 })
+	local mason = MakeOutfit("Mason", { Trinket0Slot = 1014 })
+	local category = O:FindOutfit(quill)
+	Check(category == O:FindOutfit(anvil) and category == O:FindOutfit(mason), "the three test outfits are in one list")
+	-- Only look at these three: the list has other outfits from earlier steps
+	local function Mine()
+		local names = {}
+		for _, outfit in ipairs(O.Settings.Outfits[category]) do
+			if outfit == quill or outfit == anvil or outfit == mason then names[#names + 1] = outfit.Name end
+		end
+		return table.concat(names, ",")
+	end
+	O:SortOutfits()
+	Check(Mine() == "Anvil,Mason,Quill", "by name to start with (is " .. Mine() .. ")")
+	Check(anvil.Order == nil and quill.Order == nil, "and nothing is numbered until something is moved")
+
+	local items = Menu(mason)
+	Check(items[O.cMoveUp] and items[O.cMoveDown], "the outfit's menu has Move up and Move down")
+	Check(items[O.cSortByName] == nil, "and no Sort by name while the list is by name already")
+
+	-- Put the three at the bottom of the list in a known order to test the ends
+	local before = Names(category)
+	items[O.cMoveUp].func()
+	W.Tick(0.2)
+	local index = select(1, O:GetOutfitPlace(mason))
+	Check(Names(category) ~= before, "Move up changes the list")
+	Check(O.Settings.Outfits[category][index] == mason, "the outfit is where the list says")
+	Check(O.Settings.Outfits[category][index + 1].Name ~= nil and before:find(O.Settings.Outfits[category][index + 1].Name .. ",Mason", 1, true),
+		"it swapped places with the one above (was " .. before .. ", is " .. Names(category) .. ")")
+	for position, outfit in ipairs(O.Settings.Outfits[category]) do
+		if outfit.Order ~= position then Fail(outfit.Name .. " has place " .. tostring(outfit.Order) .. " at " .. position) end
+	end
+	Check(env.gOutfitter_Settings.Outfits[category][index] == mason and mason.Order == index, "the place is saved with the outfit, per character")
+
+	items = Menu(mason)
+	Check(items[O.cSortByName] ~= nil, "Sort by name is offered once the list has its own order")
+	items[O.cMoveDown].func()
+	W.Tick(0.2)
+	Check(Names(category) == before, "Move down puts it back (is " .. Names(category) .. ")")
+
+	-- The ends
+	local count = #O.Settings.Outfits[category]
+	for _ = 1, 50 do if not O:MoveOutfit(quill, 1) then break end end
+	Check(select(1, O:GetOutfitPlace(quill)) == count, "an outfit can be moved all the way down")
+	items = Menu(quill)
+	Check(items[O.cMoveDown].disabled and not items[O.cMoveUp].disabled, "Move down is greyed out at the bottom")
+	local atBottom = Names(category)
+	Check(O:MoveOutfit(quill, 1) == false and Names(category) == atBottom, "and does nothing there")
+	for _ = 1, 50 do if not O:MoveOutfit(anvil, -1) then break end end
+	Check(select(1, O:GetOutfitPlace(anvil)) == 1, "and all the way up")
+	items = Menu(anvil)
+	Check(items[O.cMoveUp].disabled and not items[O.cMoveDown].disabled, "Move up is greyed out at the top")
+
+	-- The order holds when the window redraws, and new outfits go to the end
+	local ordered = Names(category)
+	O.DisplayIsDirty = true
+	O:Update(true)
+	W.Tick(0.5)
+	Check(Names(category) == ordered, "redrawing the list doesn't put it back in name order")
+	local bell = MakeOutfit("Bell", { Trinket0Slot = 1014 })
+	O.DisplayIsDirty = true
+	O:Update(true)
+	Check(Names(category) == ordered .. ",Bell", "a new outfit goes to the end (is " .. Names(category) .. ")")
+	Check(bell.Order == count + 1, "and gets the next place")
+	O:DeleteOutfit(bell)
+	O:SortOutfits()
+	Check(Names(category) == ordered, "deleting one leaves the rest in order")
+	for position, outfit in ipairs(O.Settings.Outfits[category]) do
+		if outfit.Order ~= position then Fail("after a delete, " .. outfit.Name .. " has place " .. tostring(outfit.Order) .. " at " .. position) end
+	end
+
+	-- The outfit bar and minimap menu read the same list
+	Check(O:GetOutfitsByCategoryID(category)[1] == anvil, "the outfit bar and minimap menu see the new order")
+
+	-- Other lists are untouched
+	for other, outfits in pairs(O.Settings.Outfits) do
+		if other ~= category then
+			for _, outfit in ipairs(outfits) do
+				if outfit.Order ~= nil then Fail(outfit.Name .. " in " .. other .. " was numbered too") end
+			end
+		end
+	end
+
+	-- A saved place that isn't a number is ignored
+	mason.Order = "first"
+	O:SortOutfits()
+	Check(type(mason.Order) == "number", "a bad saved place is repaired")
+
+	-- Back to names
+	Menu(mason)[O.cSortByName].func()
+	W.Tick(0.2)
+	Check(Mine() == "Anvil,Mason,Quill", "Sort by name puts the list back in name order (is " .. Mine() .. ")")
+	for _, outfit in ipairs(O.Settings.Outfits[category]) do
+		if outfit.Order ~= nil then Fail(outfit.Name .. " still has a place after Sort by name") end
+	end
+	O:DeleteOutfit(quill)
+	O:DeleteOutfit(anvil)
+	O:DeleteOutfit(mason)
+	W.Tick(0.5)
+end
+
+----------------------------------------
+Step("the Outfits and Options panels have a plain background")
+do
+	Check(env.OutfitterMainFrameBackground == nil, "no logo behind the outfit list")
+	Check(env.OutfitterOptionsFrameBackground == nil, "no logo behind the options")
+	for _, file in ipairs({ "Outfitter.xml", "Outfitter.lua", "OutfitterLook.lua" }) do
+		local handle = assert(io.open(file, "rb"))
+		local source = handle:read("*a")
+		handle:close()
+		Check(not source:find("LogoLarge", 1, true), file .. " doesn't use the large logo")
+	end
+	Check(io.open("Textures/LogoLarge.tga", "rb") == nil, "the large logo isn't shipped any more")
+	Check(env.OutfitterFrame.Look and env.OutfitterFrame.Look.Fill ~= nil, "the panel still has its solid fill")
+
+	-- The tab's icon: 64x64, 32-bit, uncompressed, rows stored bottom-up, and opaque
+	local handle = io.open("Textures/Tab.tga", "rb")
+	Check(handle ~= nil, "the tab icon is shipped")
+	if handle then
+		local data = handle:read("*a")
+		handle:close()
+		Check(data:byte(3) == 2 and data:byte(17) == 32, "it's an uncompressed 32-bit TGA")
+		Check(data:byte(13) + data:byte(14) * 256 == 64 and data:byte(15) + data:byte(16) * 256 == 64, "64 by 64")
+		Check(data:byte(18) % 64 < 32, "rows stored bottom-up, like the game expects")
+		Check(#data >= 18 + 64 * 64 * 4, "all the pixels are there")
+		local opaque = true
+		for pixel = 0, 64 * 64 - 1 do
+			if data:byte(18 + pixel * 4 + 4) ~= 255 then opaque = false break end
+		end
+		Check(opaque, "no see-through pixels, so the Equipment Manager's icon can't show through")
+	end
+end
 
 ----------------------------------------
 Step("bags and bank events")

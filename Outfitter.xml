@@ -652,18 +652,6 @@
 								</FontString>
 							</Layer>
 							<Layer level="BACKGROUND">
-								<Texture name="$parentBackground" file="Interface\AddOns\OutfitterForever\Textures\LogoLarge">
-									<Size>
-										<AbsDimension x="226" y="226"/>
-									</Size>
-									<Anchors>
-										<Anchor point="CENTER">
-											<Offset>
-												<AbsDimension x="-13" y="-20"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</Texture>
 								<Texture name="$parentButtonBarBackground" file="Interface\AddOns\OutfitterForever\Textures\ButtonBarBackground">
 									<Size>
 										<AbsDimension x="253" y="20"/>
@@ -801,29 +789,10 @@
 								</Scripts>
 							</Button>
 						</Frames>
-						<Scripts>
-							<OnLoad>
-								OutfitterMainFrameBackground:SetVertexColor(1, 1, 1, 0.20)
-							</OnLoad>
-						</Scripts>
 					</Frame>
 
 					<Frame name="OutfitterOptionsFrame" hidden="true" setAllPoints="true">
 						<Layers>
-							<Layer level="BACKGROUND">
-								<Texture name="$parentBackground" file="Interface\AddOns\OutfitterForever\Textures\LogoLarge">
-									<Size>
-										<AbsDimension x="226" y="226"/>
-									</Size>
-									<Anchors>
-										<Anchor point="CENTER">
-											<Offset>
-												<AbsDimension x="0" y="-30"/>
-											</Offset>
-										</Anchor>
-									</Anchors>
-								</Texture>
-							</Layer>
 							<Layer level="OVERLAY">
 								<FontString text="Outfitter_cOptionsTitle" inherits="GameFontNormalLarge">
 									<Anchors>
@@ -997,12 +966,34 @@
 									</OnLeave>
 								</Scripts>
 							</CheckButton>
+							<CheckButton name="OutfitterUseSidebarTab" inherits="OutfitterCheckboxTemplate">
+								<Anchors>
+									<Anchor point="TOPLEFT" relativeTo="OutfitterItemComparisons" relativePoint="BOTTOMLEFT">
+										<Offset>
+											<AbsDimension x="0" y="-5"/>
+										</Offset>
+									</Anchor>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										getglobal(self:GetName().."Text"):SetText(Outfitter.cSidebarTab)
+									</OnLoad>
+									<OnClick>
+										Outfitter:SetUseSidebarTab(self:GetChecked())
+									</OnClick>
+									<OnEnter>
+										if self:GetChecked() then
+											Outfitter.AddNewbieTip(self, Outfitter.cSidebarTab, 1.0, 1.0, 1.0, Outfitter.cSidebarTabOnDescription, 1)
+										else
+											Outfitter.AddNewbieTip(self, Outfitter.cSidebarTab, 1.0, 1.0, 1.0, Outfitter.cSidebarTabOffDescription, 1)
+										end
+									</OnEnter>
+									<OnLeave>
+										GameTooltip:Hide()
+									</OnLeave>
+								</Scripts>
+							</CheckButton>
 						</Frames>
-						<Scripts>
-							<OnLoad>
-								OutfitterOptionsFrameBackground:SetVertexColor(1, 1, 1, 0.20)
-							</OnLoad>
-						</Scripts>
 					</Frame>
 
 					<Button name="OutfitterFrameTab1" inherits="OutfitterTabTemplate" id="1" text="Outfitter_cOutfitterTabTitle">

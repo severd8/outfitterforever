@@ -203,6 +203,15 @@ Outfitter.cOpenCharacterWindow = "Open your character window (%s) and Outfitter 
 
 Outfitter.cKeyBinding = "Key Binding"
 
+Outfitter.cMoveUp = "Move up"
+Outfitter.cMoveDown = "Move down"
+Outfitter.cSortByName = "Sort this list by name"
+
+Outfitter.cSidebarTab = "Use the Equipment Manager tab"
+Outfitter.cSidebarTabOnDescription = "The Equipment Manager tab at the top of your character window opens Outfitter Forever. Turn this off to get the game's Equipment Manager back and use the small Outfitter button instead"
+Outfitter.cSidebarTabOffDescription = "Turn this on to open Outfitter Forever from the Equipment Manager tab at the top of your character window, in place of the small Outfitter button"
+Outfitter.cSidebarTabTip = "Click to open or close your outfits."
+
 BINDING_HEADER_OUTFITTER_TITLE = Outfitter.cTitle
 BINDING_NAME_OUTFITTER_OUTFIT = "Open Outfitter Forever"
 

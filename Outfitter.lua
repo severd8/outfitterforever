@@ -1011,6 +1011,8 @@ function Outfitter:OutfitterButtonAdjust()
 			OutfitterFrame:ClearAllPoints()
 			OutfitterFrame:SetPoint("TOPLEFT", vModeTab, "TOPRIGHT", 2, 0)
 		end
+		self:CreateSidebarTab()
+		self:UpdateSidebarTab()
 		return
 	end
 	if IsClassicEra then
@@ -1047,6 +1049,95 @@ function Outfitter:OutfitterButtonAdjust()
 		OutfitterButton:SetPoint("TOPRIGHT", PaperDollFrame, "TOPRIGHT", 4, -28)
 	end
 	--]]--
+end
+
+-- Forever: Outfitter's own button sits over the Equipment Manager tab at the
+-- top of the stats pane, so that tab opens Outfitter. It is Outfitter's frame,
+-- a child of Blizzard's tab strip so it shows and hides with it; nothing of
+-- Blizzard's is changed or hooked. The small button by the pane's arrow is
+-- used when the strip is hidden (stats pane collapsed) or the option is off.
+function Outfitter:CreateSidebarTab()
+	if self.SidebarTab or not IsForever then
+		return self.SidebarTab
+	end
+
+	local vTabs = _G["PaperDollSidebarTabs"]
+	local vEMTab = _G["PaperDollSidebarTab2"]
+
+	if not vTabs or not vEMTab then
+		return nil
+	end
+
+	local vTab = CreateFrame("CheckButton", "OutfitterSidebarTab", vTabs)
+
+	vTab:SetAllPoints(vEMTab)
+	vTab:SetFrameLevel(vEMTab:GetFrameLevel() + 5)
+
+	vTab.Icon = vTab:CreateTexture(nil, "BACKGROUND")
+	vTab.Icon:SetAllPoints()
+	vTab.Icon:SetTexture("Interface\\AddOns\\OutfitterForever\\Textures\\Tab")
+
+	-- The same ring and selected glow as the game's own tabs
+	vTab.Ring = vTab:CreateTexture(nil, "BORDER")
+	vTab.Ring:SetPoint("CENTER")
+	vTab.Ring:SetAtlas("UI-Character-Info-StatTab", true)
+
+	vTab.Selected = vTab:CreateTexture(nil, "ARTWORK")
+	vTab.Selected:SetPoint("CENTER")
+	vTab.Selected:SetAtlas("UI-Character-Info-StatTab-Selected", true)
+	vTab.Selected:Hide()
+
+	vTab:SetScript("OnClick", function (pTab)
+		Outfitter:ToggleOutfitterFrame()
+		Outfitter:UpdateSidebarTab()
+	end)
+	vTab:SetScript("OnEnter", function (pTab)
+		GameTooltip:SetOwner(pTab, "ANCHOR_RIGHT")
+		GameTooltip:SetText(Outfitter.cTitle)
+		GameTooltip:AddLine(Outfitter.cSidebarTabTip, 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	vTab:SetScript("OnLeave", function (pTab)
+		GameTooltip:Hide()
+	end)
+	vTab:SetScript("OnShow", function (pTab) Outfitter:UpdateSidebarTab() end)
+	vTab:SetScript("OnHide", function (pTab) Outfitter:UpdateSidebarTab() end)
+
+	OutfitterFrame:HookScript("OnShow", function () Outfitter:UpdateSidebarTab() end)
+	OutfitterFrame:HookScript("OnHide", function () Outfitter:UpdateSidebarTab() end)
+
+	self.SidebarTab = vTab
+
+	return vTab
+end
+
+function Outfitter:UpdateSidebarTab()
+	local vTab = self.SidebarTab
+
+	if not vTab then
+		return
+	end
+
+	local vUseTab = not (self.Settings and self.Settings.Options and self.Settings.Options.DisableSidebarTab)
+
+	if vTab:IsShown() ~= vUseTab then
+		vTab:SetShown(vUseTab) -- comes back here through OnShow / OnHide
+		return
+	end
+
+	local vOpen = self:IsOpen()
+
+	vTab:SetChecked(vOpen)
+	vTab.Selected:SetShown(vOpen)
+
+	-- The small button stands in whenever the tab can't be seen
+	OutfitterButton:SetShown(not (vUseTab and vTab:IsVisible()))
+end
+
+function Outfitter:SetUseSidebarTab(pUseTab)
+	self.Settings.Options.DisableSidebarTab = not pUseTab
+	self:UpdateSidebarTab()
+	self:Update(false)
 end
 
 function Outfitter_OnAddonCompartmentClick(addonName, buttonName)
@@ -1972,6 +2063,22 @@ function Outfitter:AddOutfitMenu(menu, outfit)
 	menu:AddFunction(PET_RENAME, function (menu)
 		self:PerformAction("RENAME", outfit)
 	end)
+
+	-- Place in the list
+	local vPlace, vCount, vCategoryID = self:GetOutfitPlace(outfit)
+	if vPlace then
+		menu:AddFunction(self.cMoveUp, function (menu)
+			self:PerformAction("MOVE_UP", outfit)
+		end, vPlace <= 1)
+		menu:AddFunction(self.cMoveDown, function (menu)
+			self:PerformAction("MOVE_DOWN", outfit)
+		end, vPlace >= vCount)
+		if self:OutfitsAreOrdered(self.Settings.Outfits[vCategoryID]) then
+			menu:AddFunction(self.cSortByName, function (menu)
+				self:PerformAction("SORT_BY_NAME", outfit)
+			end)
+		end
+	end
 	menu:AddSelect(self.cKeyBinding, {
 		self.cNone,
 		_G["BINDING_NAME_OUTFITTER_OUTFIT1"],
@@ -2786,10 +2893,111 @@ function Outfitter:AddOutfitItemsToList(pOutfitItems, pCategoryID, pItemIndex, p
 	return vItemIndex, vFirstItemIndex
 end
 
+-- Outfits are listed by name until one is moved with Move up / Move down.
+-- From then on every outfit in that category carries its place in Order
+-- (saved with the outfit, so per character), and new ones go to the end.
 function Outfitter:SortOutfits()
 	for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
-		table.sort(vOutfits, Outfitter.CompareOutfitNames)
+		table.sort(vOutfits, Outfitter.CompareOutfits)
+
+		if self:OutfitsAreOrdered(vOutfits) then
+			for vIndex, vOutfit in ipairs(vOutfits) do
+				vOutfit.Order = vIndex
+			end
+		end
 	end
+end
+
+function Outfitter:OutfitsAreOrdered(pOutfits)
+	for _, vOutfit in ipairs(pOutfits) do
+		if type(vOutfit.Order) == "number" then
+			return true
+		end
+	end
+	return false
+end
+
+function Outfitter.CompareOutfits(pOutfit1, pOutfit2)
+	local vOrder1 = type(pOutfit1.Order) == "number" and pOutfit1.Order or nil
+	local vOrder2 = type(pOutfit2.Order) == "number" and pOutfit2.Order or nil
+
+	if vOrder1 ~= vOrder2 then
+		if not vOrder1 then
+			return false
+		end
+		if not vOrder2 then
+			return true
+		end
+		return vOrder1 < vOrder2
+	end
+
+	return Outfitter.CompareOutfitNames(pOutfit1, pOutfit2)
+end
+
+-- Where an outfit is in its category's list: its place and how many there are
+function Outfitter:GetOutfitPlace(pOutfit)
+	self:SortOutfits()
+
+	local vCategoryID, vIndex = self:FindOutfit(pOutfit)
+
+	if not vCategoryID then
+		return nil
+	end
+
+	return vIndex, #self.Settings.Outfits[vCategoryID], vCategoryID
+end
+
+-- Moves an outfit one place up (pDelta -1) or down (pDelta 1) in its category
+function Outfitter:MoveOutfit(pOutfit, pDelta)
+	local vIndex, vCount, vCategoryID = self:GetOutfitPlace(pOutfit)
+
+	if not vIndex then
+		return false
+	end
+
+	local vNewIndex = vIndex + pDelta
+
+	if vNewIndex < 1 or vNewIndex > vCount then
+		return false
+	end
+
+	local vOutfits = self.Settings.Outfits[vCategoryID]
+
+	for vOutfitIndex, vOutfit in ipairs(vOutfits) do
+		vOutfit.Order = vOutfitIndex
+	end
+
+	vOutfits[vIndex].Order, vOutfits[vNewIndex].Order = vNewIndex, vIndex
+	self:SortOutfits()
+
+	self.DisplayIsDirty = true
+	self:DispatchOutfitEvent("EDIT_OUTFIT", pOutfit:GetName(), pOutfit)
+	self:Update(false)
+
+	return true
+end
+
+-- Back to listing a category by name
+function Outfitter:SortOutfitsByName(pCategoryID)
+	local vOutfits = self.Settings.Outfits[pCategoryID]
+
+	if not vOutfits then
+		return
+	end
+
+	for _, vOutfit in ipairs(vOutfits) do
+		vOutfit.Order = nil
+	end
+
+	self:SortOutfits()
+
+	self.DisplayIsDirty = true
+
+	if vOutfits[1] then
+		self:DispatchOutfitEvent("EDIT_OUTFIT", vOutfits[1]:GetName(), vOutfits[1])
+	end
+
+	self:Update(false)
 end
 
 function Outfitter.CompareOutfitNames(pOutfit1, pOutfit2)
@@ -2932,6 +3140,10 @@ function Outfitter:Update(pOutfitsChanged)
 		OutfitterShowHotkeyMessages:SetChecked(not self.Settings.Options.DisableHotkeyMessages)
 		OutfitterShowOutfitBar:SetChecked(self.Settings.OutfitBar.ShowOutfitBar)
 		OutfitterItemComparisons:SetChecked(not self.Settings.Options.DisableItemComparisons)
+		if OutfitterUseSidebarTab then
+			OutfitterUseSidebarTab:SetChecked(not self.Settings.Options.DisableSidebarTab)
+			OutfitterUseSidebarTab:SetShown(self.SidebarTab ~= nil)
+		end
 	end
 end
 
@@ -4741,6 +4953,10 @@ function Outfitter:AddOutfit(pOutfit)
 	end
 	--]]
 
+	if pOutfit.CategoryID ~= vCategoryID then
+		pOutfit.Order = nil -- its place was in the list it came from
+	end
+
 	table.insert(self.Settings.Outfits[vCategoryID], pOutfit)
 	pOutfit.CategoryID = vCategoryID
 
@@ -4851,6 +5067,7 @@ function Outfitter:EquipmentManagerAdjust(eventName, cvar, value)
 		Outfitter:OutfitterButtonAdjust()
 	end
 	OutfitterButton:Show()
+	Outfitter:UpdateSidebarTab()
 end
 
 function Outfitter:IsInitialized()
@@ -6151,6 +6368,22 @@ end
 
 function Outfitter.OutfitMenuActions:RENAME(pOutfit)
 	Outfitter:OpenNameOutfitDialog(pOutfit)
+end
+
+function Outfitter.OutfitMenuActions:MOVE_UP(pOutfit)
+	self:MoveOutfit(pOutfit, -1)
+end
+
+function Outfitter.OutfitMenuActions:MOVE_DOWN(pOutfit)
+	self:MoveOutfit(pOutfit, 1)
+end
+
+function Outfitter.OutfitMenuActions:SORT_BY_NAME(pOutfit)
+	local vCategoryID = self:FindOutfit(pOutfit)
+
+	if vCategoryID then
+		self:SortOutfitsByName(vCategoryID)
+	end
 end
 
 function Outfitter.OutfitMenuActions:SCRIPT_SETTINGS(pOutfit)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- **Put your outfits in your own order.** Open the menu to the right of an outfit and pick **Move up** or **Move down**. The order is saved for each character and is used in the outfit list, the minimap menu and the outfit bar. New outfits go to the end of the list. **Sort this list by name** in the same menu puts a list back in A to Z order. Lists you haven't touched stay in A to Z order.
+- **The Equipment Manager tab opens Outfitter Forever.** The second tab at the top of your character window (it used to say Equipment Manager) now shows the Outfitter Forever icon and opens and closes your outfits. The small Outfitter button is gone while that tab is showing; it comes back if you collapse the stats pane. To get the game's Equipment Manager tab back, untick **Use the Equipment Manager tab** in Options.
+- The Outfits and Options tabs have a plain dark background. The large faded logo is gone.
+
 ## 1.1.1
 
 - The scroll track beside the outfit list is flat and dark like the rest of the window. It was still the original stone art.

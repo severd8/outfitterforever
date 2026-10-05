@@ -858,6 +858,14 @@ F.PaperDollItemsFrame.flyoutSettings = {
 	postGetItemsFunc = function(button, items, count) return count end,
 }
 F.PaperDollSidebarTabs = New("Frame", "PaperDollSidebarTabs", F.CharacterFrame)
+-- The strip of tabs above the stats pane: Stats, Equipment Manager, Titles.
+-- It's hidden while the stats pane is collapsed.
+F.PaperDollSidebarTab2 = New("CheckButton", "PaperDollSidebarTab2", F.PaperDollSidebarTabs, nil, 2)
+F.PaperDollSidebarTab2:SetSize(42, 42)
+F.PaperDollSidebarTab2:SetScript("OnClick", function() W.equipmentManagerClicks = (W.equipmentManagerClicks or 0) + 1 end)
+function W.PlayerCollapsesStatsPane(collapsed)
+	F.PaperDollSidebarTabs:SetShown(not collapsed)
+end
 F.CharacterLevelText = New("FontString", "CharacterLevelText", F.PaperDollFrame)
 F.CharacterModelScene = New("ModelScene", "CharacterModelScene", F.PaperDollFrame)
 for name, id in pairs(SLOTS) do
