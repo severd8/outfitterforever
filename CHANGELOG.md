@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+- **Works with Baganator.** If you use the Baganator bag addon with its equipment set groups, every outfit now gets its own group in your bags, not only the outfits stored on the server. The groups follow the order of your outfit list and update when you add, change, rename or delete an outfit. Nothing changes if you don't use Baganator.
+
 ## 1.2.0
 
 - **Put your outfits in your own order.** Open the menu to the right of an outfit and pick **Move up** or **Move down**. The order is saved for each character and is used in the outfit list, the minimap menu and the outfit bar. New outfits go to the end of the list. **Sort this list by name** in the same menu puts a list back in A to Z order. Lists you haven't touched stay in A to Z order.

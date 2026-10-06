@@ -42,6 +42,22 @@ W.bags = {
 		[7] = { id = 1015, count = 1 }, [8] = { id = 1016, count = 20 } },
 }
 
+-- Baganator, a bag addon that groups gear by equipment set. It's there before
+-- Outfitter loads in half the runs, and loads after it in the other half.
+local baganator = { sources = {}, refreshes = 0 }
+local function InstallBaganator()
+	rawset(env, "Baganator", { API = {
+		RegisterItemSetSource = function(label, id, getItemSetInfo, getAllSetNames)
+			assert(type(label) == "string" and type(id) == "string" and type(getItemSetInfo) == "function"
+				and (getAllSetNames == nil or type(getAllSetNames) == "function"), "bad arguments to RegisterItemSetSource")
+			table.insert(baganator.sources, { label = label, id = id, get = getItemSetInfo, names = getAllSetNames })
+		end,
+		RequestItemButtonsRefresh = function() baganator.refreshes = baganator.refreshes + 1 end,
+	} })
+end
+local baganatorFirst = projectId == 1
+if baganatorFirst then InstallBaganator() end
+
 Step("load the addon")
 W.LoadToc("OutfitterForever.toc")
 NoErrors()
@@ -737,6 +753,127 @@ do
 	O:DeleteOutfit(anvil)
 	O:DeleteOutfit(mason)
 	W.Tick(0.5)
+end
+
+----------------------------------------
+Step("Baganator is told which outfit each item belongs to")
+do
+	if not baganatorFirst then
+		Check(#baganator.sources == 0, "nothing is registered while Baganator isn't there")
+		W.Fire("ADDON_LOADED", "SomeOtherAddon")
+		Check(#baganator.sources == 0, "another addon loading doesn't register anything")
+		InstallBaganator()
+		W.Fire("ADDON_LOADED", "Baganator")
+	end
+	Check(#baganator.sources == 1, "Outfitter registers with Baganator once (" .. #baganator.sources .. ")")
+	W.Fire("ADDON_LOADED", "Baganator")
+	Check(#baganator.sources == 1, "and not again")
+	local source = baganator.sources[1]
+	if source then
+		local function Has(list, name)
+			for _, entry in ipairs(list or {}) do
+				if entry == name or (type(entry) == "table" and entry.name == name) then return true end
+			end
+			return false
+		end
+		local function Sets(itemID) return source.get(nil, "Item-1-0-" .. itemID, W.ItemLink(itemID)) end
+
+		Check(source.label == "Outfitter Forever" and source.id == "outfitter_forever", "under its own name")
+		Check(source.names ~= nil, "it can list its outfits")
+
+		-- Every outfit, in the order of Outfitter's list
+		local expected = {}
+		for _, category in ipairs(O.cCategoryOrder) do
+			for _, outfit in ipairs(O.Settings.Outfits[category] or {}) do expected[#expected + 1] = outfit.Name end
+		end
+		Check(table.concat(source.names(), ",") == table.concat(expected, ","), "the outfits are listed in Outfitter's order")
+		Check(Has(source.names(), "Fishing") and Has(source.names(), "Battle Gear"), "Fishing and Battle Gear are among them")
+
+		-- Items
+		-- (an earlier step made a second fishing outfit, so the pole is in more than one)
+		local sets = Sets(1011)
+		local poleOutfits = sets and #sets or 0
+		Check(Has(sets, "Fishing"), "the fishing pole belongs to Fishing")
+		Check(sets and sets[1].iconTexture ~= nil, "with an icon for the bag")
+		for _, entry in ipairs(sets or {}) do
+			local outfit = O:FindOutfitByName(entry.name)
+			Check(outfit and outfit:GetItem("MainHandSlot") and outfit:GetItem("MainHandSlot").Code == 1011,
+				entry.name .. " really has the pole")
+		end
+		Check(Has(Sets(1001), "Battle Gear"), "the helm belongs to Battle Gear")
+		Check(Sets(1016) == nil, "a bandage belongs to nothing")
+		Check(source.get(nil, nil, nil) == nil, "no link, no answer")
+		Check(source.get(nil, "x", "|cff0070dd|Hbattlepet:39:1:3:158:10:12:0|h[Pet]|h|r") == nil, "a link that isn't an item is ignored")
+		Check(source.get(nil, "x", 12345) == nil, "and so is a link that isn't text")
+
+		-- An item in two outfits is reported for both
+		local before = baganator.refreshes
+		local pair = MakeOutfit("Bag Pair", { MainHandSlot = 1011, FingerSlot = nil })
+		Check(baganator.refreshes == before + 1, "a new outfit makes Baganator redraw the bags")
+		Check(Has(source.names(), "Bag Pair"), "and it's listed")
+		sets = Sets(1011)
+		Check(sets and #sets == poleOutfits + 1 and Has(sets, "Fishing") and Has(sets, "Bag Pair"), "the pole is now in the new outfit as well")
+
+		-- Nothing changed: no redraw
+		before = baganator.refreshes
+		O:OutfitSettingsChanged(pair)
+		Check(baganator.refreshes == before, "a change that doesn't touch names or items doesn't redraw the bags")
+
+		-- Changing the outfit's items
+		pair:AddItem("HeadSlot", O:GetItemInfoFromLink(W.ItemLink(1002)))
+		O:OutfitSettingsChanged(pair)
+		Check(baganator.refreshes == before + 1, "adding an item redraws the bags")
+		Check(Has(Sets(1002), "Bag Pair"), "and the item belongs to the outfit")
+
+		-- Renaming
+		before = baganator.refreshes
+		pair:SetName("Bag Duo")
+		O:DispatchOutfitEvent("DID_RENAME_OUTFIT", pair, "Bag Pair", "Bag Duo")
+		Check(baganator.refreshes == before + 1, "renaming redraws the bags")
+		Check(Has(source.names(), "Bag Duo") and not Has(source.names(), "Bag Pair"), "under the new name")
+		Check(Has(Sets(1011), "Bag Duo"), "for its items too")
+
+		-- Moving it in the list changes the order Baganator gets
+		local order = table.concat(source.names(), ",")
+		if O:MoveOutfit(pair, -1) then
+			Check(table.concat(source.names(), ",") ~= order, "Move up changes the order of the groups")
+			O:SortOutfitsByName(O:FindOutfit(pair))
+		end
+
+		-- Another item with the same ID that the outfit doesn't mean
+		local uses = pair.OutfitUsesItem
+		pair.OutfitUsesItem = function() return false end
+		Check(not Has(Sets(1002), "Bag Duo"), "an item the outfit doesn't use isn't reported, even with the same ID")
+		pair.OutfitUsesItem = uses
+
+		-- Outfits stored on the server are Equipment Manager sets: Baganator has those already
+		before = baganator.refreshes
+		pair.StoredInEM = true
+		O:OutfitSettingsChanged(pair)
+		Check(not Has(source.names(), "Bag Duo"), "an outfit stored on the server is left to Baganator's own Equipment Manager groups")
+		Check(not Has(Sets(1002), "Bag Duo"), "and so are its items")
+		Check(baganator.refreshes == before + 1, "the bags are redrawn when that changes")
+		pair.StoredInEM = nil
+		O:OutfitSettingsChanged(pair)
+		Check(Has(source.names(), "Bag Duo"), "and it's back when it's stored locally again")
+
+		-- An error inside Outfitter must not reach Baganator's bag drawing
+		local real = O.GetItemInfoFromLink
+		O.GetItemInfoFromLink = function() error("boom") end
+		local ok, result = pcall(Sets, 1011)
+		O.GetItemInfoFromLink = real
+		Check(ok and result == nil, "an error in Outfitter gives Baganator no answer instead of breaking the bags")
+
+		-- Deleting
+		before = baganator.refreshes
+		O:DeleteOutfit(pair)
+		Check(baganator.refreshes == before + 1, "deleting redraws the bags")
+		Check(not Has(source.names(), "Bag Duo"), "and the outfit is gone from the list")
+		sets = Sets(1011)
+		Check(sets and #sets == poleOutfits and Has(sets, "Fishing") and not Has(sets, "Bag Duo"), "the pole is back to the outfits it was in")
+		Check(Sets(1002) == nil or not Has(Sets(1002), "Bag Duo"), "and the hat isn't in the deleted outfit")
+		W.Tick(0.5)
+	end
 end
 
 ----------------------------------------

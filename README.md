@@ -18,6 +18,7 @@ It works like the Outfitter you know, with the same outfits, menus and scripts. 
 - **Quick access.** A minimap menu, an optional outfit bar, key bindings, `/outfitter` commands for macros, and LibDataBroker.
 - **Generate outfits** that maximize a stat or a mix of stats, or use your Pawn weights (needs Pawn).
 - **Extras.** An icon picker, item tooltips that show which outfits use the item, and a title, helm and cloak setting for each outfit.
+- **Works with Baganator.** With the Baganator bag addon, each outfit's gear gets its own group in your bags.
 
 ## On WoW: Forever
 

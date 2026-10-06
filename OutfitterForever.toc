@@ -10,6 +10,7 @@
 ## IconTexture: Interface\AddOns\OutfitterForever\Textures\Logo
 ## SavedVariablesPerCharacter: gOutfitter_Settings
 ## SavedVariables: gOutfitter_GlobalSettings
+## OptionalDeps: Baganator
 ## X-License: MIT
 ## X-Curse-Project-ID: 1721014
 ## X-Category: Inventory
@@ -62,6 +63,7 @@ Theme.lua
 OutfitterLook.lua
 
 OutfitterLDB.lua
+OutfitterBaganator.lua
 
 Outfitter.xml
 OutfitterBar.xml
