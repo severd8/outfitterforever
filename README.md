@@ -45,6 +45,7 @@ Don't install another copy of Outfitter alongside it.
 - **Open Outfitter Forever.** Open your character window (`C`) and click the Outfitter Forever tab at the top (where the Equipment Manager tab was), or left-click the minimap button for the outfit menu.
 - **Make an outfit.** Put on the gear, click **New Outfit**, and name it. Untick the slots the outfit shouldn't change.
 - **Wear an outfit.** Click it in the Outfitter Forever window, the minimap menu or the outfit bar.
+- **Keep an outfit up to date.** Gear you put on yourself stays on, but it isn't added to an outfit. To save what you're wearing into one (your **Normal** outfit as you level, say), open the menu to the right of the outfit and pick **Rebuild → Update to current items**.
 - **Automatic outfits.** Use the menu to the right of an outfit to pick a script or turn it off.
 - **Put outfits in your own order.** In the same menu, pick **Move up** or **Move down**. The order is saved for each character and is used in the list, the minimap menu and the outfit bar. **Sort this list by name** puts it back in A to Z order.
 

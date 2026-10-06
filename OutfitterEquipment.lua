@@ -975,22 +975,74 @@ function Outfitter.OutfitStack:Initialize()
 	self:RestoreSavedStack()
 end
 
+-- The stack is kept twice: self.Outfits (the outfits) and LastOutfitStack in the saved
+-- settings (their names; an unnamed, temporary outfit is saved whole). The two have to
+-- match place for place. Upstream changes both at each step, by position, and two bugs
+-- let them drift apart, after which a temporary outfit was saved past a gap and lost at
+-- the next login:
+--   * a new character's first stack was restored on top of the one InitializeOutfits had
+--     just made, so Normal was in self.Outfits twice and in the saved copy once
+--   * CollapseTemporaryOutfits removed from self.Outfits only
+-- A lost temporary outfit is the gear you put on yourself, so the next automatic change
+-- took it off. Now the saved copy is written out again from self.Outfits after every
+-- change (SaveStack), and restoring starts from nothing. Anything an older version saved
+-- past a gap is of unknown age and is dropped: what you're wearing at login is adopted
+-- instead (Outfitter:AdoptWornGear).
+function Outfitter.OutfitStack:SaveStack()
+	local vSaved = gOutfitter_Settings.LastOutfitStack
+
+	if type(vSaved) ~= "table" then
+		vSaved = {}
+		gOutfitter_Settings.LastOutfitStack = vSaved
+	end
+
+	for vKey in pairs(vSaved) do
+		vSaved[vKey] = nil
+	end
+
+	for vIndex, vOutfit in ipairs(self.Outfits) do
+		local vName = vOutfit:GetName()
+
+		vSaved[vIndex] = vName and {Name = vName} or vOutfit
+	end
+end
+
 function Outfitter.OutfitStack:RestoreSavedStack()
-	if not gOutfitter_Settings.LastOutfitStack then
+	if type(gOutfitter_Settings.LastOutfitStack) ~= "table" then
 		gOutfitter_Settings.LastOutfitStack = {}
 	end
 
-	for vIndex, vOutfit in ipairs(gOutfitter_Settings.LastOutfitStack) do
-		if vOutfit.Name then
-			vOutfit = Outfitter:FindOutfitByName(vOutfit.Name)
-		else
-			setmetatable(vOutfit, Outfitter._OutfitMetaTable)
+	local vSaved = gOutfitter_Settings.LastOutfitStack
+
+	for vKey in pairs(self.Outfits) do
+		self.Outfits[vKey] = nil
+	end
+
+	local vInStack = {}
+
+	for vIndex = 1, #vSaved do
+		local vOutfit = vSaved[vIndex]
+
+		if vOutfit == nil then
+			break
 		end
 
-		if vOutfit and vOutfit:GetItems() then
-			table.insert(self.Outfits, vOutfit)
+		if type(vOutfit) == "table" then
+			if vOutfit.Name then
+				vOutfit = Outfitter:FindOutfitByName(vOutfit.Name)
+			else
+				setmetatable(vOutfit, Outfitter._OutfitMetaTable)
+			end
+
+			if vOutfit and vOutfit:GetItems() and not vInStack[vOutfit] then
+				vInStack[vOutfit] = true
+				table.insert(self.Outfits, vOutfit)
+			end
 		end
 	end
+
+	self:CollapseTemporaryOutfits()
+	self:SaveStack()
 
 	Outfitter.ExpectedOutfit = Outfitter:GetCompiledOutfit()
 
@@ -1076,6 +1128,8 @@ function Outfitter.OutfitStack:AddOutfit(pOutfit, pLayerID)
 		self:CollapseTemporaryOutfits()
 	end
 
+	self:SaveStack()
+
 	Outfitter:DispatchOutfitEvent("WEAR_OUTFIT", pOutfit:GetName(), pOutfit)
 end
 
@@ -1092,6 +1146,7 @@ function Outfitter.OutfitStack:RemoveOutfit(pOutfit)
 	table.remove(gOutfitter_Settings.LastOutfitStack, vIndex)
 
 	self:CollapseTemporaryOutfits()
+	self:SaveStack()
 
 	for vLayerID, vLayerIndex in pairs(gOutfitter_Settings.LayerIndex) do
 		if vIndex < vLayerIndex then
@@ -1144,6 +1199,7 @@ function Outfitter.OutfitStack:Clear()
 
 	gOutfitter_Settings.LastOutfitStack = Outfitter:RecycleTable(gOutfitter_Settings.LastOutfitStack)
 	gOutfitter_Settings.LayerIndex = Outfitter:RecycleTable(gOutfitter_Settings.LayerIndex)
+	self:SaveStack()
 	Outfitter.DisplayIsDirty = true
 
 	if gOutfitter_Settings.Options.ShowStackContents then
@@ -1183,6 +1239,7 @@ function Outfitter.OutfitStack:ClearNonPersistent()
 	end
 
 	self:CollapseTemporaryOutfits()
+	self:SaveStack()
 
 	if vChanged then
 		if gOutfitter_Settings.Options.ShowStackContents then
@@ -1226,6 +1283,7 @@ function Outfitter.OutfitStack:ClearCategory(pCategoryID)
 	end
 
 	self:CollapseTemporaryOutfits()
+	self:SaveStack()
 
 	if vChanged then
 		if gOutfitter_Settings.Options.ShowStackContents then

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2
+
+- **Fixed: a reload could take gear off a new character.** On a character's first session, the gear you put on yourself wasn't saved. After a `/reload` or logging back in, the next automatic outfit change (a stance, a form, mounting) put you back in the gear you had when Outfitter first saw the character: newly filled slots were emptied, and chat showed "Can't find item" for anything you had sold. What you put on yourself is now saved properly.
+- **Logging in never changes your gear.** Whatever you're wearing when you log in or reload is taken as it is, even if Outfitter's saved outfits say otherwise.
+
 ## 1.2.1
 
 - **Works with Baganator.** If you use the Baganator bag addon with its equipment set groups, every outfit now gets its own group in your bags, not only the outfits stored on the server. The groups follow the order of your outfit list and update when you add, change, rename or delete an outfit. Nothing changes if you don't use Baganator.

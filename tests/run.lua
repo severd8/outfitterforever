@@ -18,6 +18,17 @@ for _, projectId in ipairs({ 18, 1 }) do
 		end
 	end
 end
+-- What's saved has to survive a /reload
+do
+	local runner = assert(loadfile("tests/reload.lua"))
+	local ok, result = pcall(runner)
+	if not ok then
+		print("Reload tests crashed: " .. tostring(result))
+		failures = failures + 1
+	else
+		failures = failures + result
+	end
+end
 if failures > 0 then
 	print(failures .. " failure(s)")
 	os.exit(1)

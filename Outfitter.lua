@@ -4342,6 +4342,40 @@ function Outfitter:GetNewItemsOutfit(pPreviousOutfit)
 	return vNewItemsOutfit, self.CurrentInventoryOutfit
 end
 
+-- Logging in or a /reload must never change your gear. Whatever you're wearing that the
+-- stack of outfits doesn't account for goes into the temporary outfit on top of it, as
+-- it would have had you put it on this session. So a stack that's out of date (saved by
+-- an older version, or gear changed while the addon was off) can't take your gear off at
+-- the next stance change or other automatic switch.
+-- An empty slot is left alone: right after login an item may just not be readable yet,
+-- and writing down "nothing here" would take it off later.
+function Outfitter:AdoptWornGear()
+	local vExpected = self:GetExpectedOutfit()
+	local vNewItems = self:GetNewItemsOutfit(vExpected)
+
+	if not vNewItems then
+		return
+	end
+
+	local vEmptySlots = {}
+
+	for vInventorySlot, vItem in pairs(vNewItems:GetItems()) do
+		if type(vItem) ~= "table" or not vItem.Code or vItem.Code == 0 then
+			table.insert(vEmptySlots, vInventorySlot)
+		end
+	end
+
+	for _, vInventorySlot in ipairs(vEmptySlots) do
+		vNewItems:RemoveItem(vInventorySlot)
+	end
+
+	if vNewItems:IsEmpty() then
+		return
+	end
+
+	self:UpdateTemporaryOutfit(vNewItems)
+end
+
 function Outfitter:UpdateTemporaryOutfit(pNewItemsOutfit)
 	-- Just return if nothing has changed
 
@@ -5193,6 +5227,9 @@ function Outfitter:Initialize()
 	-- Initialize the outfit stack
 
 	self.OutfitStack:Initialize()
+
+	-- What you're wearing as you log in is taken as it is
+	self:AdoptWornGear()
 
 	-- Clean up any recent complete outfits which don't exist as
 	-- well as duplicate entries
