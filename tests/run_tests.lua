@@ -545,6 +545,67 @@ W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Frostbolt")
 W.Tick(6)
 
 ----------------------------------------
+Step("the restyled window: tabs on top, flat rows, switches")
+do
+	local look = env.OutfitterFrame.Look
+	if not env.OutfitterFrame:IsShown() then O:ToggleOutfitterFrame() end
+	W.Tick(0.5)
+	Check(env.OutfitterFrame:IsVisible(), "Outfitter is open")
+	O:ShowPanel(1)
+	O:Update(true)
+	W.Tick(0.2)
+	Check(look.Tabs and look.Tabs[1].on and not look.Tabs[2].on, "the Outfits tab is lit")
+	Check(not env.OutfitterFrameTab1:IsShown() and not env.OutfitterFrameTab2:IsShown(), "the game's tabs under the window are hidden")
+	look.Tabs[2]:Click()
+	W.Tick(0.2)
+	Check(env.OutfitterOptionsFrame:IsShown() and look.Tabs[2].on and not look.Tabs[1].on, "the Options tab opens the options")
+	for index, card in ipairs(look.Cards or {}) do
+		Check(card:IsVisible(), "option card " .. index .. " shows")
+	end
+	Check(AnchoredTo(env.OutfitterAutoSwitch, look.Cards[1]) and AnchoredTo(env.OutfitterTooltipInfo, look.Cards[2])
+		and AnchoredTo(env.OutfitterShowOutfitBar, look.Cards[3]), "each option sits in its card")
+	Check(env.OutfitterAutoSwitch:GetWidth() == 30, "options are on/off switches")
+	look.Tabs[1]:Click()
+	W.Tick(0.2)
+	Check(env.OutfitterMainFrame:IsShown(), "the Outfits tab brings the list back")
+
+	-- Rows: a script's name beside the outfit's, category names in capitals
+	local scriptRow, plainRow, categoryRow
+	for index = 0, O.cMaxDisplayedItems - 1 do
+		local item = env["OutfitterItem" .. index]
+		local outfit = item:IsShown() and not item.isCategory and not item.isOutfitItem and item:GetOutfit()
+		if item:IsShown() and item.isCategory then
+			categoryRow = categoryRow or item
+		elseif outfit and outfit.ScriptID and O:GetPresetScriptByID(outfit.ScriptID) then
+			scriptRow = scriptRow or item
+		elseif outfit and not outfit.ScriptID and not outfit.Script then
+			plainRow = plainRow or item
+		end
+	end
+	local preset = scriptRow and O:GetPresetScriptByID(scriptRow:GetOutfit().ScriptID)
+	Check(scriptRow and scriptRow.Look.Script:IsShown() and scriptRow.Look.Script:GetText() == preset.Name,
+		"an outfit with a script shows the script's name (shows " .. tostring(scriptRow and scriptRow.Look.Script:GetText()) .. ")")
+	Check(scriptRow and not env[scriptRow:GetName() .. "OutfitScriptIcon"]:IsShown(), "in place of the gear icon")
+	Check(plainRow and not plainRow.Look.Script:IsShown(), "an outfit without a script shows no script name")
+	local categoryName = categoryRow and env[categoryRow:GetName() .. "CategoryName"]:GetText()
+	Check(categoryName and categoryName == categoryName:upper(), "category names are in capitals (" .. tostring(categoryName) .. ")")
+
+	-- The scripts switch in the footer turns all outfit scripts off and on
+	Check(look.Scripts:IsOn() == not O.Settings.Options.DisableAutoSwitch, "the scripts switch shows the setting")
+	look.Scripts:Click()
+	Check(O.Settings.Options.DisableAutoSwitch and not look.Scripts:IsOn(), "switching it off stops outfit scripts")
+	look.Scripts:Click()
+	Check(not O.Settings.Options.DisableAutoSwitch and look.Scripts:IsOn(), "switching it on runs them again")
+
+	-- The New Outfit dialog gets the header bar with its title
+	O:OpenNameOutfitDialog(nil)
+	local dialog = O.NameOutfitDialog
+	Check(dialog.Look and dialog.Look.Header.text:GetText() == O.cNewOutfit, "the New Outfit dialog has the header bar and its title")
+	dialog:Cancel()
+	W.Tick(0.2)
+end
+
+----------------------------------------
 Step("options and the outfit bar")
 O:ShowPanel(2)
 W.Tick(0.2)

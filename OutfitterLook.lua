@@ -1,7 +1,7 @@
 -- Outfitter Forever: the shared look (Theme.lua) on Outfitter's window.
--- A restyle only: the dark panel, the red header bar with the logo, and the
--- text. Outfitter's layout, outfit list and controls are the original addon's
--- and are left as they are.
+-- A restyle only: everything here changes how the window looks, never what it
+-- does. Outfitter's own frames, scripts and saved settings are untouched; their
+-- art is hidden and flat pieces in the shared colours are drawn instead.
 
 local _, Outfitter = ...
 local T = Outfitter.Theme
@@ -10,17 +10,340 @@ local C = T.C
 -- Chat lines start with the logo and name, as in every addon with this look
 Outfitter.ChatPrefix = T.CHAT_PREFIX .. ": "
 
--- Called once, after the original code has built the window's frame art
+local ARROW = "Interface\\Buttons\\Arrow-Down-Up"
+
+---------------------------------------------------------------------------
+-- Small pieces
+---------------------------------------------------------------------------
+local function Fade(region)
+	if region then region:SetAlpha(0) end
+end
+
+-- A flat box of the given size centred on a frame, drawn with the frame's own
+-- textures (so whatever the frame draws on top, like a check, stays on top)
+local function Box(frame, size, fill, edge)
+	local half = size / 2
+	local bg = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+	bg:SetSize(size, size)
+	bg:SetPoint("CENTER")
+	bg:SetColorTexture(unpack(fill))
+	local edges = {
+		{ size, 1, 0, half - 0.5 }, { size, 1, 0, 0.5 - half },
+		{ 1, size, 0.5 - half, 0 }, { 1, size, half - 0.5, 0 },
+	}
+	for _, e in ipairs(edges) do
+		local t = frame:CreateTexture(nil, "BORDER")
+		t:SetSize(e[1], e[2])
+		t:SetPoint("CENTER", e[3], e[4])
+		t:SetColorTexture(unpack(edge))
+	end
+	return bg
+end
+
+-- An existing button made flat: its art faded out, a flat fill and edge behind
+-- its text, brighter on hover. What it does is unchanged.
+local function Flatten(button, fill, hover, edge)
+	for _, get in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture", "GetHighlightTexture" }) do
+		Fade(button[get](button))
+	end
+	for _, key in ipairs({ "Left", "Middle", "Right", "LeftTexture", "MiddleTexture", "RightTexture", "HighlightTexture" }) do
+		if type(button[key]) == "table" then Fade(button[key]) end
+	end
+	local bg = T.Fill(button, fill)
+	T.Border(button, edge or C.btnEdge)
+	button:HookScript("OnEnter", function() bg:SetColorTexture(unpack(hover)) end)
+	button:HookScript("OnLeave", function() bg:SetColorTexture(unpack(fill)) end)
+	local fs = button.GetFontString and button:GetFontString() or button.Text
+	if fs then fs:SetTextColor(C.gold[1], C.gold[2], C.gold[3]) end
+	return bg
+end
+
+-- The small gold arrow that opens a menu, on a menu button's own textures
+local function ArrowButton(button)
+	for _, get in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetDisabledTexture" }) do
+		local t = button[get](button)
+		if t then
+			t:SetTexture(ARROW)
+			t:ClearAllPoints()
+			t:SetSize(10, 10)
+			t:SetPoint("CENTER")
+			t:SetVertexColor(C.orange[1], C.orange[2], C.orange[3])
+		end
+	end
+	local disabled = button:GetDisabledTexture()
+	if disabled then disabled:SetVertexColor(C.grey[1], C.grey[2], C.grey[3]) end
+end
+
+-- What an outfit's script is called, for the line beside its name
+local function ScriptName(outfit)
+	if outfit.ScriptID then
+		local preset = Outfitter:GetPresetScriptByID(outfit.ScriptID)
+		return preset and preset.Name
+	elseif outfit.Script then
+		return Outfitter.cCustomScript
+	end
+end
+
+---------------------------------------------------------------------------
+-- Rows of the outfit list. These run inside Outfitter's own list code, after
+-- it has drawn a row, so they're hooked here, before Outfitter.xml builds the
+-- rows from _ListItem.
+---------------------------------------------------------------------------
+hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
+	local look = self.Look
+	if not look then return end
+	_G[self:GetName() .. "OutfitScriptIcon"]:Hide()
+	local name = ScriptName(outfit)
+	if not name then
+		look.Script:Hide()
+		return
+	end
+	local nameField = _G[self:GetName() .. "OutfitName"]
+	local width = math.min(nameField:GetStringWidth() or 0, nameField:GetWidth() or 133)
+	look.Script:ClearAllPoints()
+	look.Script:SetPoint("LEFT", nameField, "LEFT", width + 6, 0)
+	look.Script:SetPoint("RIGHT", nameField, "RIGHT", 14, 0)
+	look.Script:SetText(name)
+	local off = Outfitter.Settings.Options.DisableAutoSwitch or outfit.Disabled
+	local color = off and C.offTrack or C.grey
+	look.Script:SetTextColor(color[1], color[2], color[3])
+	look.Script:Show()
+end)
+
+local function PaintCategory(self)
+	local nameField = _G[self:GetName() .. "CategoryName"]
+	nameField:SetTextColor(C.orange[1], C.orange[2], C.orange[3])
+end
+
+hooksecurefunc(Outfitter._ListItem, "SetToCategory", function(self, categoryID)
+	if not self.Look then return end
+	local nameField = _G[self:GetName() .. "CategoryName"]
+	nameField:SetText((nameField:GetText() or ""):upper())
+	PaintCategory(self)
+	-- A gold arrow: down when the category is open, right when it's folded
+	local expand = _G[self:GetName() .. "CategoryExpand"]
+	local arrow = expand:GetNormalTexture()
+	if arrow then
+		arrow:SetTexture(ARROW)
+		arrow:ClearAllPoints()
+		arrow:SetSize(10, 10)
+		arrow:SetPoint("CENTER")
+		arrow:SetVertexColor(C.orange[1], C.orange[2], C.orange[3])
+		arrow:SetRotation(Outfitter.Collapsed[categoryID] and math.pi / 2 or 0)
+	end
+end)
+
+-- Leaving a category row puts its name back in orange (Outfitter makes it white)
+hooksecurefunc(Outfitter._ListItem, "OnLeave", function(self)
+	if self.Look and self.isCategory then PaintCategory(self) end
+end)
+
+local function StyleRow(item)
+	local name = item:GetName()
+	item.Look = {}
+
+	-- Worn checkbox: a flat box with the gold check
+	local check = _G[name .. "OutfitSelected"]
+	Fade(check:GetNormalTexture())
+	Fade(check:GetPushedTexture())
+	Box(check, 14, C.field, C.fieldEdge)
+	local tick = check:GetCheckedTexture()
+	if tick then
+		tick:ClearAllPoints()
+		tick:SetSize(20, 20)
+		tick:SetPoint("CENTER", 1, 1)
+	end
+
+	-- The script's name, in grey after the outfit's name, instead of the gear icon
+	local script = _G[name .. "Outfit"]:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	script:SetJustifyH("LEFT")
+	script:SetWordWrap(false)
+	script:Hide()
+	item.Look.Script = script
+
+	-- The menu button: a flat field with the gold arrow
+	local menu = _G[name .. "OutfitMenu"]
+	Box(menu, 16, C.field, C.fieldEdge)
+	if menu.Button then
+		ArrowButton(menu.Button)
+		menu.Button:ClearAllPoints()
+		menu.Button:SetPoint("CENTER")
+		menu.Button:SetSize(16, 16)
+		if menu.Button.HighlightTexture then menu.Button.HighlightTexture:SetAlpha(0.35) end
+	end
+
+	-- Category rows: orange capitals
+	_G[name .. "CategoryName"]:SetFontObject(GameFontNormalSmall)
+	local expand = _G[name .. "CategoryExpand"]
+	Fade(expand:GetHighlightTexture())
+end
+
+---------------------------------------------------------------------------
+-- Tabs at the top, under the header bar
+---------------------------------------------------------------------------
+local TAB_H = 24
+
+local function MakeTabs(frame, header)
+	local tabs = {}
+	local labels = { Outfitter.cOutfitterTabTitle, Outfitter.cOptionsTabTitle }
+	local width = (frame:GetWidth() or 256) / #labels
+	for index, label in ipairs(labels) do
+		local tab = CreateFrame("Button", nil, frame)
+		tab:SetSize(width, TAB_H)
+		tab:SetPoint("TOPLEFT", header, "BOTTOMLEFT", (index - 1) * width, 0)
+		tab.bg = T.Fill(tab, C.side)
+		tab.bar = tab:CreateTexture(nil, "ARTWORK")
+		tab.bar:SetPoint("BOTTOMLEFT")
+		tab.bar:SetPoint("BOTTOMRIGHT")
+		tab.bar:SetHeight(2)
+		tab.bar:SetColorTexture(unpack(C.accent))
+		tab.text = T.Text(tab, label, "GameFontNormal")
+		tab.text:SetPoint("CENTER")
+		tab.text:SetJustifyH("CENTER")
+		tab:SetScript("OnClick", function()
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+			Outfitter:ShowPanel(index)
+		end)
+		tab:SetScript("OnEnter", function(self)
+			if not self.on then self.bg:SetColorTexture(unpack(C.card)) end
+		end)
+		tab:SetScript("OnLeave", function(self)
+			if not self.on then self.bg:SetColorTexture(unpack(C.side)) end
+		end)
+		tabs[index] = tab
+	end
+	-- A line under the tabs
+	local line = frame:CreateTexture(nil, "BORDER")
+	line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -TAB_H)
+	line:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -TAB_H)
+	line:SetHeight(1)
+	line:SetColorTexture(unpack(C.line))
+
+	function tabs.Paint(current)
+		for index, tab in ipairs(tabs) do
+			tab.on = index == current
+			tab.bg:SetColorTexture(unpack(tab.on and C.tabOn or C.side))
+			tab.bar:SetShown(tab.on)
+			local color = tab.on and C.gold or C.muted
+			tab.text:SetTextColor(color[1], color[2], color[3])
+		end
+	end
+	return tabs
+end
+
+-- The big title each panel had under the header ("Outfitter Forever", "Options")
+local function HideTitles(panel, ...)
+	local titles = {}
+	for i = 1, select("#", ...) do titles[select(i, ...)] = true end
+	for _, region in ipairs({ panel:GetRegions() }) do
+		if region:GetObjectType() == "FontString" and titles[region:GetText()] then
+			region:Hide()
+		end
+	end
+end
+
+---------------------------------------------------------------------------
+-- Options: on/off switches in three cards
+---------------------------------------------------------------------------
+local ROW_H = 24
+
+local function MakeSwitch(check)
+	for _, get in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetHighlightTexture",
+		"GetCheckedTexture", "GetDisabledCheckedTexture", "GetDisabledTexture" }) do
+		Fade(check[get](check))
+	end
+	check:SetSize(30, 16)
+	local track = check:CreateTexture(nil, "BACKGROUND", nil, -8)
+	track:SetAllPoints()
+	local knob = check:CreateTexture(nil, "ARTWORK")
+	knob:SetSize(12, 12)
+	local function Paint()
+		local on = check:GetChecked()
+		track:SetColorTexture(unpack(on and C.onTrack or C.offTrack))
+		knob:SetColorTexture(unpack(on and C.gold or C.grey))
+		knob:ClearAllPoints()
+		knob:SetPoint("LEFT", check, "LEFT", on and 16 or 2, 0)
+	end
+	hooksecurefunc(check, "SetChecked", Paint)
+	check:HookScript("OnClick", Paint)
+	Paint()
+
+	local label = _G[check:GetName() .. "Text"] or check.Text
+	if label then
+		label:ClearAllPoints()
+		label:SetPoint("LEFT", check, "RIGHT", 8, 0)
+		label:SetFontObject(GameFontHighlightSmall)
+		label:SetTextColor(C.title[1], C.title[2], C.title[3])
+		label:SetJustifyH("LEFT")
+		label:SetWidth(180)
+		label:SetWordWrap(false)
+		-- The label is part of the switch: clicking it flips the switch too
+		check:SetHitRectInsets(0, -188, -4, -4)
+	end
+end
+
+local function StyleOptions(look)
+	local panel = OutfitterOptionsFrame
+	HideTitles(panel, Outfitter.cOptionsTitle, "Outfitter_cOptionsTitle")
+	local cards = {
+		{ Outfitter.cOutfitterTabTitle, { "OutfitterAutoSwitch", "OutfitterShowHotkeyMessages" } },
+		{ Outfitter.cLookTooltips, { "OutfitterTooltipInfo", "OutfitterItemComparisons" } },
+		{ Outfitter.cLookQuickAccess, { "OutfitterShowMinimapButton", "OutfitterShowOutfitBar", "OutfitterUseSidebarTab" } },
+	}
+	local y = -(24 + TAB_H + 8)
+	local width = (panel:GetWidth() or 256) - 16
+	look.Cards = {}
+	for index, info in ipairs(cards) do
+		local rows = #info[2]
+		local card = T.Card(panel, info[1], 8, y, width, 30 + rows * ROW_H)
+		card:SetFrameLevel(panel:GetFrameLevel())
+		for row, checkName in ipairs(info[2]) do
+			local check = _G[checkName]
+			if check then
+				MakeSwitch(check)
+				check:ClearAllPoints()
+				check:SetPoint("TOPLEFT", card, "TOPLEFT", 12, -26 - (row - 1) * ROW_H)
+				check:SetFrameLevel(card:GetFrameLevel() + 2)
+			end
+		end
+		card.rows = rows
+		look.Cards[index] = card
+		y = y - (30 + rows * ROW_H) - 6
+	end
+end
+
+---------------------------------------------------------------------------
+-- The checkboxes Outfitter puts on your character's slots
+---------------------------------------------------------------------------
+local function StyleSlotEnables()
+	for _, slot in ipairs(Outfitter.cSlotNames or {}) do
+		local check = _G["OutfitterEnable" .. slot]
+		if check then
+			Fade(check:GetNormalTexture())
+			Fade(check:GetPushedTexture())
+			Box(check, 14, C.field, C.btnEdge)
+		end
+	end
+	for _, name in ipairs({ "OutfitterEnableAll", "OutfitterEnableNone" }) do
+		local button = _G[name]
+		if button then Flatten(button, C.card, C.line, C.edge) end
+	end
+end
+
+---------------------------------------------------------------------------
+-- The whole window. Called once, after the original code has built its frame art.
+---------------------------------------------------------------------------
 function Outfitter:ApplyLook()
 	local frame = OutfitterFrame
 	if not frame or frame.Look then return end
-	frame.Look = {}
+	local look = {}
+	frame.Look = look
 
 	-- The original stone frame art goes; a flat dark panel takes its place.
 	-- These are the frame's own textures, so they stay behind everything in it.
 	for _, piece in pairs(frame.Background or {}) do piece:Hide() end
-	frame.Look.Fill = T.Fill(frame, C.win)
-	frame.Look.Edges = T.Border(frame, C.edge)
+	look.Fill = T.Fill(frame, C.win)
+	look.Edges = T.Border(frame, C.edge)
 
 	-- Header bar: logo, then the name and version
 	local header = CreateFrame("Frame", nil, frame)
@@ -30,7 +353,7 @@ function Outfitter:ApplyLook()
 	T.HeaderStrip(header, OutfitterFrameTitle:GetText())
 	header:FitLogo(24)
 	OutfitterFrameTitle:Hide()
-	frame.Look.Header = header
+	look.Header = header
 
 	-- A flat X in the header instead of the game's round close button
 	local close = T.FlatButton(header, "X", 18, 18)
@@ -38,13 +361,172 @@ function Outfitter:ApplyLook()
 	close:SetScript("OnClick", function() frame:Hide() end)
 	header.text:SetPoint("RIGHT", close, "LEFT", -4, 0)
 	OutfitterCloseButton:Hide()
-	frame.Look.Close = close
+	look.Close = close
 
-	-- The outfit list's scroll track: flat and dark like the panel, in place of the stone art
+	-- Outfits / Options tabs under the header, in place of the game's tabs below the window
+	look.Tabs = MakeTabs(frame, header)
+	for index = 1, #look.Tabs do
+		local old = _G["OutfitterFrameTab" .. index]
+		if old then old:Hide() end
+	end
+	look.Tabs.Paint(self.CurrentPanel)
+	hooksecurefunc(self, "ShowPanel", function(_, index) look.Tabs.Paint(index) end)
+
+	-- Outfits panel
+	HideTitles(OutfitterMainFrame, self.cTitle, "Outfitter_cTitle")
+	for index = 0, (self.cMaxDisplayedItems or 14) - 1 do
+		local item = _G["OutfitterItem" .. index]
+		if item then StyleRow(item) end
+	end
+
+	-- The selected outfit: a dark red row with a red bar at its left
+	local highlight = OutfitterMainFrameHighlight
+	highlight:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.28)
+	highlight:SetBlendMode("BLEND")
+	local bar = OutfitterMainFrame:CreateTexture(nil, "OVERLAY")
+	bar:SetPoint("TOPLEFT", highlight, "TOPLEFT")
+	bar:SetPoint("BOTTOMLEFT", highlight, "BOTTOMLEFT")
+	bar:SetWidth(2)
+	bar:SetColorTexture(unpack(C.accent))
+	look.SelectedBar = bar
+
+	-- The outfit list's scroll track: flat and dark like the panel, a thin gold thumb
 	local track = OutfitterMainFrameScrollbarTrench
 	for _, part in ipairs({ "Top", "Middle", "Bottom" }) do
 		_G[track:GetName() .. part]:Hide()
 	end
-	frame.Look.Track = T.Fill(track, C.side)
+	look.Track = T.Fill(track, C.side)
 	T.Border(track, C.line)
+	local rail = track:CreateTexture(nil, "BORDER")
+	rail:SetPoint("TOP", 0, -6)
+	rail:SetPoint("BOTTOM", 0, 6)
+	rail:SetWidth(6)
+	rail:SetColorTexture(unpack(C.offTrack))
+	local scrollBar = OutfitterMainFrameScrollFrameScrollBar
+	if scrollBar then
+		local thumb = scrollBar:GetThumbTexture()
+		for _, region in ipairs({ scrollBar:GetRegions() }) do
+			if region ~= thumb and region:GetObjectType() == "Texture" then region:SetAlpha(0) end
+		end
+		if thumb then
+			thumb:SetColorTexture(unpack(C.btnEdge))
+			thumb:SetSize(6, 40)
+		end
+		Fade(scrollBar.ScrollUpButton)
+		Fade(scrollBar.ScrollDownButton)
+	end
+
+	-- Footer: the outfit scripts switch, and New Outfit as a flat red button
+	OutfitterMainFrameButtonBarBackground:Hide()
+	local footer = OutfitterMainFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
+	footer:SetPoint("BOTTOMLEFT", 1, 1)
+	footer:SetPoint("BOTTOMRIGHT", -1, 1)
+	footer:SetHeight(32)
+	footer:SetColorTexture(unpack(C.side))
+	local footerLine = OutfitterMainFrame:CreateTexture(nil, "BORDER")
+	footerLine:SetPoint("BOTTOMLEFT", footer, "TOPLEFT")
+	footerLine:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT")
+	footerLine:SetHeight(1)
+	footerLine:SetColorTexture(unpack(C.line))
+	Flatten(OutfitterNewButton, C.red, C.redHi)
+
+	local scripts = T.SwitchWidget(OutfitterMainFrame)
+	scripts:SetPoint("BOTTOMLEFT", 8, 10)
+	scripts.label = T.Text(scripts, self.cLookOutfitScripts, "GameFontHighlightSmall", C.muted)
+	scripts.label:SetPoint("LEFT", scripts, "RIGHT", 6, 0)
+	scripts:SetHitRectInsets(0, -80, -4, -4)
+	scripts:SetScript("OnClick", function(switch)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		Outfitter:SetAutoSwitch(not switch:IsOn())
+		switch:SetOn(not Outfitter.Settings.Options.DisableAutoSwitch)
+	end)
+	T.Tooltip(scripts, self.cLookOutfitScripts, self.cLookOutfitScriptsDescription)
+	look.Scripts = scripts
+
+	-- Options panel
+	StyleOptions(look)
+
+	-- Slot checkboxes on the character
+	StyleSlotEnables()
+
+	-- Keep the switches and the selected row's bar in step with Outfitter's own updates
+	local function Refresh()
+		if not self.Settings then return end
+		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
+		bar:SetShown(highlight:IsShown())
+		local sidebar = look.Cards[3]
+		if sidebar then
+			local rows = (OutfitterUseSidebarTab and OutfitterUseSidebarTab:IsShown()) and sidebar.rows or sidebar.rows - 1
+			sidebar:SetHeight(30 + rows * ROW_H)
+		end
+	end
+	hooksecurefunc(self, "Update", Refresh)
+	Refresh()
 end
+
+---------------------------------------------------------------------------
+-- The New Outfit / Rename dialog: same panel, header bar, cards and flat controls
+---------------------------------------------------------------------------
+local function StyleSection(section)
+	if not section then return end
+	if section.SetBackdrop then section:SetBackdrop(nil) end
+	T.Fill(section, C.card)
+	T.Border(section, C.line)
+	if section.Title then
+		section.Title:SetFontObject(GameFontNormalSmall)
+		section.Title:SetTextColor(C.orange[1], C.orange[2], C.orange[3])
+		section.Title:SetText((section.Title:GetText() or ""):upper())
+	end
+end
+
+local function StyleField(field)
+	if not field then return end
+	Fade(field.LeftTexture)
+	Fade(field.MiddleTexture)
+	Fade(field.RightTexture)
+	T.Fill(field, C.field)
+	T.Border(field, C.fieldEdge)
+	if field.Title then field.Title:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+end
+
+function Outfitter:StyleDialog(dialog)
+	if not dialog or dialog.Look then return end
+	dialog.Look = {}
+	if dialog.SetBackdrop then dialog:SetBackdrop(nil) end
+	T.Fill(dialog, C.win)
+	T.Border(dialog, C.edge)
+
+	local header = CreateFrame("Frame", nil, dialog)
+	header:SetPoint("TOPLEFT")
+	header:SetPoint("TOPRIGHT")
+	header:SetHeight(22)
+	T.HeaderStrip(header, dialog.Title and dialog.Title:GetText())
+	header:FitLogo(22)
+	dialog.Look.Header = header
+	if dialog.Title then
+		dialog.Title:Hide()
+		hooksecurefunc(dialog.Title, "SetText", function(_, text) header.text:SetText(text) end)
+	end
+	if dialog.TitleBackground then dialog.TitleBackground:Hide() end
+
+	if dialog.DoneButton then Flatten(dialog.DoneButton, C.red, C.redHi) end
+	if dialog.CancelButton then Flatten(dialog.CancelButton, C.card, C.line, C.edge) end
+	for _, key in ipairs({ "InfoSection", "BuildSection", "StatsSection" }) do
+		StyleSection(dialog[key])
+	end
+	StyleField(dialog.Name)
+	if dialog.Name then dialog.Name:SetTextInsets(6, 6, 0, 0) end
+	local menu = dialog.ScriptMenu
+	if menu then
+		StyleField(menu)
+		if menu.Button then ArrowButton(menu.Button) end
+		if menu.Text then
+			menu.Text:SetJustifyH("LEFT")
+			menu.Text:SetPoint("LEFT", menu, "LEFT", 6, 0)
+		end
+	end
+end
+
+hooksecurefunc(Outfitter, "OpenNameOutfitDialog", function(self)
+	self:StyleDialog(self.NameOutfitDialog)
+end)

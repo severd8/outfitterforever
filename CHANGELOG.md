@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+The whole Outfitter Forever window has the new look now, not just its frame. Outfits work exactly as before.
+
+- **Tabs at the top.** Outfits and Options sit under the red header bar instead of hanging below the window.
+- **Outfit list.** Flat checkboxes, category names in orange capitals with a small arrow to fold them, and a flat menu button on each outfit. An outfit with a script shows the script's name in grey beside its name, where the gear icon was. The outfit you've selected has a dark red row with a red bar at its left.
+- **Footer.** An **Outfit scripts** switch turns all automatic outfits off and on (the same as "Disable all outfit scripts" in Options), next to a flat **New Outfit** button.
+- **Options.** On/off switches in three groups: Outfits, Tooltips and Quick access.
+- **New Outfit dialog** and the checkboxes on your character's slots match the rest of the window.
+- The outfit menu, the minimap menu and the outfit bar look the same as before.
+
 ## 1.2.2
 
 - **Fixed: a reload could take gear off a new character.** On a character's first session, the gear you put on yourself wasn't saved. After a `/reload` or logging back in, the next automatic outfit change (a stance, a form, mounting) put you back in the gear you had when Outfitter first saw the character: newly filled slots were emptied, and chat showed "Can't find item" for anything you had sold. What you put on yourself is now saved properly.

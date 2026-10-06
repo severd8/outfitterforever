@@ -169,6 +169,11 @@ Outfitter.cShowMinimapButtonOffDescription = "Turn this on if you want the Outfi
 Outfitter.cAutoSwitch = "Disable all outfit scripts"
 Outfitter.cAutoSwitchOnDescription = "Turn this off to allow outfit scripts to run"
 Outfitter.cAutoSwitchOffDescription = "Turn this on to block all outfit scripts from running"
+-- Forever: the restyled window (OutfitterLook.lua)
+Outfitter.cLookOutfitScripts = "Outfit scripts"
+Outfitter.cLookOutfitScriptsDescription = "On: outfits with a script go on and come off by themselves. Off: no script changes your gear."
+Outfitter.cLookTooltips = "Tooltips"
+Outfitter.cLookQuickAccess = "Quick access"
 Outfitter.cTooltipInfo = "Show 'Used by:' in tooltips"
 Outfitter.cTooltipInfoOnDescription = "Turn this off if you experience performance problems when mousing over equippable items"
 Outfitter.cTooltipInfoOffDescription = "Turn this on if you want to display 'Used By:' information in Tooltip"
