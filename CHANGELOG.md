@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.2
+
+- **The outfit bar and menus in the new look.** The outfit bar is a flat dark panel with a thin gold edge and flat icon buttons; the outfit you wear has a dark red wash. Its settings and the icon picker match the rest of Outfitter Forever, and every Outfitter menu is a flat dark panel with a dark red row under the mouse.
+- **Update to current items** is now right under Rename at the top of the outfit menu: one click to save the gear you're wearing into an outfit.
+- **Waiting for combat.** Gear can't change in combat. If you pick an outfit during a fight, one chat line says it goes on when combat ends. Outfit scripts (stances, forms) stay quiet.
+- **Translations.** Outfitter Forever's own text is now in German, French, Chinese, Korean and Russian too.
+- Smaller download: the old Outfitter manual is no longer included.
+
 ## 1.3.1
 
 - **Edit Script dialog in the new look.** The window for an outfit's script now matches the rest of Outfitter Forever: a red header bar, Settings and Source tabs at the top, flat fields, on/off switches for yes/no settings, and flat Done and Cancel buttons. It works exactly as before.
