@@ -211,6 +211,7 @@ Outfitter.cKeyBinding = "Key Binding"
 Outfitter.cMoveUp = "Move up"
 Outfitter.cMoveDown = "Move down"
 Outfitter.cSortByName = "Sort this list by name"
+Outfitter.cCombatWait = "%s: your gear changes when combat ends."
 
 Outfitter.cSidebarTab = "Use the Equipment Manager tab"
 Outfitter.cSidebarTabOnDescription = "The Equipment Manager tab at the top of your character window opens Outfitter Forever. Turn this off to get the game's Equipment Manager back and use the small Outfitter button instead"

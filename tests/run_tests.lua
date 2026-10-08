@@ -238,13 +238,37 @@ W.Fire("UNIT_SPELLCAST_SENT", "player", "Heroic Strike")
 W.Fire("UNIT_MANA", "player")
 W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Heroic Strike")
 W.Tick(1)
+local function CombatNotes()
+	local count = 0
+	for _, line in ipairs(W.printed) do
+		if tostring(line):find((O.cCombatWait:gsub("^%%s", "")), 1, true) then count = count + 1 end
+	end
+	return count
+end
+local notesBefore = CombatNotes()
 O:WearOutfit(fishing)
 W.Tick(1)
 Check(W.equipped[1] == 1001, "armor isn't changed in combat")
+Check(CombatNotes() == notesBefore + 1, "a chat line says the outfit you picked goes on when combat ends")
+Check(tostring(W.printed[#W.printed]):find(fishing:GetName(), 1, true) ~= nil, "naming the outfit")
+O:RemoveOutfit(fishing)
+O:WearOutfit(fishing)
+W.Tick(1)
+Check(CombatNotes() == notesBefore + 1, "only once per fight")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Tick(3)
 Check(W.equipped[1] == 1002, "the outfit goes on after combat (head has " .. tostring(W.equipped[1]) .. ")")
+-- Scripts (stances, forms) change outfits in every fight: they say nothing
+W.combat = true
+W.Fire("PLAYER_REGEN_DISABLED")
+O:RemoveOutfit(fishing, true)
+O:WearOutfit(fishing, nil, true)
+W.Tick(1)
+Check(CombatNotes() == notesBefore + 1, "an outfit a script changes in combat gets no chat line")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+W.Tick(3)
 O:WearOutfit(battle)
 W.Tick(3)
 

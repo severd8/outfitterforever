@@ -406,4 +406,5 @@ BINDING_NAME_OUTFITTER_DISABLEAUTOMATION = "停用自動換裝"
 	Outfitter.cSidebarTabOnDescription = "角色視窗頂部的裝備管理員標籤會打開 Outfitter Forever。關閉此項可恢復遊戲內建的裝備管理員，並改用 Outfitter 小按鈕"
 	Outfitter.cSidebarTabOffDescription = "開啟此項後，可從角色視窗頂部的裝備管理員標籤打開 Outfitter Forever，取代 Outfitter 小按鈕"
 	Outfitter.cSidebarTabTip = "點擊打開或關閉你的配裝。"
+	Outfitter.cCombatWait = "%s：你的裝備會在戰鬥結束後更換。"
 end

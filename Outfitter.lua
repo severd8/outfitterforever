@@ -1449,6 +1449,7 @@ end
 function Outfitter:RegenEnabled(pEvent)
 	self:BeginEquipmentUpdate()
 	self.InCombat = false
+	self.CombatWaitNoted = nil -- Forever
 	self:EndEquipmentUpdate()
 
 	if self.OutfitBar then
@@ -3252,7 +3253,20 @@ function Outfitter:WearOutfitNow(pOutfit, pLayerID, pCallerIsScript)
 	self:EndEquipmentUpdate(nil, true)
 end
 
+-- Forever: armor can't change in combat, so a change waits until it ends. If you
+-- picked the outfit yourself, say so once per fight (scripts change outfits in
+-- every fight, so they say nothing; nor does your own gear, which has no name)
+function Outfitter:NoteCombatWait(pOutfit, pCallerIsScript)
+	if pCallerIsScript or self.SkipCombatNote or self.CombatWaitNoted then return end
+	if not (self.InCombat or InCombatLockdown()) then return end
+	local vName = pOutfit and pOutfit:GetName()
+	if not vName or vName == "" then return end
+	self.CombatWaitNoted = true
+	self:NoteMessage(self.cCombatWait, vName)
+end
+
 function Outfitter:WearOutfit(pOutfit, pLayerID, pCallerIsScript)
+	self:NoteCombatWait(pOutfit, pCallerIsScript) -- Forever
 	self:BeginEquipmentUpdate()
 
 	-- Update the equipment
@@ -3324,6 +3338,7 @@ function Outfitter:RemoveOutfit(pOutfit, pCallerIsScript)
 	if not self.OutfitStack:RemoveOutfit(pOutfit) then
 		return
 	end
+	self:NoteCombatWait(pOutfit, pCallerIsScript) -- Forever
 
 	-- If it's a Complete outfit, move it to the bottom of the list of recent complete outfits
 
@@ -3372,7 +3387,9 @@ function Outfitter:RemoveOutfit(pOutfit, pCallerIsScript)
 			vOutfit = self:FindOutfitByName(vOutfitName)
 
 			if vOutfit and vOutfit.CategoryID == "Complete" then
+				self.SkipCombatNote = pCallerIsScript -- Forever: a script's change stays quiet
 				self:WearOutfit(vOutfit)
+				self.SkipCombatNote = nil
 				break
 			end
 

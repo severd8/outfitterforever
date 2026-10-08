@@ -13,7 +13,7 @@ end
 -- The strings the port added (or, for the tab, changed from upstream's "Outfitter")
 local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDescription", "cLookTooltips",
 	"cLookQuickAccess", "cOpenCharacterWindow", "cMoveUp", "cMoveDown", "cSortByName", "cSidebarTab",
-	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip" }
+	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip", "cCombatWait" }
 
 local function Session(locale)
 	_G.W = nil
@@ -51,6 +51,7 @@ for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	end
 	local _, placeholders = tostring(O.cOpenCharacterWindow):gsub("%%s", "")
 	Check(placeholders == 1, locale .. ": cOpenCharacterWindow keeps its one %s for the key")
+	Check(tostring(O.cCombatWait):sub(1, 2) == "%s", locale .. ": cCombatWait starts with the outfit's name (%s)")
 	Check(O.cOutfitterTabTitle ~= "Outfitter", locale .. ": the first tab is named for outfits, not \"Outfitter\"")
 	for _, message in ipairs(W.errors) do Check(false, locale .. ": Lua error: " .. message:sub(1, 300)) end
 end

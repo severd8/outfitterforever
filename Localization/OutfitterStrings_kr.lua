@@ -295,4 +295,5 @@ if GetLocale() == "koKR" then
 	Outfitter.cSidebarTabOnDescription = "캐릭터 창 위쪽의 장비 관리자 탭이 Outfitter Forever를 엽니다. 게임의 장비 관리자를 되돌리고 작은 Outfitter 버튼을 쓰려면 끄세요"
 	Outfitter.cSidebarTabOffDescription = "캐릭터 창 위쪽의 장비 관리자 탭에서 Outfitter Forever를 열려면 켜세요. 작은 Outfitter 버튼 대신 쓰입니다"
 	Outfitter.cSidebarTabTip = "클릭하면 장비 세트 창을 열거나 닫습니다."
+	Outfitter.cCombatWait = "%s: 전투가 끝나면 장비가 바뀝니다."
 end

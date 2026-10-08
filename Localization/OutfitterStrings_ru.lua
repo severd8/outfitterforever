@@ -408,4 +408,5 @@ if GetLocale() == "ruRU" then
 	Outfitter.cSidebarTabOnDescription = "Вкладка менеджера экипировки вверху окна персонажа открывает Outfitter Forever. Выключите, чтобы вернуть менеджер экипировки игры и пользоваться маленькой кнопкой Outfitter"
 	Outfitter.cSidebarTabOffDescription = "Включите, чтобы открывать Outfitter Forever вкладкой менеджера экипировки вверху окна персонажа вместо маленькой кнопки Outfitter"
 	Outfitter.cSidebarTabTip = "Нажмите, чтобы открыть или закрыть комплекты."
+	Outfitter.cCombatWait = "%s: экипировка сменится, когда закончится бой."
 end

@@ -277,4 +277,5 @@ if GetLocale() == "deDE" then
 	Outfitter.cSidebarTabOnDescription = "Der Reiter des Ausrüstungsmanagers oben in deinem Charakterfenster öffnet Outfitter Forever. Schalte dies aus, um den Ausrüstungsmanager des Spiels zurückzubekommen und stattdessen den kleinen Outfitter-Knopf zu nutzen"
 	Outfitter.cSidebarTabOffDescription = "Schalte dies ein, um Outfitter Forever über den Reiter des Ausrüstungsmanagers oben in deinem Charakterfenster zu öffnen, statt über den kleinen Outfitter-Knopf"
 	Outfitter.cSidebarTabTip = "Klicken, um deine Outfits zu öffnen oder zu schließen."
+	Outfitter.cCombatWait = "%s: Deine Ausrüstung wechselt, wenn der Kampf endet."
 end

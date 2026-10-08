@@ -391,4 +391,5 @@ if GetLocale() == "frFR" then
 	Outfitter.cSidebarTabOnDescription = "L'onglet du gestionnaire d'équipement en haut de votre fenêtre de personnage ouvre Outfitter Forever. Désactivez cette option pour retrouver le gestionnaire d'équipement du jeu et utiliser le petit bouton Outfitter à la place"
 	Outfitter.cSidebarTabOffDescription = "Activez cette option pour ouvrir Outfitter Forever depuis l'onglet du gestionnaire d'équipement en haut de votre fenêtre de personnage, à la place du petit bouton Outfitter"
 	Outfitter.cSidebarTabTip = "Cliquez pour ouvrir ou fermer vos tenues."
+	Outfitter.cCombatWait = "%s : votre équipement changera à la fin du combat."
 end

@@ -416,4 +416,5 @@ if GetLocale() == "zhCN" then
 	Outfitter.cSidebarTabOnDescription = "角色窗口顶部的装备管理标签会打开 Outfitter Forever。关闭此项可恢复游戏自带的装备管理，并改用 Outfitter 小按钮"
 	Outfitter.cSidebarTabOffDescription = "开启此项后，可从角色窗口顶部的装备管理标签打开 Outfitter Forever，代替 Outfitter 小按钮"
 	Outfitter.cSidebarTabTip = "点击打开或关闭你的套装。"
+	Outfitter.cCombatWait = "%s：你的装备会在战斗结束后更换。"
 end
