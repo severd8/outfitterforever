@@ -19,6 +19,7 @@ Keep Outfitter exactly as it is. Only change what Forever needs, and keep each c
 - Everything else is upstream's code with the Forever changes below.
 - `.pkgmeta` leaves upstream's `Documentation` folder (user manual, revision history, images) out of the download: it describes Outfitter, not this port, and nothing loads it.
 - `tests/` — offline tests (not shipped). See Testing.
+- `CURSEFORGE.md` — the CurseForge project description, pasted by hand (not shipped). It's the README adjusted: no logo, a short install note, full links. When a change shows on the project page (features, commands), update both and give the whole file to paste; the packager only uploads `CHANGELOG.md` with each file, so the description never changes on its own.
 
 ## What Forever is
 

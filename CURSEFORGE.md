@@ -1,5 +1,3 @@
-<p align="center"><img src="art/logo.png" width="200" alt="Outfitter Forever"></p>
-
 # Outfitter Forever
 
 **Outfitter, ported to World of Warcraft: Forever.**
@@ -36,9 +34,7 @@ Outfitter Forever is fitted to Forever's game and its addon rules:
 
 ## Installation
 
-1. Download the latest release.
-2. Unzip it into your WoW: Forever `Interface\AddOns` folder so you end up with an `AddOns\OutfitterForever\` folder.
-3. Restart the game, or type `/reload` if it's already running.
+Install it with the CurseForge app, or download the file and unzip it into your WoW: Forever `Interface\AddOns` folder. Then restart the game or type `/reload`.
 
 Don't install another copy of Outfitter alongside it.
 
@@ -80,4 +76,4 @@ Outfitter Forever is free. If it has saved you some gear juggling, you can [leav
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/severd8/outfitterforever/blob/main/LICENSE).
