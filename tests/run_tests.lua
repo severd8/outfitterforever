@@ -562,9 +562,10 @@ do
 	for index, card in ipairs(look.Cards or {}) do
 		Check(card:IsVisible(), "option card " .. index .. " shows")
 	end
-	Check(AnchoredTo(env.OutfitterAutoSwitch, look.Cards[1]) and AnchoredTo(env.OutfitterTooltipInfo, look.Cards[2])
+	Check(AnchoredTo(look.OptionsScripts, look.Cards[1]) and AnchoredTo(env.OutfitterShowHotkeyMessages, look.Cards[1])
+		and AnchoredTo(env.OutfitterTooltipInfo, look.Cards[2])
 		and AnchoredTo(env.OutfitterShowOutfitBar, look.Cards[3]), "each option sits in its card")
-	Check(env.OutfitterAutoSwitch:GetWidth() == 30, "options are on/off switches")
+	Check(env.OutfitterShowHotkeyMessages:GetWidth() == 30, "options are on/off switches")
 	look.Tabs[1]:Click()
 	W.Tick(0.2)
 	Check(env.OutfitterMainFrame:IsShown(), "the Outfits tab brings the list back")
@@ -597,12 +598,84 @@ do
 	look.Scripts:Click()
 	Check(not O.Settings.Options.DisableAutoSwitch and look.Scripts:IsOn(), "switching it on runs them again")
 
+	-- Options has the same switch, reading the same way (on = scripts run), not
+	-- Outfitter's "Disable all outfit scripts" box, which was on when they were off
+	O:ShowPanel(2)
+	W.Tick(0.2)
+	local optionsScripts = look.OptionsScripts
+	Check(optionsScripts and optionsScripts:IsVisible(), "Options has an Outfit scripts switch")
+	Check(not env.OutfitterAutoSwitch:IsVisible(), "instead of the Disable all outfit scripts box")
+	if optionsScripts then
+		Check(optionsScripts.label:GetText() == O.cLookOutfitScripts, "named like the footer's")
+		Check(optionsScripts:IsOn() and not O.Settings.Options.DisableAutoSwitch, "on while scripts run")
+		optionsScripts:Click()
+		W.Tick(0.1)
+		Check(O.Settings.Options.DisableAutoSwitch and not optionsScripts:IsOn(), "switching it off stops outfit scripts")
+		Check(not look.Scripts:IsOn(), "and the footer's switch follows")
+		look.Scripts:Click()
+		W.Tick(0.1)
+		Check(not O.Settings.Options.DisableAutoSwitch and optionsScripts:IsOn(), "the footer's switch turns it back on")
+	end
+	O:ShowPanel(1)
+	W.Tick(0.2)
+
 	-- The New Outfit dialog gets the header bar with its title
 	O:OpenNameOutfitDialog(nil)
 	local dialog = O.NameOutfitDialog
 	Check(dialog.Look and dialog.Look.Header.text:GetText() == O.cNewOutfit, "the New Outfit dialog has the header bar and its title")
 	dialog:Cancel()
 	W.Tick(0.2)
+
+	-- The Edit Script dialog (outfit menu > script settings) has the same look
+	O.OutfitMenuActions.SCRIPT_SETTINGS(O, fisher)
+	W.Tick(0.2)
+	local editor = env.OutfitterEditScriptDialog
+	local editorLook = editor.Look
+	Check(editor:IsShown() and editorLook ~= nil, "the Edit Script dialog opens restyled")
+	if editorLook then
+		Check(editorLook.Header.text:GetText() == env.OutfitterEditScriptDialogTitle:GetText()
+			and not env.OutfitterEditScriptDialogTitle:IsShown(), "its title is in the header bar")
+		Check(editor.CloseButton and not editor.CloseButton:IsShown() and editorLook.Close:IsShown(), "with a flat X")
+		local artShown = 0
+		for _, region in ipairs({ editor:GetRegions() }) do
+			if region:GetObjectType() == "Texture" and region:IsShown() and region:GetTexture() ~= nil then
+				artShown = artShown + 1
+			end
+		end
+		Check(artShown == 0, "none of the old frame art shows (" .. artShown .. " textures)")
+		Check(not env.OutfitterEditScriptDialogTab1:IsShown() and not env.OutfitterEditScriptDialogTab2:IsShown(),
+			"the game's tabs below the dialog are hidden")
+		Check(editorLook.Tabs[1].on and not editorLook.Tabs[2].on, "flat tabs on top, Settings lit")
+		local function Flat(button)
+			local art = 0
+			for _, piece in ipairs({ button:GetNormalTexture() or false, button.Left or false, button.Middle or false, button.Right or false }) do
+				if piece and piece:GetAlpha() > 0 then art = art + 1 end
+			end
+			return art == 0
+		end
+		Check(Flat(env.OutfitterEditScriptDialogDoneButton) and Flat(env.OutfitterEditScriptDialogCancelButton), "Done and Cancel are flat buttons")
+		-- The Fishing script's settings: a yes/no setting is a switch, a number a flat field
+		local switch, field
+		for frameType, frames in pairs(editor.FrameCache) do
+			for _, frame in ipairs(frames) do
+				if frame:IsShown() and frameType == "Checkbox" then switch = frame end
+				if frame:IsShown() and frameType == "EditBox" then field = frame end
+			end
+		end
+		Check(switch and switch:GetWidth() == 30, "a yes/no setting is an on/off switch")
+		Check(field and env[field:GetName() .. "Center"]:GetAlpha() == 0, "a number setting is a flat field")
+		editorLook.Tabs[2]:Click()
+		W.Tick(0.2)
+		Check(env.OutfitterEditScriptDialogSource:IsShown() and editorLook.Tabs[2].on and not editorLook.Tabs[1].on,
+			"the Source tab shows the script")
+		Check(env.OutfitterEditScriptDialogSourceScriptCenter:GetAlpha() == 0, "in a flat field")
+		editorLook.Tabs[1]:Click()
+		W.Tick(0.2)
+		Check(env.OutfitterEditScriptDialogSettings:IsShown() and editorLook.Tabs[1].on, "and back to Settings")
+		env.OutfitterEditScriptDialogCancelButton:Click()
+		W.Tick(0.2)
+		Check(not editor:IsShown(), "Cancel closes it")
+	end
 end
 
 ----------------------------------------
@@ -1095,6 +1168,9 @@ do
 	W.SafeCall(O.FindAndAddItemsToOutfit, O, O:NewEmptyOutfit("stray test"), nil, {}, O:GetInventoryCache())
 	W.SafeCall(O.CreateEmptySpecialOccasionOutfit, O, nil, "Battle Gear")
 	W.SafeCall(O.DebugStack, O)
+	-- The UTF-8 library puts utf8reverse in the string table, where any addon can call it
+	local _, reversed = W.SafeCall(env.string.utf8reverse, "a\226\130\172b")
+	Check(reversed == "b\226\130\172a", "string.utf8reverse reverses text with a three-byte character (got " .. tostring(reversed) .. ")")
 	-- A global with a name of the addon's own is fine: frames from the XML, saved
 	-- variables, slash commands, key binding names and the libraries it ships.
 	-- Anything else is a variable that was meant to be local (and "_" is the worst:

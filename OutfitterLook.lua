@@ -74,6 +74,21 @@ local function ArrowButton(button)
 	if disabled then disabled:SetVertexColor(C.grey[1], C.grey[2], C.grey[3]) end
 end
 
+-- A scroll bar with only a thin gold thumb left showing
+local function FlatScrollBar(scrollBar)
+	if not scrollBar then return end
+	local thumb = scrollBar:GetThumbTexture()
+	for _, region in ipairs({ scrollBar:GetRegions() }) do
+		if region ~= thumb and region:GetObjectType() == "Texture" then region:SetAlpha(0) end
+	end
+	if thumb then
+		thumb:SetColorTexture(unpack(C.btnEdge))
+		thumb:SetSize(6, 40)
+	end
+	Fade(scrollBar.ScrollUpButton)
+	Fade(scrollBar.ScrollDownButton)
+end
+
 -- What an outfit's script is called, for the line beside its name
 local function ScriptName(outfit)
 	if outfit.ScriptID then
@@ -183,10 +198,11 @@ end
 ---------------------------------------------------------------------------
 local TAB_H = 24
 
-local function MakeTabs(frame, header)
+-- Flat tabs under a header bar. choose(index) is what clicking a tab does;
+-- without a width the tabs share the frame's width.
+local function MakeTabs(frame, header, labels, choose, width)
 	local tabs = {}
-	local labels = { Outfitter.cOutfitterTabTitle, Outfitter.cOptionsTabTitle }
-	local width = (frame:GetWidth() or 256) / #labels
+	width = width or (frame:GetWidth() or 256) / #labels
 	for index, label in ipairs(labels) do
 		local tab = CreateFrame("Button", nil, frame)
 		tab:SetSize(width, TAB_H)
@@ -202,7 +218,7 @@ local function MakeTabs(frame, header)
 		tab.text:SetJustifyH("CENTER")
 		tab:SetScript("OnClick", function()
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
-			Outfitter:ShowPanel(index)
+			choose(index)
 		end)
 		tab:SetScript("OnEnter", function(self)
 			if not self.on then self.bg:SetColorTexture(unpack(C.card)) end
@@ -282,6 +298,21 @@ local function MakeSwitch(check)
 	end
 end
 
+-- The two "Outfit scripts" switches (footer and Options) do the same thing:
+-- on means outfits with a script change by themselves
+local function ScriptsSwitchClick(switch)
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+	Outfitter:SetAutoSwitch(not switch:IsOn())
+	switch:SetOn(not Outfitter.Settings.Options.DisableAutoSwitch)
+end
+
+local function ScriptsSwitch(parent)
+	local switch = T.SwitchWidget(parent)
+	switch:SetScript("OnClick", ScriptsSwitchClick)
+	T.Tooltip(switch, Outfitter.cLookOutfitScripts, Outfitter.cLookOutfitScriptsDescription)
+	return switch
+end
+
 local function StyleOptions(look)
 	local panel = OutfitterOptionsFrame
 	HideTitles(panel, Outfitter.cOptionsTitle, "Outfitter_cOptionsTitle")
@@ -299,7 +330,18 @@ local function StyleOptions(look)
 		card:SetFrameLevel(panel:GetFrameLevel())
 		for row, checkName in ipairs(info[2]) do
 			local check = _G[checkName]
-			if check then
+			if checkName == "OutfitterAutoSwitch" and check then
+				-- Outfitter's box is "Disable all outfit scripts" (ticked = off). It's
+				-- replaced by a switch that reads like the footer's: on = scripts run.
+				check:Hide()
+				local switch = ScriptsSwitch(card)
+				switch:SetPoint("TOPLEFT", card, "TOPLEFT", 12, -26 - (row - 1) * ROW_H)
+				switch:SetFrameLevel(card:GetFrameLevel() + 2)
+				switch.label = T.Text(switch, Outfitter.cLookOutfitScripts, "GameFontHighlightSmall", C.title)
+				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
+				switch:SetHitRectInsets(0, -188, -4, -4)
+				look.OptionsScripts = switch
+			elseif check then
 				MakeSwitch(check)
 				check:ClearAllPoints()
 				check:SetPoint("TOPLEFT", card, "TOPLEFT", 12, -26 - (row - 1) * ROW_H)
@@ -364,7 +406,8 @@ function Outfitter:ApplyLook()
 	look.Close = close
 
 	-- Outfits / Options tabs under the header, in place of the game's tabs below the window
-	look.Tabs = MakeTabs(frame, header)
+	look.Tabs = MakeTabs(frame, header, { self.cOutfitterTabTitle, self.cOptionsTabTitle },
+		function(index) Outfitter:ShowPanel(index) end)
 	for index = 1, #look.Tabs do
 		local old = _G["OutfitterFrameTab" .. index]
 		if old then old:Hide() end
@@ -402,19 +445,7 @@ function Outfitter:ApplyLook()
 	rail:SetPoint("BOTTOM", 0, 6)
 	rail:SetWidth(6)
 	rail:SetColorTexture(unpack(C.offTrack))
-	local scrollBar = OutfitterMainFrameScrollFrameScrollBar
-	if scrollBar then
-		local thumb = scrollBar:GetThumbTexture()
-		for _, region in ipairs({ scrollBar:GetRegions() }) do
-			if region ~= thumb and region:GetObjectType() == "Texture" then region:SetAlpha(0) end
-		end
-		if thumb then
-			thumb:SetColorTexture(unpack(C.btnEdge))
-			thumb:SetSize(6, 40)
-		end
-		Fade(scrollBar.ScrollUpButton)
-		Fade(scrollBar.ScrollDownButton)
-	end
+	FlatScrollBar(OutfitterMainFrameScrollFrameScrollBar)
 
 	-- Footer: the outfit scripts switch, and New Outfit as a flat red button
 	OutfitterMainFrameButtonBarBackground:Hide()
@@ -430,17 +461,11 @@ function Outfitter:ApplyLook()
 	footerLine:SetColorTexture(unpack(C.line))
 	Flatten(OutfitterNewButton, C.red, C.redHi)
 
-	local scripts = T.SwitchWidget(OutfitterMainFrame)
+	local scripts = ScriptsSwitch(OutfitterMainFrame)
 	scripts:SetPoint("BOTTOMLEFT", 8, 10)
 	scripts.label = T.Text(scripts, self.cLookOutfitScripts, "GameFontHighlightSmall", C.muted)
 	scripts.label:SetPoint("LEFT", scripts, "RIGHT", 6, 0)
 	scripts:SetHitRectInsets(0, -80, -4, -4)
-	scripts:SetScript("OnClick", function(switch)
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-		Outfitter:SetAutoSwitch(not switch:IsOn())
-		switch:SetOn(not Outfitter.Settings.Options.DisableAutoSwitch)
-	end)
-	T.Tooltip(scripts, self.cLookOutfitScripts, self.cLookOutfitScriptsDescription)
 	look.Scripts = scripts
 
 	-- Options panel
@@ -453,6 +478,7 @@ function Outfitter:ApplyLook()
 	local function Refresh()
 		if not self.Settings then return end
 		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
+		if look.OptionsScripts then look.OptionsScripts:SetOn(scripts:IsOn()) end
 		bar:SetShown(highlight:IsShown())
 		local sidebar = look.Cards[3]
 		if sidebar then
@@ -529,4 +555,131 @@ end
 
 hooksecurefunc(Outfitter, "OpenNameOutfitDialog", function(self)
 	self:StyleDialog(self.NameOutfitDialog)
+end)
+
+---------------------------------------------------------------------------
+-- The Edit Script dialog: header bar, flat tabs under it, flat fields and buttons
+---------------------------------------------------------------------------
+-- Outfitter's text boxes (OutfitterInputFrameTemplate): a flat field instead of the border art
+local function StyleInput(frame)
+	if not frame or frame.Look then return end
+	frame.Look = true
+	local name = frame:GetName()
+	for _, part in ipairs({ "TopLeft", "TopRight", "BottomLeft", "BottomRight", "Left", "Right", "Top", "Bottom", "Center" }) do
+		Fade(_G[name .. part])
+	end
+	T.Fill(frame, C.field)
+	T.Border(frame, C.fieldEdge)
+	local label = _G[name .. "Label"]
+	if label then label:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+	FlatScrollBar(_G[name .. "ScrollBar"] or frame.ScrollBar)
+	local zoneButton = _G[name .. "ZoneButton"]
+	if zoneButton then Flatten(zoneButton, C.card, C.line, C.edge) end
+end
+
+-- The controls a script's settings ask for, made as the Settings tab is shown
+local function StyleSettingsFields(dialog)
+	for frameType, frames in pairs(dialog.FrameCache or {}) do
+		for _, frame in ipairs(frames) do
+			if frameType == "Checkbox" then
+				if not frame.Look then
+					frame.Look = true
+					MakeSwitch(frame)
+				end
+			else
+				StyleInput(frame)
+			end
+		end
+	end
+end
+
+function Outfitter:StyleScriptDialog(dialog)
+	if not dialog or dialog.Look then return end
+	local look = {}
+	dialog.Look = look
+	local name = dialog:GetName()
+
+	-- The portrait frame art, the mail icon and the button bar go; a flat panel instead
+	for _, region in ipairs({ dialog:GetRegions() }) do
+		if region:GetObjectType() == "Texture" then region:Hide() end
+	end
+	T.Fill(dialog, C.win)
+	T.Border(dialog, C.edge)
+
+	-- Header bar with the dialog's title, and a flat X (it saves, like the old one)
+	local header = CreateFrame("Frame", nil, dialog)
+	header:SetPoint("TOPLEFT")
+	header:SetPoint("TOPRIGHT")
+	header:SetHeight(22)
+	local title = dialog.Widgets.Title
+	T.HeaderStrip(header, title:GetText())
+	header:FitLogo(22)
+	title:Hide()
+	hooksecurefunc(title, "SetText", function(_, text) header.text:SetText(text) end)
+	if dialog.CloseButton then dialog.CloseButton:Hide() end
+	local close = T.FlatButton(header, "X", 18, 18)
+	close:SetPoint("RIGHT", -3, 0)
+	close:SetScript("OnClick", function() dialog:Done() end)
+	header.text:SetPoint("RIGHT", close, "LEFT", -4, 0)
+	look.Header, look.Close = header, close
+
+	-- Settings / Source tabs under the header, in place of the game's tabs below the dialog
+	look.Tabs = MakeTabs(dialog, header, { self.cSettings, self.cSource },
+		function(index) dialog:SetPanelIndex(index) end, 110)
+	for index = 1, 2 do
+		local old = _G[name .. "Tab" .. index]
+		if old then old:Hide() end
+	end
+	look.Tabs.Paint(dialog.selectedTab)
+
+	-- The preset script menu, moved down below the tabs
+	local menu = dialog.Widgets.PresetScript
+	if menu then
+		StyleField(menu)
+		if menu.Button then ArrowButton(menu.Button) end
+		if menu.Text then
+			menu.Text:SetJustifyH("LEFT")
+			menu.Text:SetPoint("LEFT", menu, "LEFT", 6, 0)
+		end
+		menu:ClearAllPoints()
+		menu:SetPoint("TOPLEFT", dialog, "TOPLEFT", 330, -54)
+	end
+
+	-- The script's text box and its status line
+	StyleInput(_G[name .. "SourceScript"])
+	local statusLabel = _G[name .. "SourceStatusLabel"]
+	if statusLabel then statusLabel:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+	local description = dialog.Widgets.SettingsDescription
+	if description then description:SetTextColor(C.title[1], C.title[2], C.title[3]) end
+
+	-- Footer: a flat strip with Done (red) and Cancel
+	local footer = dialog:CreateTexture(nil, "BACKGROUND", nil, -7)
+	footer:SetPoint("BOTTOMLEFT", 1, 1)
+	footer:SetPoint("BOTTOMRIGHT", -1, 1)
+	footer:SetHeight(34)
+	footer:SetColorTexture(unpack(C.side))
+	local footerLine = dialog:CreateTexture(nil, "BORDER")
+	footerLine:SetPoint("BOTTOMLEFT", footer, "TOPLEFT")
+	footerLine:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT")
+	footerLine:SetHeight(1)
+	footerLine:SetColorTexture(unpack(C.line))
+	Flatten(_G[name .. "DoneButton"], C.red, C.redHi)
+	Flatten(_G[name .. "CancelButton"], C.card, C.line, C.edge)
+
+	StyleSettingsFields(dialog)
+end
+
+-- Outfitter.xml copies _EditScriptDialog's methods into the dialog as it builds it,
+-- so these hooks are set here, before that
+hooksecurefunc(Outfitter._EditScriptDialog, "Open", function(self)
+	Outfitter:StyleScriptDialog(self)
+	StyleSettingsFields(self)
+end)
+
+hooksecurefunc(Outfitter._EditScriptDialog, "ConstructSettingsFields", function(self)
+	if self.Look then StyleSettingsFields(self) end
+end)
+
+hooksecurefunc(Outfitter._EditScriptDialog, "SetPanelIndex", function(self, index)
+	if self.Look then self.Look.Tabs.Paint(index) end
 end)
