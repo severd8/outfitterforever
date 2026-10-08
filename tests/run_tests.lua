@@ -719,6 +719,83 @@ O:ShowPanel(1)
 W.Tick(0.5)
 
 ----------------------------------------
+Step("the outfit bar, its dialogs and the menus have the shared look")
+do
+	-- The bar and the icon picker are built when Outfitter starts; that used to stop
+	-- with an error printed in chat
+	for _, line in ipairs(W.printed) do
+		Check(not tostring(line):find("Error dispatching event", 1, true), "no error while Outfitter starts: " .. tostring(line))
+	end
+	O.OutfitBar:Show()
+	W.Tick(0.5)
+	local bar = O.OutfitBar.Bars[1]
+	Check(bar and bar.Look ~= nil, "the outfit bar is restyled")
+	if bar and bar.Look then
+		local stone = 0
+		for _, texture in ipairs(bar.BackgroundTextures) do
+			if texture:IsShown() then stone = stone + 1 end
+		end
+		Check(stone == 0, "none of the stone background shows (" .. stone .. ")")
+		Check(bar.Look.Fill:IsShown(), "a flat panel instead")
+		local button = bar.Buttons[1]
+		Check(button.Look and (button:GetNormalTexture() == nil or button:GetNormalTexture():GetAlpha() == 0), "its buttons are flat")
+		bar:ShowBackground(false)
+		Check(not bar.Look.Fill:IsShown() and stone == 0, "Hide background hides the flat panel")
+		bar:ShowBackground(true)
+		Check(bar.Look.Fill:IsShown(), "and shows it again")
+	end
+	local drag = O.OutfitBar.DragBar1
+	Check(drag and drag.DragTexture:GetTexture() == nil, "the drag handle is a flat bar, not the grip art")
+
+	-- Its settings (right-click a drag handle)
+	O.OutfitBar:DragBar_OnClick("RightButton")
+	W.Tick(0.2)
+	local settings = O.OutfitBar.SettingsDialog
+	Check(settings and settings:IsShown() and settings.Look, "the bar's settings are restyled")
+	if settings and settings.Look then
+		Check(settings.VerticalCheckbutton:GetWidth() == 30, "with switches")
+		settings.VerticalCheckbutton:Click()
+		W.Tick(0.2)
+		settings.VerticalCheckbutton:Click()
+		W.Tick(0.2)
+	end
+	O.OutfitBar:DragBar_OnClick("RightButton")
+	W.Tick(0.2)
+
+	-- The icon picker (outfit menu > choose icon)
+	local picker = env.OutfitterChooseIconDialog
+	O.OutfitMenuActions.OUTFITBAR_CHOOSEICON(O, fishing)
+	W.Tick(0.2)
+	Check(picker:IsShown() and picker.Look and picker.Look.Header.text:GetText() == env.OutfitterChooseIconDialogTitle:GetText(),
+		"the icon picker has the header bar with its title")
+	if picker.Look then
+		Check(env.OutfitterChooseIconDialogOKButton:GetFontString() == nil
+			or select(1, env.OutfitterChooseIconDialogOKButton:GetFontString():GetTextColor()) == env.Outfitter.Theme.C.gold[1],
+			"flat OK button")
+		Check(picker.IconButtons[1] and picker.IconButtons[1].Look, "flat icon buttons")
+	end
+	env.OutfitterChooseIconDialogCancelButton:Click()
+	W.Tick(0.2)
+	Check(not picker:IsShown(), "Cancel closes the icon picker")
+	O.OutfitBar:Hide()
+	W.Tick(0.2)
+
+	-- The outfit menu
+	O:ShowOutfitMenuAtCursor(fishing)
+	W.Tick(0.2)
+	local menuFrame = O.outfitMenu and O.outfitMenu.menuFrame
+	Check(menuFrame and menuFrame.Look and menuFrame.Look.Fill:IsShown(), "the outfit menu is a flat panel")
+	if menuFrame then
+		Check(not menuFrame.NineSlice or not menuFrame.NineSlice:IsShown(), "without the tooltip border")
+		local line = menuFrame.buttons and menuFrame.buttons[2]
+		local highlight = line and line:GetHighlightTexture()
+		Check(highlight and highlight:GetTexture() == nil, "a line under the mouse gets a flat highlight")
+	end
+	O:HideOutfitMenu()
+	W.Tick(0.5)
+end
+
+----------------------------------------
 Step("the Equipment Manager tab opens Outfitter")
 do
 	if not env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end

@@ -110,6 +110,7 @@ local function InitializeFrame(frame)
 		frame:SetScale(frame:GetScale() * GameTooltip:GetEffectiveScale() / frame:GetEffectiveScale())
 	end
 	--frame:SetBackdrop(BACKDROP_DARK_DIALOG_32_32) -- keep for nostalgia (the original thick gray border for a dialog)
+	if lib.StyleFrame then lib.StyleFrame(frame) end -- Outfitter Forever: the shared look (OutfitterLook.lua)
 
 end
 
@@ -565,6 +566,7 @@ do
 		frame.clickable = true
 		frame.enabled = true
 		frame:Enable()
+		if lib.StyleButton then lib.StyleButton(frame) end -- Outfitter Forever: the shared look (OutfitterLook.lua)
 
 		return frame
 	end

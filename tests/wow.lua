@@ -382,6 +382,8 @@ function Frame:CreateAnimationGroup(name)
 end
 
 function Frame:SetTexture(texture) self.__texture = texture return true end
+-- A colour fill replaces the texture's file, as in the game
+function Frame:SetColorTexture(r, g, b, a) self.__texture = nil self.__atlas = nil self.__color = { r, g, b, a } end
 function Frame:GetTexture() return self.__texture end
 function Frame:GetTextureFileID() return type(self.__texture) == "number" and self.__texture or nil end
 function Frame:GetTextureFilePath() return self.__texture end
@@ -520,6 +522,14 @@ local function AddParts(frame, template)
 		if part.type == "FontString" and (part.suffix == "Text" or part.key == "Text") then
 			frame.__fontString = piece
 		end
+	end
+	-- Forever's FauxScrollFrameTemplate has a scroll child (Blizzard_SharedXML/SecureScrollTemplates.xml);
+	-- the generated parts list doesn't carry <ScrollChild>
+	if template == "FauxScrollFrameTemplate" and not frame.__scrollChild then
+		local child = NewFrame("Frame", frame.__name and (frame.__name .. "ScrollChildFrame") or nil, frame)
+		child:SetSize(300, 334)
+		frame.ScrollChildFrame = child
+		frame.__scrollChild = child
 	end
 end
 AddTemplateParts = function(frame, templates)

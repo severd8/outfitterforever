@@ -683,3 +683,184 @@ end)
 hooksecurefunc(Outfitter._EditScriptDialog, "SetPanelIndex", function(self, index)
 	if self.Look then self.Look.Tabs.Paint(index) end
 end)
+
+---------------------------------------------------------------------------
+-- The outfit bar: a flat dark panel with a thin gold edge, flat icon buttons,
+-- thin gold drag handles, and its two dialogs in the same look
+---------------------------------------------------------------------------
+-- An icon button (ActionButtonTemplate): the slot art goes, the icon fills it
+-- with a gold edge; worn is a dark red wash, hover a light one
+local function StyleIconButton(button)
+	if not button or button.Look then return end
+	button.Look = true
+	Fade(button:GetNormalTexture())
+	Fade(button:GetPushedTexture())
+	for _, key in ipairs({ "SlotArt", "SlotBackground", "Border", "NormalTexture", "FloatingBG" }) do
+		if type(button[key]) == "table" and button[key].SetAlpha then Fade(button[key]) end
+	end
+	local icon = button.icon or button.Icon or _G[button:GetName() .. "Icon"]
+	if icon then
+		if button.IconMask and icon.RemoveMaskTexture then icon:RemoveMaskTexture(button.IconMask) end
+		icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	end
+	T.Fill(button, C.field)
+	T.Border(button, C.btnEdge)
+	local checked = button:GetCheckedTexture()
+	if checked then
+		checked:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.35)
+		checked:SetBlendMode("BLEND")
+	end
+	local highlight = button:GetHighlightTexture()
+	if highlight then
+		highlight:SetColorTexture(1, 1, 1, 0.15)
+		highlight:SetBlendMode("BLEND")
+	end
+end
+
+-- The bar: upstream's stone background is always hidden; "Hide background"
+-- hides the flat panel instead
+local function StyleBar(bar)
+	if not bar.Look then
+		bar.Look = { Fill = T.Fill(bar, { C.win[1], C.win[2], C.win[3], 0.9 }), Edges = T.Border(bar, C.btnEdge) }
+	end
+	for _, texture in ipairs(bar.BackgroundTextures or {}) do texture:Hide() end
+	local show = not bar.HideBackground
+	bar.Look.Fill:SetShown(show)
+	for _, edge in ipairs(bar.Look.Edges) do edge:SetShown(show) end
+	for _, button in ipairs(bar.Buttons or {}) do StyleIconButton(button) end
+end
+
+-- Outfitter.xml / OutfitterBar.lua copy these methods into the frames as they
+-- make them, so the hooks are set here, before that
+hooksecurefunc(Outfitter._ButtonBar, "SetDimensions", StyleBar)
+hooksecurefunc(Outfitter._ButtonBar, "ShowBackground", StyleBar)
+
+-- Drag handles: a thin gold bar in place of the grip art
+hooksecurefunc(Outfitter.OutfitBar._DragBar, "SetVerticalOrientation", function(self, vertical)
+	local texture = self.DragTexture
+	texture:SetTexCoord(0, 1, 0, 1)
+	texture:SetColorTexture(C.btnEdge[1], C.btnEdge[2], C.btnEdge[3], 0.9)
+	if vertical then texture:SetHeight(4) else texture:SetWidth(4) end
+end)
+
+-- A slider (OptionsSliderTemplate): a thin dark track and a gold thumb
+local function StyleSlider(slider)
+	if not slider or slider.Look then return end
+	slider.Look = true
+	if slider.NineSlice then slider.NineSlice:Hide() end
+	if slider.SetBackdrop then slider:SetBackdrop(nil) end
+	local track = slider:CreateTexture(nil, "BACKGROUND")
+	track:SetPoint("LEFT", 4, 0)
+	track:SetPoint("RIGHT", -4, 0)
+	track:SetHeight(4)
+	track:SetColorTexture(unpack(C.offTrack))
+	local thumb = slider:GetThumbTexture()
+	if thumb then
+		thumb:SetColorTexture(unpack(C.gold))
+		thumb:SetSize(8, 14)
+	end
+	for _, key in ipairs({ "Text", "Low", "High" }) do
+		local label = slider[key] or _G[slider:GetName() .. key]
+		if label then label:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+	end
+	if slider.Text then slider.Text:SetTextColor(C.title[1], C.title[2], C.title[3]) end
+end
+
+-- The bar's settings (right-click a drag handle): flat panel, switches, flat sliders
+hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
+	if self.Look then return end
+	self.Look = true
+	self:SetBackdrop(nil)
+	T.Fill(self, C.win)
+	T.Border(self, C.btnEdge)
+	for _, key in ipairs({ "SizeSlider", "AlphaSlider", "CombatAlphaSlider" }) do StyleSlider(self[key]) end
+	for _, key in ipairs({ "VerticalCheckbutton", "LockPositionCheckbutton", "HideBackgroundCheckbutton" }) do
+		local check = self[key]
+		if check then
+			MakeSwitch(check)
+			-- the dialog is narrow: shorter labels than in Options
+			local label = check.Text or _G[check:GetName() .. "Text"]
+			if label then label:SetWidth(120) end
+			check:SetHitRectInsets(0, -128, -4, -4)
+		end
+	end
+end)
+
+-- The icon picker: header bar with its title, flat fields, buttons and icons
+local function StyleIconDialog(dialog)
+	if dialog.Look then return end
+	local look = {}
+	dialog.Look = look
+	local name = dialog:GetName()
+	dialog:SetBackdrop(nil)
+	for _, child in ipairs({ dialog:GetChildren() }) do
+		-- the frame art (OutfitterDialogFrameTemplate)
+		if child.backdropInfo and not child:GetName() then
+			child:SetBackdrop(nil)
+			child:Hide()
+		end
+	end
+	T.Fill(dialog, C.win)
+	T.Border(dialog, C.edge)
+
+	local header = CreateFrame("Frame", nil, dialog)
+	header:SetPoint("TOPLEFT")
+	header:SetPoint("TOPRIGHT")
+	header:SetHeight(22)
+	local title = dialog.Widgets.Title
+	T.HeaderStrip(header, title:GetText())
+	header:FitLogo(22)
+	title:SetAlpha(0) -- it stays as the anchor for the fields below it
+	hooksecurefunc(title, "SetText", function(_, text) header.text:SetText(text) end)
+	look.Header = header
+
+	local menu = dialog.Widgets.IconSetMenu
+	if menu then
+		StyleField(menu)
+		if menu.Button then ArrowButton(menu.Button) end
+		if menu.Text then
+			menu.Text:SetJustifyH("LEFT")
+			menu.Text:SetPoint("LEFT", menu, "LEFT", 6, 0)
+		end
+	end
+	local filter = dialog.Widgets.FilterEditBox
+	if filter then
+		for _, region in ipairs({ filter:GetRegions() }) do
+			if region:GetObjectType() == "Texture" then region:Hide() end
+		end
+		T.Fill(filter, C.field)
+		T.Border(filter, C.fieldEdge)
+		filter:SetTextInsets(6, 6, 0, 0)
+	end
+	FlatScrollBar(_G[name .. "ScrollFrameScrollBar"])
+	Flatten(_G[name .. "OKButton"], C.red, C.redHi)
+	Flatten(_G[name .. "CancelButton"], C.card, C.line, C.edge)
+	for _, button in ipairs(dialog.IconButtons or {}) do StyleIconButton(button) end
+end
+
+hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", StyleIconDialog)
+
+---------------------------------------------------------------------------
+-- Outfitter's menus (its own copy of LibDropdown): a flat dark panel with a
+-- thin gold edge, a dark red row under the mouse, gold checks and arrows.
+-- The library calls these as it sets up each menu and each line.
+---------------------------------------------------------------------------
+local Dropdown = LibStub("LibDropdownMC-1.0")
+
+function Dropdown.StyleFrame(frame)
+	if frame.NineSlice then frame.NineSlice:Hide() end
+	if frame.SetBackdrop and not frame.NineSlice then frame:SetBackdrop(nil) end
+	if not frame.Look then
+		frame.Look = { Fill = T.Fill(frame, { C.win[1], C.win[2], C.win[3], 0.97 }), Edges = T.Border(frame, C.btnEdge) }
+	end
+end
+
+function Dropdown.StyleButton(button)
+	local highlight = button:GetHighlightTexture()
+	if highlight then
+		highlight:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.35)
+		highlight:SetBlendMode("BLEND")
+	end
+	if button.check then button.check:SetVertexColor(C.gold[1], C.gold[2], C.gold[3]) end
+	if button.expand then button.expand:SetVertexColor(C.orange[1], C.orange[2], C.orange[3]) end
+end
