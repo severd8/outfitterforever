@@ -808,6 +808,24 @@ do
 	Check(items[O.cMoveUp] and items[O.cMoveDown], "the outfit's menu has Move up and Move down")
 	Check(items[O.cSortByName] == nil, "and no Sort by name while the list is by name already")
 
+	-- Saving what you're wearing into the outfit is near the top, once, not down under Rebuild
+	do
+		local order = {}
+		local menu = setmetatable({}, { __index = function() return function() end end })
+		function menu:AddFunction(title) order[#order + 1] = title end
+		function menu:AddCategoryTitle(title) order[#order + 1] = "#" .. tostring(title) end
+		O:AddOutfitMenu(menu, mason)
+		local at, count, rebuild = nil, 0, nil
+		for index, title in ipairs(order) do
+			if title == O.cSetCurrentItems then at, count = at or index, count + 1 end
+			if title == "#" .. O.cRebuild then rebuild = index end
+		end
+		Check(count == 1, "Update to current items is in the outfit menu once (" .. count .. ")")
+		Check(at == 3 and order[2] == env.PET_RENAME and order[4] == O.cMoveUp,
+			"right after Rename, before Move up (" .. table.concat(order, " | ", 1, math.min(#order, 5)) .. ")")
+		Check(rebuild and at < rebuild, "above the Rebuild section")
+	end
+
 	-- Put the three at the bottom of the list in a known order to test the ends
 	local before = Names(category)
 	items[O.cMoveUp].func()
@@ -1196,6 +1214,17 @@ for _, file in ipairs({ "OutfitterForever.toc", "Outfitter.xml", "OutfitterBar.x
 		local found = io.open(path .. ".tga") or io.open(path .. ".blp")
 		Check(found ~= nil, file .. " uses " .. path .. ", which isn't in the addon")
 		if found then found:close() end
+	end
+end
+
+-- Upstream's user manual and revision history describe Outfitter, not this port: they're
+-- left out of the download, and nothing the addon loads may point into that folder
+do
+	local pkgmeta = io.open(".pkgmeta"):read("*a")
+	Check(pkgmeta:find("\n  %- Documentation\n") ~= nil, ".pkgmeta leaves the Documentation folder out of the download")
+	for _, file in ipairs({ "OutfitterForever.toc", "Outfitter.xml", "OutfitterBar.xml", "Outfitter.lua", "OutfitterLook.lua" }) do
+		local text = io.open(file):read("*a")
+		Check(not text:find("OutfitterForever[\\/]+Documentation"), file .. " points into the Documentation folder")
 	end
 end
 

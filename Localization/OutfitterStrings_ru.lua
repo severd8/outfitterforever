@@ -395,4 +395,17 @@ if GetLocale() == "ruRU" then
 	Outfitter.cChangeIcon = "Сменить иконку"
 	
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
+	-- Outfitter Forever
+	Outfitter.cLookOutfitScripts = "Скрипты комплектов"
+	Outfitter.cLookOutfitScriptsDescription = "Вкл.: комплекты со скриптом надеваются и снимаются сами. Выкл.: ни один скрипт не меняет вашу экипировку."
+	Outfitter.cLookTooltips = "Подсказки"
+	Outfitter.cLookQuickAccess = "Быстрый доступ"
+	Outfitter.cOpenCharacterWindow = "Откройте окно персонажа (%s), и Outfitter Forever откроется вместе с ним. В WoW: Forever аддон не может открыть это окно за вас."
+	Outfitter.cMoveUp = "Переместить вверх"
+	Outfitter.cMoveDown = "Переместить вниз"
+	Outfitter.cSortByName = "Сортировать список по имени"
+	Outfitter.cSidebarTab = "Вкладка менеджера экипировки"
+	Outfitter.cSidebarTabOnDescription = "Вкладка менеджера экипировки вверху окна персонажа открывает Outfitter Forever. Выключите, чтобы вернуть менеджер экипировки игры и пользоваться маленькой кнопкой Outfitter"
+	Outfitter.cSidebarTabOffDescription = "Включите, чтобы открывать Outfitter Forever вкладкой менеджера экипировки вверху окна персонажа вместо маленькой кнопки Outfitter"
+	Outfitter.cSidebarTabTip = "Нажмите, чтобы открыть или закрыть комплекты."
 end

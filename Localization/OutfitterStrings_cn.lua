@@ -16,7 +16,7 @@ if GetLocale() == "zhCN" then
 	Outfitter.cUseEmptyOutfit = "新建空白套装"
 	Outfitter.cAutomationLabel = "自动:"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "套装"
 	Outfitter.cOptionsTabTitle = "选项"
 
 	Outfitter.cNewOutfit = "新套装"
@@ -403,4 +403,17 @@ if GetLocale() == "zhCN" then
 	Outfitter.cChangeIcon = "更换图标"
 	
 	Outfitter.cNoItemsWithStat = "Couldn't generate an outfit because no items with that stat were found"
+	-- Outfitter Forever
+	Outfitter.cLookOutfitScripts = "套装脚本"
+	Outfitter.cLookOutfitScriptsDescription = "开：带脚本的套装会自动穿上和脱下。关：任何脚本都不会更换你的装备。"
+	Outfitter.cLookTooltips = "鼠标提示"
+	Outfitter.cLookQuickAccess = "快捷访问"
+	Outfitter.cOpenCharacterWindow = "打开你的角色窗口（%s），Outfitter Forever 会随之打开。在 WoW: Forever 中，插件无法替你打开该窗口。"
+	Outfitter.cMoveUp = "上移"
+	Outfitter.cMoveDown = "下移"
+	Outfitter.cSortByName = "按名称排序此列表"
+	Outfitter.cSidebarTab = "使用装备管理标签"
+	Outfitter.cSidebarTabOnDescription = "角色窗口顶部的装备管理标签会打开 Outfitter Forever。关闭此项可恢复游戏自带的装备管理，并改用 Outfitter 小按钮"
+	Outfitter.cSidebarTabOffDescription = "开启此项后，可从角色窗口顶部的装备管理标签打开 Outfitter Forever，代替 Outfitter 小按钮"
+	Outfitter.cSidebarTabTip = "点击打开或关闭你的套装。"
 end

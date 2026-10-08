@@ -2063,6 +2063,10 @@ function Outfitter:AddOutfitMenu(menu, outfit)
 	menu:AddFunction(PET_RENAME, function (menu)
 		self:PerformAction("RENAME", outfit)
 	end)
+	-- Forever: saving what you're wearing is up here, not down under Rebuild
+	menu:AddFunction(self.cSetCurrentItems, function ()
+		self:PerformAction("SET_CURRENT", outfit)
+	end)
 
 	-- Place in the list
 	local vPlace, vCount, vCategoryID = self:GetOutfitPlace(outfit)
@@ -2226,9 +2230,6 @@ function Outfitter:AddOutfitMenu(menu, outfit)
 
 	-- Rebuild
 	menu:AddCategoryTitle(self.cRebuild)
-	menu:AddFunction(self.cSetCurrentItems, function ()
-		self:PerformAction("SET_CURRENT", outfit)
-	end)
 	local statName
 	if outfit.StatConfig then
 		statName = self:GetStatConfigName(outfit.StatConfig)

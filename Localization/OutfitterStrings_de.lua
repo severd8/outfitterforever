@@ -11,7 +11,7 @@ if GetLocale() == "deDE" then
 	Outfitter.cUseCurrentOutfit = "Benutze derzeitiges Outfit"
 	Outfitter.cUseEmptyOutfit = "Erstelle neues Outfit"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "Outfits"
 	Outfitter.cOptionsTabTitle = "Einstellungen"
 
 	Outfitter.cNewOutfit = "Neues Outfit"
@@ -264,4 +264,17 @@ if GetLocale() == "deDE" then
 	
 	Outfitter.cRequiresPrefix = "Benötigt:"
 	Outfitter.cUniqueEquippedSearchPattern = "^Einzigartig angelegt: (.*) %((%d+)%)$"
+	-- Outfitter Forever
+	Outfitter.cLookOutfitScripts = "Outfit-Skripte"
+	Outfitter.cLookOutfitScriptsDescription = "An: Outfits mit einem Skript werden von selbst an- und abgelegt. Aus: Kein Skript ändert deine Ausrüstung."
+	Outfitter.cLookTooltips = "Tooltips"
+	Outfitter.cLookQuickAccess = "Schnellzugriff"
+	Outfitter.cOpenCharacterWindow = "Öffne dein Charakterfenster (%s), dann öffnet sich Outfitter Forever mit. In WoW: Forever kann ein Addon dieses Fenster nicht für dich öffnen."
+	Outfitter.cMoveUp = "Nach oben"
+	Outfitter.cMoveDown = "Nach unten"
+	Outfitter.cSortByName = "Liste nach Namen sortieren"
+	Outfitter.cSidebarTab = "Reiter des Ausrüstungsmanagers nutzen"
+	Outfitter.cSidebarTabOnDescription = "Der Reiter des Ausrüstungsmanagers oben in deinem Charakterfenster öffnet Outfitter Forever. Schalte dies aus, um den Ausrüstungsmanager des Spiels zurückzubekommen und stattdessen den kleinen Outfitter-Knopf zu nutzen"
+	Outfitter.cSidebarTabOffDescription = "Schalte dies ein, um Outfitter Forever über den Reiter des Ausrüstungsmanagers oben in deinem Charakterfenster zu öffnen, statt über den kleinen Outfitter-Knopf"
+	Outfitter.cSidebarTabTip = "Klicken, um deine Outfits zu öffnen oder zu schließen."
 end

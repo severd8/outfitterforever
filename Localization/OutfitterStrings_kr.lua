@@ -11,7 +11,7 @@ if GetLocale() == "koKR" then
 	Outfitter.cUseCurrentOutfit = "현재 장비 세트 사용"
 	Outfitter.cUseEmptyOutfit = "빈 장비 세트 생성"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "장비 세트"
 	Outfitter.cOptionsTabTitle = "옵션"
 
 	Outfitter.cNewOutfit = "신규 장비 세트"
@@ -282,4 +282,17 @@ if GetLocale() == "koKR" then
 
 	Outfitter.cRequiresPrefix = "요구 사항:"
     Outfitter.cUniqueEquippedSearchPattern = "^고유 장착 아이템: (.*) %((%d+)%)$"
+	-- Outfitter Forever
+	Outfitter.cLookOutfitScripts = "장비 세트 스크립트"
+	Outfitter.cLookOutfitScriptsDescription = "켜기: 스크립트가 있는 장비 세트는 알아서 착용되고 해제됩니다. 끄기: 어떤 스크립트도 장비를 바꾸지 않습니다."
+	Outfitter.cLookTooltips = "툴팁"
+	Outfitter.cLookQuickAccess = "빠른 접근"
+	Outfitter.cOpenCharacterWindow = "캐릭터 창(%s)을 열면 Outfitter Forever도 함께 열립니다. WoW: Forever에서는 애드온이 이 창을 대신 열 수 없습니다."
+	Outfitter.cMoveUp = "위로 이동"
+	Outfitter.cMoveDown = "아래로 이동"
+	Outfitter.cSortByName = "이 목록을 이름순으로 정렬"
+	Outfitter.cSidebarTab = "장비 관리자 탭 사용"
+	Outfitter.cSidebarTabOnDescription = "캐릭터 창 위쪽의 장비 관리자 탭이 Outfitter Forever를 엽니다. 게임의 장비 관리자를 되돌리고 작은 Outfitter 버튼을 쓰려면 끄세요"
+	Outfitter.cSidebarTabOffDescription = "캐릭터 창 위쪽의 장비 관리자 탭에서 Outfitter Forever를 열려면 켜세요. 작은 Outfitter 버튼 대신 쓰입니다"
+	Outfitter.cSidebarTabTip = "클릭하면 장비 세트 창을 열거나 닫습니다."
 end

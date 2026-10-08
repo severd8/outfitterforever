@@ -11,7 +11,7 @@ if GetLocale() == "frFR" then
 	Outfitter.cUseCurrentOutfit = "Utiliser la tenue actuelle"
 	Outfitter.cUseEmptyOutfit = "Créer une tenue vide"
 
-	Outfitter.cOutfitterTabTitle = "Outfitter"
+	Outfitter.cOutfitterTabTitle = "Tenues"
 	Outfitter.cOptionsTabTitle = "Options"
 
 	Outfitter.cNewOutfit = "Nouvelle tenue"
@@ -378,4 +378,17 @@ if GetLocale() == "frFR" then
 	Outfitter.cTooManyServerOutfits = "Vous ne pouvez pas stocker plus de %d tenues sur le serveur."
 
 	Outfitter.cNoItemsWithStat = "Impossible de générer une tenue car aucun élément avec cette catactéristique n'a été trouvé"
+	-- Outfitter Forever
+	Outfitter.cLookOutfitScripts = "Scripts de tenue"
+	Outfitter.cLookOutfitScriptsDescription = "Activé : les tenues avec un script se mettent et s'enlèvent toutes seules. Désactivé : aucun script ne change votre équipement."
+	Outfitter.cLookTooltips = "Infobulles"
+	Outfitter.cLookQuickAccess = "Accès rapide"
+	Outfitter.cOpenCharacterWindow = "Ouvrez votre fenêtre de personnage (%s) et Outfitter Forever s'ouvrira avec elle. Sur WoW: Forever, un addon ne peut pas ouvrir cette fenêtre à votre place."
+	Outfitter.cMoveUp = "Monter"
+	Outfitter.cMoveDown = "Descendre"
+	Outfitter.cSortByName = "Trier cette liste par nom"
+	Outfitter.cSidebarTab = "Utiliser l'onglet du gestionnaire d'équipement"
+	Outfitter.cSidebarTabOnDescription = "L'onglet du gestionnaire d'équipement en haut de votre fenêtre de personnage ouvre Outfitter Forever. Désactivez cette option pour retrouver le gestionnaire d'équipement du jeu et utiliser le petit bouton Outfitter à la place"
+	Outfitter.cSidebarTabOffDescription = "Activez cette option pour ouvrir Outfitter Forever depuis l'onglet du gestionnaire d'équipement en haut de votre fenêtre de personnage, à la place du petit bouton Outfitter"
+	Outfitter.cSidebarTabTip = "Cliquez pour ouvrir ou fermer vos tenues."
 end
