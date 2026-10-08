@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+- **Edit Script dialog in the new look.** The window for an outfit's script now matches the rest of Outfitter Forever: a red header bar, Settings and Source tabs at the top, flat fields, on/off switches for yes/no settings, and flat Done and Cancel buttons. It works exactly as before.
+- **One way to read the scripts switch.** In Options, "Disable all outfit scripts" is now an **Outfit scripts** switch that works like the one at the bottom of the outfit list: on means outfits with a script change by themselves. The two switches always agree.
+- Fixed a rare error in a text helper shared with other addons.
+
 ## 1.3.0
 
 The whole Outfitter Forever window has the new look now, not just its frame. Outfits work exactly as before.
