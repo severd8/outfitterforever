@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.5
+
+- **Outfit bar:** the outfit you wear is easier to spot: besides its gold edge it now has a gold check in the corner.
+
 ## 1.3.4
 
 - **Outfit bar:** the outfit you wear now has a bright gold edge instead of a red wash, and the highlight under your mouse lines up with each button.
