@@ -705,7 +705,7 @@ local function StyleIconButton(button)
 	end
 	T.Fill(button, C.field)
 	T.Border(button, C.btnEdge)
-	-- Worn (checked): a bright gold edge, 2 wide, in place of the template's check art
+	-- Worn (checked): a bright gold edge, 2 wide, in place of the template's check art,
 	Fade(button:GetCheckedTexture())
 	local worn = {}
 	for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
@@ -722,7 +722,20 @@ local function StyleIconButton(button)
 		end
 		worn[#worn + 1] = edge
 	end
+	-- and a gold check badge in the bottom right corner
+	local badge = button:CreateTexture(nil, "OVERLAY", nil, 7)
+	badge:SetSize(12, 12)
+	badge:SetPoint("BOTTOMRIGHT")
+	badge:SetColorTexture(unpack(C.gold))
+	local tick = button:CreateTexture(nil, "OVERLAY", nil, 7)
+	tick:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+	tick:SetSize(16, 16)
+	tick:SetPoint("CENTER", badge, "CENTER", 1, 0)
+	tick:SetVertexColor(C.win[1], C.win[2], C.win[3])
+	worn[#worn + 1] = badge
+	worn[#worn + 1] = tick
 	button.WornEdges = worn
+	button.WornBadge = badge
 	local function PaintWorn()
 		local on = button:GetChecked() and true or false
 		for _, edge in ipairs(worn) do edge:SetShown(on) end

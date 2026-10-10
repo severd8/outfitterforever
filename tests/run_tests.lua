@@ -757,8 +757,9 @@ do
 		if button.WornEdges then
 			button:SetChecked(true)
 			Check(button.WornEdges[1]:IsShown(), "the gold edge shows on the outfit you wear")
+			Check(button.WornBadge and button.WornBadge:IsShown(), "with a gold check badge in the corner")
 			button:SetChecked(false)
-			Check(not button.WornEdges[1]:IsShown(), "and not on the others")
+			Check(not button.WornEdges[1]:IsShown() and not (button.WornBadge and button.WornBadge:IsShown()), "and not on the others")
 		end
 		local _, _, _, x1 = bar.Buttons[1]:GetPoint(1)
 		local second = bar.NumColumns > 1 and bar.Buttons[2]
