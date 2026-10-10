@@ -758,6 +758,12 @@ do
 			button:SetChecked(true)
 			Check(button.WornEdges[1]:IsShown(), "the gold edge shows on the outfit you wear")
 			Check(button.WornBadge and button.WornBadge:IsShown(), "with a gold check badge in the corner")
+			if button.WornTick then
+				local badgeLayer, badgeSub = button.WornBadge:GetDrawLayer()
+				local tickLayer, tickSub = button.WornTick:GetDrawLayer()
+				Check(button.WornTick:IsShown() and tickLayer == badgeLayer and tickSub > badgeSub,
+					"the check draws on top of the badge (sub-layers " .. tostring(tickSub) .. " over " .. tostring(badgeSub) .. ")")
+			end
 			button:SetChecked(false)
 			Check(not button.WornEdges[1]:IsShown() and not (button.WornBadge and button.WornBadge:IsShown()), "and not on the others")
 		end

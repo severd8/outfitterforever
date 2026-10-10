@@ -723,7 +723,8 @@ local function StyleIconButton(button)
 		worn[#worn + 1] = edge
 	end
 	-- and a gold check badge in the bottom right corner
-	local badge = button:CreateTexture(nil, "OVERLAY", nil, 7)
+	-- (the badge one sub-layer under the check, so the check always draws on top)
+	local badge = button:CreateTexture(nil, "OVERLAY", nil, 6)
 	badge:SetSize(12, 12)
 	badge:SetPoint("BOTTOMRIGHT")
 	badge:SetColorTexture(unpack(C.gold))
@@ -732,6 +733,7 @@ local function StyleIconButton(button)
 	tick:SetSize(16, 16)
 	tick:SetPoint("CENTER", badge, "CENTER", 1, 0)
 	tick:SetVertexColor(C.win[1], C.win[2], C.win[3])
+	button.WornTick = tick
 	worn[#worn + 1] = badge
 	worn[#worn + 1] = tick
 	button.WornEdges = worn

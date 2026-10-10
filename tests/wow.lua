@@ -364,7 +364,13 @@ local function NewRegion(parent, objectType, name, layer)
 	table.insert(parent.__regions, region)
 	return region
 end
-function Frame:CreateTexture(name, layer) return NewRegion(self, "Texture", name, layer) end
+function Frame:CreateTexture(name, layer, template, sublevel)
+	local texture = NewRegion(self, "Texture", name, layer)
+	texture.__sublevel = sublevel or 0
+	return texture
+end
+function Frame:GetDrawLayer() return self.__layer or "ARTWORK", self.__sublevel or 0 end
+function Frame:SetDrawLayer(layer, sublevel) self.__layer, self.__sublevel = layer, sublevel or 0 end
 function Frame:CreateMaskTexture(name, layer) return NewRegion(self, "MaskTexture", name, layer) end
 function Frame:CreateLine(name, layer) return NewRegion(self, "Line", name, layer) end
 function Frame:CreateFontString(name, layer, template)

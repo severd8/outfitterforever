@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.6
+
+- **Outfit bar:** the check on the outfit you wear now shows. In 1.3.5 the gold badge in the corner covered it.
+
 ## 1.3.5
 
 - **Outfit bar:** the outfit you wear is easier to spot: besides its gold edge it now has a gold check in the corner.
