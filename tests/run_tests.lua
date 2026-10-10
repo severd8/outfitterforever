@@ -739,6 +739,16 @@ do
 		Check(bar.Look.Fill:IsShown(), "a flat panel instead")
 		local button = bar.Buttons[1]
 		Check(button.Look and (button:GetNormalTexture() == nil or button:GetNormalTexture():GetAlpha() == 0), "its buttons are flat")
+		-- The buttons sit apart: each is narrower than the step to the next
+		local style = O.Style.ButtonBar
+		Check(button:GetWidth() == style.ButtonWidth and button:GetWidth() < style.BackgroundWidth,
+			"buttons are " .. tostring(button:GetWidth()) .. " wide on a " .. style.BackgroundWidth .. " grid")
+		local _, _, _, x1 = bar.Buttons[1]:GetPoint(1)
+		local second = bar.NumColumns > 1 and bar.Buttons[2]
+		if second then
+			local _, _, _, x2 = second:GetPoint(1)
+			Check(x2 - x1 == style.BackgroundWidth, "the next button is one grid step along (" .. tostring(x2 - x1) .. ")")
+		end
 		bar:ShowBackground(false)
 		Check(not bar.Look.Fill:IsShown() and stone == 0, "Hide background hides the flat panel")
 		bar:ShowBackground(true)
@@ -754,6 +764,11 @@ do
 	Check(settings and settings:IsShown() and settings.Look, "the bar's settings are restyled")
 	if settings and settings.Look then
 		Check(settings.VerticalCheckbutton:GetWidth() == 30, "with switches")
+		-- One row each: Lock under Vertical, Hide background under Lock, apart
+		local _, under1, _, _, gap1 = settings.LockPositionCheckbutton:GetPoint(1)
+		local _, under2, _, _, gap2 = settings.HideBackgroundCheckbutton:GetPoint(1)
+		Check(under1 == settings.VerticalCheckbutton and under2 == settings.LockPositionCheckbutton and gap1 < 0 and gap2 < 0,
+			"the switches are stacked a row apart, not on top of each other")
 		settings.VerticalCheckbutton:Click()
 		W.Tick(0.2)
 		settings.VerticalCheckbutton:Click()

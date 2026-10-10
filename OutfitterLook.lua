@@ -728,6 +728,27 @@ local function StyleBar(bar)
 	bar.Look.Fill:SetShown(show)
 	for _, edge in ipairs(bar.Look.Edges) do edge:SetShown(show) end
 	for _, button in ipairs(bar.Buttons or {}) do StyleIconButton(button) end
+
+	-- Upstream's buttons are wider (47) than their spacing (42); the stone art hid
+	-- the overlap. Keep the bar's size and grid, and centre a smaller button in
+	-- each cell so they sit apart.
+	local style = Outfitter.Style.ButtonBar
+	local size = style.ButtonWidth
+	local left = (style.BackgroundWidth0 + style.BackgroundWidthN - size) / 2
+	local top = (style.BackgroundHeight0 + style.BackgroundHeightN - size) / 2
+	local index = 1
+	for row = 1, bar.NumRows or 0 do
+		for column = 1, bar.NumColumns or 0 do
+			local button = bar.Buttons[index]
+			if button then
+				button:SetSize(size, size)
+				button:ClearAllPoints()
+				button:SetPoint("TOPLEFT", bar, "TOPLEFT",
+					left + (column - 1) * style.BackgroundWidth, -(top + (row - 1) * style.BackgroundHeight))
+			end
+			index = index + 1
+		end
+	end
 end
 
 -- Outfitter.xml / OutfitterBar.lua copy these methods into the frames as they
@@ -774,6 +795,9 @@ hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
 	T.Fill(self, C.win)
 	T.Border(self, C.btnEdge)
 	for _, key in ipairs({ "SizeSlider", "AlphaSlider", "CombatAlphaSlider" }) do StyleSlider(self[key]) end
+	-- Upstream stacked its checkboxes overlapping (they were 24 high, 7 apart);
+	-- the switches get a row each, under the sliders
+	local previous
 	for _, key in ipairs({ "VerticalCheckbutton", "LockPositionCheckbutton", "HideBackgroundCheckbutton" }) do
 		local check = self[key]
 		if check then
@@ -782,8 +806,16 @@ hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
 			local label = check.Text or _G[check:GetName() .. "Text"]
 			if label then label:SetWidth(120) end
 			check:SetHitRectInsets(0, -128, -4, -4)
+			check:ClearAllPoints()
+			if previous then
+				check:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -8)
+			else
+				check:SetPoint("TOPLEFT", self, "TOPLEFT", 14, -166)
+			end
+			previous = check
 		end
 	end
+	self:SetHeight(166 + 3 * 16 + 2 * 8 + 14)
 end)
 
 -- The icon picker: header bar with its title, flat fields, buttons and icons
