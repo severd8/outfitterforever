@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.4
+
+- **Outfit bar:** the outfit you wear now has a bright gold edge instead of a red wash, and the highlight under your mouse lines up with each button.
+
 ## 1.3.3
 
 - **Outfit bar:** the buttons no longer overlap. Each sits in its own space on the dark panel.
