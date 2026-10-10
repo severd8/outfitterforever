@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3
+
+- **Outfit bar:** the buttons no longer overlap. Each sits in its own space on the dark panel.
+- **Outfit bar settings:** Vertical, Lock Position and Hide Background each have their own switch again; they were drawn on top of each other.
+
 ## 1.3.2
 
 - **The outfit bar and menus in the new look.** The outfit bar is a flat dark panel with a thin gold edge and flat icon buttons; the outfit you wear has a dark red wash. Its settings and the icon picker match the rest of Outfitter Forever, and every Outfitter menu is a flat dark panel with a dark red row under the mouse.
