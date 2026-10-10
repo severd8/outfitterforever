@@ -743,6 +743,23 @@ do
 		local style = O.Style.ButtonBar
 		Check(button:GetWidth() == style.ButtonWidth and button:GetWidth() < style.BackgroundWidth,
 			"buttons are " .. tostring(button:GetWidth()) .. " wide on a " .. style.BackgroundWidth .. " grid")
+		-- The hover light covers the button exactly
+		local light = button:GetHighlightTexture()
+		if light then
+			local p1, r1 = light:GetPoint(1)
+			local p2, r2 = light:GetPoint(2)
+			Check(light:GetNumPoints() == 2 and p1 == "TOPLEFT" and r1 == button and p2 == "BOTTOMRIGHT" and r2 == button,
+				"the hover light lines up with the button")
+		end
+		-- The outfit you wear has a bright gold edge (not a red wash); the others don't
+		Check(button.WornEdges and (button:GetCheckedTexture() == nil or button:GetCheckedTexture():GetAlpha() == 0),
+			"worn is shown by a gold edge, not the check art")
+		if button.WornEdges then
+			button:SetChecked(true)
+			Check(button.WornEdges[1]:IsShown(), "the gold edge shows on the outfit you wear")
+			button:SetChecked(false)
+			Check(not button.WornEdges[1]:IsShown(), "and not on the others")
+		end
 		local _, _, _, x1 = bar.Buttons[1]:GetPoint(1)
 		local second = bar.NumColumns > 1 and bar.Buttons[2]
 		if second then

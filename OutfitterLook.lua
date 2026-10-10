@@ -705,15 +705,39 @@ local function StyleIconButton(button)
 	end
 	T.Fill(button, C.field)
 	T.Border(button, C.btnEdge)
-	local checked = button:GetCheckedTexture()
-	if checked then
-		checked:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.35)
-		checked:SetBlendMode("BLEND")
+	-- Worn (checked): a bright gold edge, 2 wide, in place of the template's check art
+	Fade(button:GetCheckedTexture())
+	local worn = {}
+	for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+		local edge = button:CreateTexture(nil, "OVERLAY", nil, 7)
+		edge:SetColorTexture(unpack(C.gold))
+		if side == "TOP" or side == "BOTTOM" then
+			edge:SetPoint(side .. "LEFT")
+			edge:SetPoint(side .. "RIGHT")
+			edge:SetHeight(2)
+		else
+			edge:SetPoint("TOP" .. side)
+			edge:SetPoint("BOTTOM" .. side)
+			edge:SetWidth(2)
+		end
+		worn[#worn + 1] = edge
 	end
+	button.WornEdges = worn
+	local function PaintWorn()
+		local on = button:GetChecked() and true or false
+		for _, edge in ipairs(worn) do edge:SetShown(on) end
+	end
+	hooksecurefunc(button, "SetChecked", PaintWorn)
+	button:HookScript("OnClick", PaintWorn)
+	PaintWorn()
+	-- The template gives the hover light its own size and anchors; it covers the
+	-- button exactly instead, so it lines up when the bar makes the button smaller
 	local highlight = button:GetHighlightTexture()
 	if highlight then
 		highlight:SetColorTexture(1, 1, 1, 0.15)
 		highlight:SetBlendMode("BLEND")
+		highlight:ClearAllPoints()
+		highlight:SetAllPoints(button)
 	end
 end
 
