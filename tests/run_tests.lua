@@ -295,6 +295,38 @@ if defensive then
 end
 
 ----------------------------------------
+Step("a script with a broken $SETTING line gets a message, not a Lua error")
+do
+	local broken = {
+		{ "-- $SETTING Foo={label=\"Foo\"}", "a setting with no type" },
+		{ "-- $SETTING Foo={type=5, label=\"Foo\"}", "a setting whose type isn't text" },
+		{ "-- $SETTING Foo=5", "a setting that's a number" },
+		{ "-- $SETTING Foo=nil+1", "a setting that throws when it's read" },
+	}
+	for _, case in ipairs(broken) do
+		local errorsBefore = #W.errors
+		local ok, fields, message = W.SafeCall(O.ParseScriptFields, O, "-- $EVENTS TIMER\n" .. case[1] .. "\n")
+		Check(ok and #W.errors == errorsBefore, case[2] .. ": no Lua error")
+		Check(fields == nil and type(message) == "string" and message ~= "", case[2] .. ": a message saying what's wrong (" .. tostring(message) .. ")")
+		reportedErrors = #W.errors
+	end
+	-- Good settings still parse
+	local fields = O:ParseScriptFields("-- $SETTING Loot={type=\"boolean\", label=\"Auto loot\"}\n-- $SETTING Bar=\"number\"\n")
+	Check(fields and fields.Inputs and #fields.Inputs == 2, "good settings still parse")
+	-- An outfit with a broken script doesn't stop the others' scripts from starting
+	local bad = MakeOutfit("Broken settings", { HeadSlot = 1002 })
+	bad.Script = "-- $EVENTS TIMER\n-- $SETTING Foo=nil+1\n"
+	local errorsBefore = #W.errors
+	W.SafeCall(O.ActivateScript, O, bad)
+	Check(#W.errors == errorsBefore, "activating it is no Lua error")
+	local said = tostring(W.printed[#W.printed - 1]) .. " / " .. tostring(W.printed[#W.printed])
+	Check(said:find("Broken settings", 1, true) ~= nil and said:find("nil value", 1, true) ~= nil,
+		"and chat says which outfit's script didn't start, and why (" .. said .. ")")
+	O:DeleteOutfit(bad)
+	reportedErrors = #W.errors
+end
+
+----------------------------------------
 Step("scripts that read hidden values don't error")
 local lowHealth = MakeOutfit("Low Health", { HeadSlot = 1002 })
 O:SetScriptID(lowHealth, "LOW_HEALTH")

@@ -1884,7 +1884,15 @@ function Outfitter:ParseScriptFields(pScript)
 				return nil, vMessage
 			end
 
-			vScriptInputs = vScriptInputs()
+			-- Forever: read the setting in protected mode, so one broken $SETTING line
+			-- gives a message instead of a Lua error that stops what was parsing it
+			local vSucceeded, vInputs = pcall(vScriptInputs)
+
+			if not vSucceeded then
+				return nil, vInputs
+			end
+
+			vScriptInputs = vInputs
 
 			if not vSettings.Inputs then
 				vSettings.Inputs = {}
@@ -1898,10 +1906,16 @@ function Outfitter:ParseScriptFields(pScript)
 						vValue.Label = vValue.Label..":"
 					end
 				elseif type(vValue) == "table" then
-					vValue.Type = (vValue.Type or vValue.type):lower()
+					local vType = vValue.Type or vValue.type -- Forever: a setting needs a type (it was a Lua error)
+					if type(vType) ~= "string" then
+						return nil, string.format("$SETTING %s needs a type, like type=\"boolean\"", tostring(vKey))
+					end
+					vValue.Type = vType:lower()
 					vValue.Label = vValue.Label or vValue.label
 					vValue.Default = vValue.Default or vValue.default
 					vValue.ZoneType = vValue.ZoneType or vValue.zonetype
+				else -- Forever: anything else (a number, true) was a Lua error
+					return nil, string.format("$SETTING %s should be a type name or a table, like type=\"boolean\"", tostring(vKey))
 				end
 
 				vValue.Field = vKey
@@ -1927,10 +1941,13 @@ function Outfitter:ActivateScript(pOutfit)
 		return
 	end
 
-	local vScriptFields = Outfitter:ParseScriptFields(vScript)
+	local vScriptFields, vFieldsMessage = Outfitter:ParseScriptFields(vScript)
 	local vScriptSettings = {}
 
 	if not vScriptFields then
+		-- Forever: say why, as for a script that won't compile (below)
+		Outfitter:ErrorMessage("Couldn't activate script for %s", pOutfit:GetName() or "")
+		if vFieldsMessage then Outfitter:ErrorMessage(vFieldsMessage) end
 		return
 	end
 

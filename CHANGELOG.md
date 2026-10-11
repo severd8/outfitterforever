@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.7
+
+- **Fixed: a mistake in a custom script's settings line caused a Lua error.** A `-- $SETTING` line with no type, a number in place of a setting, or an expression that fails now gives a chat message saying which outfit's script didn't start and why. Other outfits' scripts keep working.
+
 ## 1.3.6
 
 - **Outfit bar:** the check on the outfit you wear now shows. In 1.3.5 the gold badge in the corner covered it.
