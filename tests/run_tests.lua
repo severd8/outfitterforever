@@ -684,6 +684,83 @@ do
 		W.Tick(0.1)
 		Check(not O.Settings.Options.DisableAutoSwitch and optionsScripts:IsOn(), "the footer's switch turns it back on")
 	end
+
+	-- Every option has the same tooltip: its name and what it does, shown even with
+	-- the game's enhanced tooltips off, and the same whether it's on or off
+	local savedUber = W.cvars.UberTooltips
+	W.cvars.UberTooltips = "0"
+	local options = {
+		{ optionsScripts, O.cLookOutfitScripts, O.cLookOutfitScriptsDescription },
+		{ env.OutfitterShowHotkeyMessages, O.cShowHotkeyMessages, O.cLookHotkeyMessagesDescription },
+		{ env.OutfitterTooltipInfo, O.cTooltipInfo, O.cLookTooltipInfoDescription },
+		{ env.OutfitterItemComparisons, O.cLookItemComparisons, O.cLookItemComparisonsDescription },
+		{ env.OutfitterShowMinimapButton, O.cShowMinimapButton, O.cLookMinimapButtonDescription },
+		{ env.OutfitterShowOutfitBar, O.cShowOutfitBar, O.cLookOutfitBarDescription },
+		{ env.OutfitterUseSidebarTab, O.cSidebarTab, O.cLookSidebarTabDescription },
+	}
+	local function TooltipFor(widget)
+		widget:GetScript("OnEnter")(widget)
+		local lines = env.GameTooltip.__lines or {}
+		local label = widget.label or env[widget:GetName() .. "Text"]
+		local r, g, b = label:GetTextColor()
+		local hover = { r, g, b }
+		widget:GetScript("OnLeave")(widget)
+		r, g, b = label:GetTextColor()
+		return lines[1], lines[2], hover, { r, g, b }, label
+	end
+	for _, option in ipairs(options) do
+		local widget, title, body = option[1], option[2], option[3]
+		local name = tostring(title)
+		Check(type(body) == "string" and body ~= "", name .. ": has a description")
+		local first, second, hover, after, label = TooltipFor(widget)
+		Check(first == title and second == body, name .. ": the tooltip shows its name and description with enhanced tooltips off (got "
+			.. tostring(first) .. " / " .. tostring(second) .. ")")
+		widget:Click()
+		W.Tick(0.1)
+		local first2, second2 = TooltipFor(widget)
+		Check(first2 == first and second2 == second, name .. ": the tooltip doesn't change when the option does")
+		widget:Click()
+		W.Tick(0.1)
+		Check(label:GetText() == title, name .. ": the label is the option's name")
+		Check(hover[1] == 1 and hover[2] == 0.82 and hover[3] == 0, name .. ": its label turns gold on hover")
+		Check(not (after[1] == 1 and after[2] == 0.82 and after[3] == 0), name .. ": and back when the mouse leaves")
+		-- Clicks reach the end of the label's text, not empty space past it
+		local _, right = widget:GetHitRectInsets()
+		local textWidth = math.min(label:GetUnboundedStringWidth(), label:GetWidth())
+		Check(right == -(8 + textWidth), name .. ": the clickable area ends with the label (" .. tostring(right) .. ")")
+	end
+	W.cvars.UberTooltips = savedUber
+
+	-- The first card is named for what's in it, not after the Outfits tab
+	Check(look.Cards[1].title:GetText() == O.cLookAutomation:upper(), "the first card is Automation")
+	Check(look.Cards[1].title:GetText() ~= O.cOutfitterTabTitle:upper(), "not Outfits, the tab's name")
+
+	-- The outfit bar's settings, from a button beside its switch
+	local barSettings = look.BarSettings
+	Check(barSettings and barSettings:IsVisible() and AnchoredTo(barSettings, env.OutfitterShowOutfitBar),
+		"Options has a button for the outfit bar's settings, by its switch")
+	if barSettings then
+		barSettings:Click()
+		W.Tick(0.1)
+		local dialog = O.OutfitBar.SettingsDialog
+		Check(dialog and dialog:IsShown(), "it opens the outfit bar's settings")
+		barSettings:Click()
+		W.Tick(0.1)
+		Check(dialog and not dialog:IsShown(), "and closes them")
+		Check(env.OutfitterShowOutfitBarText:GetWidth() < 180,
+			"the outfit bar's label makes room for the button")
+	end
+
+	-- Without the Equipment Manager tab its row goes, and the card shrinks to fit
+	local card3 = look.Cards[3]:GetHeight()
+	local sidebarTab = O.SidebarTab
+	O.SidebarTab = nil
+	O:Update(false)
+	Check(not env.OutfitterUseSidebarTab:IsShown() and look.Cards[3]:GetHeight() == card3 - 22,
+		"no Equipment Manager tab: its row is hidden and the card is a row shorter")
+	O.SidebarTab = sidebarTab
+	O:Update(false)
+	Check(env.OutfitterUseSidebarTab:IsShown() and look.Cards[3]:GetHeight() == card3, "and back when there is one")
 	O:ShowPanel(1)
 	W.Tick(0.2)
 

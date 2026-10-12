@@ -274,6 +274,8 @@ function Frame:SetWidth(w) self.__width = w end
 function Frame:SetHeight(h) self.__height = h end
 function Frame:GetWidth() return self.__width end
 function Frame:GetHeight() return self.__height end
+function Frame:SetHitRectInsets(l, r, t, b) self.__hitRect = { l, r, t, b } end
+function Frame:GetHitRectInsets() return unpack(self.__hitRect or { 0, 0, 0, 0 }) end
 function Frame:GetSize() return self.__width, self.__height end
 function Frame:GetRect() return 100, 100, self.__width, self.__height end
 function Frame:GetLeft() return 100 end
@@ -318,7 +320,14 @@ function Frame:SetText(text)
 end
 function Frame:SetFormattedText(format, ...) self:SetText(string.format(format, ...)) end
 function Frame:GetText() return self.__text end
-function Frame:GetStringWidth() return #(tostring(self.__text or "")) * 6 end
+-- About 6 px a letter, 11 for Chinese and Korean ones (three bytes in UTF-8)
+function Frame:GetStringWidth()
+	local width = 0
+	for char in tostring(self.__text or ""):gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+		width = width + (char:byte() >= 224 and 11 or 6)
+	end
+	return width
+end
 function Frame:GetUnboundedStringWidth() return self:GetStringWidth() end
 function Frame:GetStringHeight() return 12 end
 function Frame:GetTextWidth() return self:GetStringWidth() end

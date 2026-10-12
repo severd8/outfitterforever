@@ -13,7 +13,23 @@ end
 -- The strings the port added (or, for the tab, changed from upstream's "Outfitter")
 local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDescription", "cLookTooltips",
 	"cLookQuickAccess", "cOpenCharacterWindow", "cMoveUp", "cMoveDown", "cSortByName", "cSidebarTab",
-	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip", "cCombatWait" }
+	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip", "cCombatWait", "cLookAutomation",
+	"cLookHotkeyMessagesDescription", "cLookTooltipInfoDescription", "cLookItemComparisons", "cLookItemComparisonsDescription",
+	"cLookMinimapButtonDescription", "cLookOutfitBarDescription", "cLookBarSettings", "cLookBarSettingsDescription",
+	"cLookSidebarTabDescription" }
+
+-- The option cards: the bottom of the last one, measured from the window's top
+local function CardsBottom(W, O)
+	O:ShowPanel(2)
+	W.Tick(0.2)
+	local cards = W.env.OutfitterFrame.Look.Cards
+	local last = cards[#cards]
+	local point = last.__points[1]
+	local y = point[#point] -- SetPoint("TOPLEFT", x, y)
+	O:ShowPanel(1)
+	W.Tick(0.2)
+	return -y + last:GetHeight(), cards[3]:GetHeight()
+end
 
 local function Session(locale)
 	_G.W = nil
@@ -41,7 +57,8 @@ end
 -- Words that are the same as in English
 local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true } }
 
-local _, english = Session("enUS")
+local englishW, english = Session("enUS")
+local _, englishCard3 = CardsBottom(englishW, english)
 for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	local W, O = Session(locale)
 	for _, key in ipairs(KEYS) do
@@ -53,6 +70,14 @@ for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	Check(placeholders == 1, locale .. ": cOpenCharacterWindow keeps its one %s for the key")
 	Check(tostring(O.cCombatWait):sub(1, 2) == "%s", locale .. ": cCombatWait starts with the outfit's name (%s)")
 	Check(O.cOutfitterTabTitle ~= "Outfitter", locale .. ": the first tab is named for outfits, not \"Outfitter\"")
+	-- Long option names wrap onto a second line (the French Equipment Manager tab
+	-- does) instead of being cut off, and the cards still fit in the window
+	local bottom, card3 = CardsBottom(W, O)
+	-- 344: the window's height in Outfitter.xml, less an 8 px margin
+	Check(bottom <= 344 - 8, locale .. ": the option cards fit in the window (" .. bottom .. ")")
+	if locale == "frFR" then
+		Check(card3 > englishCard3, "frFR: the long Equipment Manager tab option takes two lines")
+	end
 	for _, message in ipairs(W.errors) do Check(false, locale .. ": Lua error: " .. message:sub(1, 300)) end
 end
 

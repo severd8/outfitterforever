@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0
+
+- **Options tab, tidied up.**
+  - Every option shows a tooltip saying what it does, even with the game's Enhanced Tooltips turned off.
+  - Long option names in other languages wrap onto a second line instead of being cut off.
+  - An option's name turns gold under your mouse, and clicking the empty space beside it no longer flips it.
+  - The first card is now called Automation, and "Show in item comparisons" is now "Outfits in item comparisons".
+  - A **Settings** button next to the outfit bar's switch opens the bar's size, transparency and lock settings.
+
 ## 1.3.9
 
 - **Fixed: yellow triangles on icons.** Clicking an icon in the icon picker (or on the outfit bar) left a big yellow triangle over it. They no longer appear.

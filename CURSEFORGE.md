@@ -25,7 +25,7 @@ It works like the Outfitter you know, with the same outfits, menus and scripts. 
 Outfitter Forever is fitted to Forever's game and its addon rules:
 
 - **Classic gear and classes.** The ranged slot (bows, guns, wands, thrown, relics) is managed, warrior stance outfits follow your three stances, and scripts limited to a specialization use your talent trees.
-- **The Equipment Manager tab opens Outfitter Forever.** It's the second tab at the top of your character window, and the Outfitter Forever window opens beside the window's tabs. With the stats pane collapsed, a small Outfitter button by the pane's arrow does the same. Untick **Use the Equipment Manager tab** in Options to get the game's Equipment Manager tab back and always use the small button.
+- **The Equipment Manager tab opens Outfitter Forever.** It's the second tab at the top of your character window, and the Outfitter Forever window opens beside the window's tabs. With the stats pane collapsed, a small Outfitter button by the pane's arrow does the same. Turn off **Use the Equipment Manager tab** in Options to get the game's Equipment Manager tab back and always use the small button.
 - **Open the character window yourself.** An addon can't open it on Forever. "Open Outfitter Forever" works while it's open; otherwise you're asked to open it (`C`) and Outfitter Forever opens with it.
 - **Health and mana are hidden from addons.** The Low Health / Low Mana outfit never changes your gear, Dining stays on until the food or drink buff ends, and Spirit regen counts any spell cast followed by a mana change as mana spent.
 - **Buffs can't be read in combat.** Outfits that follow a buff (aspects, Ghost Wolf, Has Buff, ...) keep their state until combat ends.
@@ -46,6 +46,7 @@ Don't install another copy of Outfitter alongside it.
 - **Keep an outfit up to date.** Gear you put on yourself stays on, but it isn't added to an outfit. To save what you're wearing into one (your **Normal** outfit as you level, say), open the menu to the right of the outfit and pick **Update to current items** (right under Rename).
 - **Automatic outfits.** Use the menu to the right of an outfit to pick a script or turn it off.
 - **Put outfits in your own order.** In the same menu, pick **Move up** or **Move down**. The order is saved for each character and is used in the list, the minimap menu and the outfit bar. **Sort this list by name** puts it back in A to Z order.
+- **Options.** The Options tab turns outfit scripts, the minimap button, the outfit bar (its **Settings** button sets its size, transparency and lock) and the tooltip lines on and off. Hover over an option to see what it does. Outfits and options are saved for each character, so a new character starts with the defaults.
 
 | Command | What it does |
 |---|---|

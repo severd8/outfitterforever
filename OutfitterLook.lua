@@ -261,7 +261,7 @@ end
 ---------------------------------------------------------------------------
 -- Options: on/off switches in three cards
 ---------------------------------------------------------------------------
-local ROW_H = 24
+local ROW_H = 22
 
 local function MakeSwitch(check)
 	for _, get in ipairs({ "GetNormalTexture", "GetPushedTexture", "GetHighlightTexture",
@@ -313,45 +313,116 @@ local function ScriptsSwitch(parent)
 	return switch
 end
 
+-- Option labels wrap to a second line rather than being cut off (long in some
+-- languages); each extra line makes its row this much taller
+local LABEL_W, LINE_H = 180, 11
+
+-- Hovering a row turns its label gold
+local function HoverLabel(widget, label)
+	function widget:SetHover(on)
+		local color = on and C.gold or C.title
+		label:SetTextColor(color[1], color[2], color[3])
+	end
+end
+
+-- Lays the option rows and cards out from the top: a hidden row takes no room
+-- and a two-line label makes its row taller. Clicks reach as far as the label's text.
+local function LayoutOptions(look)
+	local y = look.CardsTop
+	for _, card in ipairs(look.Cards) do
+		local rowY = -26
+		for _, row in ipairs(card.rows) do
+			if row.widget:IsShown() then
+				local width = LABEL_W - (row.extra or 0)
+				row.label:SetWidth(width)
+				local full = row.label:GetUnboundedStringWidth()
+				local lines = full > width and 2 or 1
+				local height = ROW_H + (lines - 1) * LINE_H
+				row.widget:ClearAllPoints()
+				row.widget:SetPoint("TOPLEFT", card, "TOPLEFT", 12, rowY - (lines - 1) * LINE_H / 2)
+				row.widget:SetHitRectInsets(0, -(8 + math.min(full, width)), -4, -4)
+				rowY = rowY - height
+			end
+		end
+		card:ClearAllPoints()
+		card:SetPoint("TOPLEFT", 8, y)
+		card:SetHeight(-rowY + 4)
+		y = y + rowY - 4 - 6
+	end
+end
+
 local function StyleOptions(look)
 	local panel = OutfitterOptionsFrame
 	HideTitles(panel, Outfitter.cOptionsTitle, "Outfitter_cOptionsTitle")
 	local cards = {
-		{ Outfitter.cOutfitterTabTitle, { "OutfitterAutoSwitch", "OutfitterShowHotkeyMessages" } },
-		{ Outfitter.cLookTooltips, { "OutfitterTooltipInfo", "OutfitterItemComparisons" } },
-		{ Outfitter.cLookQuickAccess, { "OutfitterShowMinimapButton", "OutfitterShowOutfitBar", "OutfitterUseSidebarTab" } },
+		{ Outfitter.cLookAutomation, {
+			{ "OutfitterAutoSwitch" },
+			{ "OutfitterShowHotkeyMessages", Outfitter.cShowHotkeyMessages, Outfitter.cLookHotkeyMessagesDescription } } },
+		{ Outfitter.cLookTooltips, {
+			{ "OutfitterTooltipInfo", Outfitter.cTooltipInfo, Outfitter.cLookTooltipInfoDescription },
+			{ "OutfitterItemComparisons", Outfitter.cLookItemComparisons, Outfitter.cLookItemComparisonsDescription } } },
+		{ Outfitter.cLookQuickAccess, {
+			{ "OutfitterShowMinimapButton", Outfitter.cShowMinimapButton, Outfitter.cLookMinimapButtonDescription },
+			{ "OutfitterShowOutfitBar", Outfitter.cShowOutfitBar, Outfitter.cLookOutfitBarDescription },
+			{ "OutfitterUseSidebarTab", Outfitter.cSidebarTab, Outfitter.cLookSidebarTabDescription } } },
 	}
-	local y = -(24 + TAB_H + 8)
+	look.CardsTop = -(24 + TAB_H + 8)
 	local width = (panel:GetWidth() or 256) - 16
 	look.Cards = {}
 	for index, info in ipairs(cards) do
-		local rows = #info[2]
-		local card = T.Card(panel, info[1], 8, y, width, 30 + rows * ROW_H)
+		local card = T.Card(panel, info[1], 8, 0, width, ROW_H)
 		card:SetFrameLevel(panel:GetFrameLevel())
-		for row, checkName in ipairs(info[2]) do
+		card.rows = {}
+		for _, option in ipairs(info[2]) do
+			local checkName, text, description = option[1], option[2], option[3]
 			local check = _G[checkName]
+			local row
 			if checkName == "OutfitterAutoSwitch" and check then
 				-- Outfitter's box is "Disable all outfit scripts" (ticked = off). It's
 				-- replaced by a switch that reads like the footer's: on = scripts run.
 				check:Hide()
 				local switch = ScriptsSwitch(card)
-				switch:SetPoint("TOPLEFT", card, "TOPLEFT", 12, -26 - (row - 1) * ROW_H)
 				switch:SetFrameLevel(card:GetFrameLevel() + 2)
 				switch.label = T.Text(switch, Outfitter.cLookOutfitScripts, "GameFontHighlightSmall", C.title)
 				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
-				switch:SetHitRectInsets(0, -188, -4, -4)
+				switch.label:SetJustifyH("LEFT")
 				look.OptionsScripts = switch
+				row = { widget = switch, label = switch.label }
 			elseif check then
 				MakeSwitch(check)
-				check:ClearAllPoints()
-				check:SetPoint("TOPLEFT", card, "TOPLEFT", 12, -26 - (row - 1) * ROW_H)
 				check:SetFrameLevel(card:GetFrameLevel() + 2)
+				row = { widget = check, label = _G[checkName .. "Text"] }
+				row.label:SetText(text)
+				-- One tooltip for every switch, always shown, saying what the option does
+				T.Tooltip(check, text, description)
+			end
+			if row then
+				row.label:SetWordWrap(true)
+				HoverLabel(row.widget, row.label)
+				table.insert(card.rows, row)
 			end
 		end
-		card.rows = rows
 		look.Cards[index] = card
-		y = y - (30 + rows * ROW_H) - 6
 	end
+
+	-- The outfit bar's own settings (also on a right-click on the bar's handle)
+	local barRow = look.Cards[3].rows[2]
+	if barRow and Outfitter.OutfitBar then
+		local settings = T.FlatButton(look.Cards[3], Outfitter.cLookBarSettings, 1, 16)
+		local text = settings:GetFontString()
+		text:SetFontObject(GameFontHighlightSmall)
+		settings:SetWidth(math.ceil(text:GetStringWidth()) + 12)
+		-- At the card's right edge, level with the switch
+		settings:SetPoint("LEFT", barRow.widget, "LEFT", width - 22 - settings:GetWidth(), 0)
+		settings:SetFrameLevel(look.Cards[3]:GetFrameLevel() + 2)
+		settings:SetScript("OnClick", function() Outfitter.OutfitBar:DragBar_OnClick("RightButton") end)
+		T.Tooltip(settings, Outfitter.cLookBarSettings, Outfitter.cLookBarSettingsDescription)
+		barRow.extra = settings:GetWidth() + 6
+		look.BarSettings = settings
+	end
+
+	panel:HookScript("OnShow", function() LayoutOptions(look) end)
+	LayoutOptions(look)
 end
 
 ---------------------------------------------------------------------------
@@ -480,11 +551,8 @@ function Outfitter:ApplyLook()
 		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
 		if look.OptionsScripts then look.OptionsScripts:SetOn(scripts:IsOn()) end
 		bar:SetShown(highlight:IsShown())
-		local sidebar = look.Cards[3]
-		if sidebar then
-			local rows = (OutfitterUseSidebarTab and OutfitterUseSidebarTab:IsShown()) and sidebar.rows or sidebar.rows - 1
-			sidebar:SetHeight(30 + rows * ROW_H)
-		end
+		-- The Equipment Manager tab's row is hidden when there's no tab
+		LayoutOptions(look)
 	end
 	hooksecurefunc(self, "Update", Refresh)
 	Refresh()
