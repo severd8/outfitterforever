@@ -856,6 +856,13 @@ do
 			or select(1, env.OutfitterChooseIconDialogOKButton:GetFontString():GetTextColor()) == env.Outfitter.Theme.C.gold[1],
 			"flat OK button")
 		Check(picker.IconButtons[1] and picker.IconButtons[1].Look, "flat icon buttons")
+		-- The template's flyout arrow (a yellow triangle once the icon is clicked) never shows
+		for _, button in ipairs({ picker.IconButtons[1], O.OutfitBar.Bars[1] and O.OutfitBar.Bars[1].Buttons[1] or false }) do
+			if button then
+				Check(not button.Arrow or button.Arrow:GetAlpha() == 0, "no flyout arrow on an icon button")
+				Check(not button.BorderShadow or button.BorderShadow:GetAlpha() == 0, "nor its border shadow")
+			end
+		end
 	end
 	env.OutfitterChooseIconDialogCancelButton:Click()
 	W.Tick(0.2)

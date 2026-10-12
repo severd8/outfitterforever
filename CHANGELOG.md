@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.9
+
+- **Fixed: yellow triangles on icons.** Clicking an icon in the icon picker (or on the outfit bar) left a big yellow triangle over it. They no longer appear.
+
 ## 1.3.8
 
 - **Your outfit on your data broker bar.** In Titan Panel, ChocolateBar and other LibDataBroker displays, Outfitter Forever's icon now changes to the icon of the outfit you're wearing, next to its name. The minimap button keeps the Outfitter Forever logo.

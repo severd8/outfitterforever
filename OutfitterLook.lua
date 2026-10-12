@@ -695,7 +695,10 @@ local function StyleIconButton(button)
 	button.Look = true
 	Fade(button:GetNormalTexture())
 	Fade(button:GetPushedTexture())
-	for _, key in ipairs({ "SlotArt", "SlotBackground", "Border", "NormalTexture", "FloatingBG" }) do
+	-- Arrow / BorderShadow: the template's flyout arrow. ActionButtonTemplate's OnLoad replaces the
+	-- flyout's, so the arrow is never sized or hidden, and pressing the button draws it as a big
+	-- yellow triangle over the icon
+	for _, key in ipairs({ "SlotArt", "SlotBackground", "Border", "NormalTexture", "FloatingBG", "Arrow", "BorderShadow" }) do
 		if type(button[key]) == "table" and button[key].SetAlpha then Fade(button[key]) end
 	end
 	local icon = button.icon or button.Icon or _G[button:GetName() .. "Icon"]
