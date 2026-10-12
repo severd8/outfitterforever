@@ -15,7 +15,7 @@ It works like the Outfitter you know, with the same outfits, menus and scripts. 
 - **Outfits.** Save any set of gear as an outfit and put it on with one click. **Complete outfits** replace everything you're wearing; **accessories** cover a few slots and go on top (fishing pole, Carrot on a Stick, ...).
 - **Automatic outfits.** Give an outfit a script and it goes on and comes off by itself: riding, swimming, fishing, cooking, dining, cities, battlegrounds, dungeons, stances, forms, stealth, buffs, zones and more. Use the ready-made scripts or write your own.
 - **Ready-made outfits.** On first use you get **Normal** (your current gear), a **Birthday Suit**, and empty outfits for your class's stances and forms.
-- **Quick access.** A minimap menu, an optional outfit bar, key bindings, `/outfitter` commands for macros, and LibDataBroker.
+- **Quick access.** A minimap menu, an optional outfit bar, key bindings, `/outfitter` commands for macros, and a LibDataBroker entry (Titan Panel, ChocolateBar, ...) with the name and icon of the outfit you're wearing.
 - **Generate outfits** that maximize a stat or a mix of stats, or use your Pawn weights (needs Pawn).
 - **Extras.** An icon picker, item tooltips that show which outfits use the item, and a title, helm and cloak setting for each outfit.
 - **Works with Baganator.** With the Baganator bag addon, each outfit's gear gets its own group in your bags.

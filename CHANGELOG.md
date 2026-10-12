@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.8
+
+- **Your outfit on your data broker bar.** In Titan Panel, ChocolateBar and other LibDataBroker displays, Outfitter Forever's icon now changes to the icon of the outfit you're wearing, next to its name. The minimap button keeps the Outfitter Forever logo.
+
 ## 1.3.7
 
 - **Fixed: a mistake in a custom script's settings line caused a Lua error.** A `-- $SETTING` line with no type, a number in place of a setting, or an expression that fails now gives a chat message saying which outfit's script didn't start and why. Other outfits' scripts keep working.

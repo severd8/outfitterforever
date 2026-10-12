@@ -20,7 +20,7 @@ function Outfitter.LDB:OutfitEvent(pEvent, pOutfitName, pOutfit)
 	
 	if vOutfit then
 		self.DataObj.text = vOutfitName
-		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo" -- always the logo (see UpdateCurrentOutfitIcon)
+		self.DataObj.icon = Outfitter.OutfitBar:GetOutfitTexture(vOutfit) -- the worn outfit's icon, as upstream (the minimap button keeps the logo)
 	else
 		self.DataObj.text = Outfitter.cTitle
 		self.DataObj.icon = "Interface\\AddOns\\OutfitterForever\\Textures\\Logo"

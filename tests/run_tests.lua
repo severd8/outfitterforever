@@ -170,7 +170,12 @@ Check(env.OutfitterMinimapButton:GetNormalTexture() == nil, "with no other art u
 O:UpdateCurrentOutfitIcon()
 W.Tick(0.5)
 Check(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture() == logo, "and keeps showing it whatever outfit is on")
-Check(O.LDB.DataObj.icon == logo, "the data broker icon is the logo too")
+do
+	-- The data broker shows the worn outfit's icon (the logo when none is worn)
+	local _, worn = O:GetCurrentOutfitInfo()
+	local expected = worn and O.OutfitBar:GetOutfitTexture(worn) or logo
+	Check(O.LDB.DataObj.icon == expected, "the data broker icon is the worn outfit's icon (" .. tostring(O.LDB.DataObj.icon) .. ")")
+end
 O:ShowPanel(1)
 O:Update(true)
 W.Tick(0.5)
@@ -198,6 +203,13 @@ O:WearOutfit(fishing)
 W.Tick(3)
 Check(W.equipped[1] == 1002, "fishing hat on (head has " .. tostring(W.equipped[1]) .. ")")
 Check(W.equipped[16] == 1011, "fishing pole in hand (main hand has " .. tostring(W.equipped[16]) .. ")")
+do
+	local _, worn = O:GetCurrentOutfitInfo()
+	Check(worn == fishing and O.LDB.DataObj.icon == O.OutfitBar:GetOutfitTexture(fishing) and O.LDB.DataObj.icon ~= logo,
+		"the data broker switches to the fishing outfit's icon (" .. tostring(O.LDB.DataObj.icon) .. ")")
+	Check(O.LDB.DataObj.text == fishing:GetName(), "and its name")
+	Check(env.OutfitterMinimapButton.CurrentOutfitTexture:GetTexture() == logo, "the minimap button keeps the logo")
+end
 Check(W.equipped[8] == 1006, "riding boots on")
 Check(W.equipped[17] == nil, "shield put away for the two-hander")
 Check(W.equipped[18] == 1010, "bow left alone")
