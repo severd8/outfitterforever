@@ -32,9 +32,17 @@ function Outfitter.LDB:OnClick(pFrame, pButton)
 	if pButton == "LeftButton" then
 		self:ToggleMenu()
 	else
-		self:HideMenu()
-		if Outfitter:OpenShortcutWorks() then -- Forever: see OpenShortcutWorks
-			Outfitter:ToggleUI(true)
+		-- Forever: what right-click does is an option (see RightClickAction)
+		local vAction = Outfitter:RightClickAction()
+		if vAction == "menu" then
+			self:ToggleMenu()
+		else
+			self:HideMenu()
+			if vAction == "swap" then
+				Outfitter:SwapOutfits()
+			else
+				Outfitter:ToggleUI(true)
+			end
 		end
 	end
 end

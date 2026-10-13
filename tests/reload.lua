@@ -253,11 +253,12 @@ state = Session(NewCharacter(), function(S)
 	look.ShowDisplay()
 	S.W.Tick(0.2)
 	look.Swatches[2]:Click()        -- High contrast
-	look.TextSizes[3]:Click()       -- Larger
-	look.WindowSize:SetValue(130)
-	look.WindowSize:GetScript("OnMouseUp")(look.WindowSize)
+	look.TextSize.Box:SetText("130")
+	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
+	look.WindowSize.Slider:SetValue(130)
+	look.WindowSize.Slider:GetScript("OnMouseUp")(look.WindowSize.Slider)
 	local saved = S.env.gOutfitter_GlobalSettings.Display
-	Check(saved.Colors == "contrast" and saved.TextSize == "larger" and saved.Scale == 130, "the Display choices are saved for the account")
+	Check(saved.Colors == "contrast" and saved.TextSize == 130 and saved.Scale == 130, "the Display choices are saved for the account")
 	Check(S.O.Theme.C.win[1] ~= 0, "the colours wait for a reload")
 	Check(look.ReloadNote:GetText() ~= "", "and the tab says so")
 	Check(S.env.OutfitterFrame:GetScale() == 1.3, "the window size changes straight away")
@@ -272,8 +273,10 @@ state = Session(state, function(S)
 	local row = ShownOutfitRow(S)
 	local size = row and select(2, S.env[row:GetName() .. "OutfitName"]:GetFont())
 	Check(size and math.abs(size - 12 * 1.3) < 0.01, "and its text size (" .. tostring(size) .. ")")
-	-- Light colours: the game's gold outfit names are made dark on the light panel
+	-- Light colours: the game's gold outfit names are made dark on the light panel.
+	-- And 1.5.0 saved the text size as a word.
 	S.env.gOutfitter_GlobalSettings.Display.Colors = "light"
+	S.env.gOutfitter_GlobalSettings.Display.TextSize = "large"
 end)
 state = Session(state, function(S)
 	OpenWindow(S)
@@ -284,6 +287,8 @@ state = Session(state, function(S)
 	Check(C.win[1] > 0.8 and r == C.title[1] and g == C.title[2] and b == C.title[3],
 		"Light colours: outfit names are dark (" .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b) .. ")")
 	local look = S.env.OutfitterFrame.Look
+	local textSize = row and select(2, S.env[row:GetName() .. "OutfitName"]:GetFont())
+	Check(textSize and math.abs(textSize - 12 * 1.15) < 0.01, "1.5.0's Large text is 115% (" .. tostring(textSize) .. ")")
 	Check(not look.Header.text.OFKeep or select(1, look.Header.text:GetTextColor()) == C.gold[1], "the header's text stays gold")
 	look.ShowDisplay()
 	look.DisplayReset:Click()

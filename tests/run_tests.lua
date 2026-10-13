@@ -697,7 +697,6 @@ do
 		{ env.OutfitterShowMinimapButton, O.cShowMinimapButton, O.cLookMinimapButtonDescription },
 		{ env.OutfitterShowOutfitBar, O.cShowOutfitBar, O.cLookOutfitBarDescription },
 		{ env.OutfitterUseSidebarTab, O.cSidebarTab, O.cLookSidebarTabDescription },
-		{ look.OpenShortcuts, O.cLookOpenShortcuts, O.cLookOpenShortcutsDescription },
 	}
 	local function TooltipFor(widget)
 		widget:GetScript("OnEnter")(widget)
@@ -1558,52 +1557,114 @@ W.Tick(0.2)
 NoErrors()
 
 ----------------------------------------
-Step("the Open from minimap and broker option")
--- Asked for by a player: right-click on the minimap button or the broker, and
--- "Open Outfitter Forever" in their menu, only print a reminder while the
--- character window is closed. With the option off they're left out then.
+Step("right-click on the minimap button and broker")
+-- Asked for by players: right-click can open Outfitter (it only prints a reminder
+-- while the character window is closed), show the outfit menu, or swap between
+-- two outfits picked in their menus
 do
 	local look = env.OutfitterFrame.Look
-	local switch = look.OpenShortcuts
-	local function MenuHasOpen()
-		local found = false
-		local items = setmetatable({}, { __index = function(_, key)
-			return function(_, text) if key == "AddFunction" and text == O.cOpenOutfitter then found = true end end
+	local field = look.RightClick
+	-- A stand-in for a menu that records what's added to it
+	local function Recorder()
+		local record = { functions = {}, toggles = {} }
+		return setmetatable(record, { __index = function(_, key)
+			return function(self, text, a, b)
+				if key == "AddFunction" then record.functions[text] = a end
+				if key == "AddToggle" then record.toggles[text] = { get = a, set = b } end
+				return self
+			end
 		end })
+	end
+	local function MenuHasOpen()
+		local items = Recorder()
 		O:GetMinimapDropdownItems(items)
-		return found
+		return items.functions[O.cOpenOutfitter] ~= nil
+	end
+	local function TooltipSays(text)
+		O:ShowBrokerTooltip(env.UIParent)
+		for _, line in ipairs(env.GameTooltip.__lines or {}) do
+			if line == text then return true end
+		end
+		return false
 	end
 	local minimapClick = env.OutfitterMinimapButton:GetScript("OnMouseUp") or env.OutfitterMinimapButton:GetScript("OnClick")
-	Check(switch and AnchoredTo(switch, look.Cards[3]), "Options has it, in Quick access")
-	Check(switch and switch:IsOn() and not O.Settings.Options.DisableOpenShortcuts, "on to start with")
+	local function RightClick() W.SafeCall(minimapClick, env.OutfitterMinimapButton, "RightButton") W.Tick(0.2) end
 	if env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end
 	env.OutfitterFrame:Hide()
 	W.Tick(0.2)
-	Check(MenuHasOpen(), "while it's on the menu has Open Outfitter Forever")
-	switch:Click()
-	Check(O.Settings.Options.DisableOpenShortcuts == true and not switch:IsOn(), "switching it off is saved")
-	Check(env.gOutfitter_Settings.Options.DisableOpenShortcuts == true, "in this character's settings")
-	local printedBefore = #W.printed
-	W.SafeCall(minimapClick, env.OutfitterMinimapButton, "RightButton")
+
+	-- Open (the default)
+	Check(field and AnchoredTo(field:GetParent(), look.Cards[3]), "Options has the choice, in Quick access")
+	field.Refresh()
+	Check(O:RightClickAction() == "open" and field.text:GetText() == O.cLookRightClickOpen, "it opens Outfitter to start with")
+	Check(TooltipSays(O.cLookTipOpen), "and the tooltip says so")
+	Check(MenuHasOpen(), "the menu has Open Outfitter Forever")
+	local printed = #W.printed
+	RightClick()
+	Check(#W.printed > printed, "with the character window closed it prints the reminder")
+	O.OpenWithCharacterWindow = nil
+
+	-- 1.4.2's switch, turned off, reads as the menu
+	O.Settings.Options.DisableOpenShortcuts = true
+	field.Refresh()
+	Check(O:RightClickAction() == "menu" and field.text:GetText() == O.cLookRightClickMenu, "1.4.2's switch turned off means the menu")
+
+	-- The menu field opens a menu, and closes it again
+	field:Click()
+	Check(field.menu ~= nil, "the choice opens a menu")
+	field:Click()
+	Check(field.menu == nil, "and closes it")
+
+	-- Menu
+	O:SetRightClickAction("menu")
+	Check(O.Settings.Options.RightClick == "menu" and O.Settings.Options.DisableOpenShortcuts == nil, "picking the menu is saved")
+	printed = #W.printed
 	O.LDB:OnClick(nil, "RightButton")
 	W.Tick(0.2)
-	Check(#W.printed == printedBefore, "off: right-clicking with the character window closed prints nothing")
-	Check(not O.OpenWithCharacterWindow, "and doesn't wait for the character window")
-	Check(not MenuHasOpen(), "the menu leaves Open Outfitter Forever out")
-	W.PlayerTogglesCharacter()
-	W.Tick(0.2)
-	Check(not env.OutfitterFrame:IsVisible(), "opening the character window doesn't open Outfitter")
-	Check(MenuHasOpen(), "with the character window open the menu has Open Outfitter Forever")
-	W.SafeCall(minimapClick, env.OutfitterMinimapButton, "RightButton")
-	W.Tick(0.2)
-	Check(env.OutfitterFrame:IsVisible(), "and right-click on the minimap button opens Outfitter")
+	Check(O.LDB.dropDownMenu ~= nil and #W.printed == printed, "right-click on the broker shows the outfit menu")
+	O.LDB:HideMenu()
+	Check(not MenuHasOpen(), "and the menu leaves Open Outfitter Forever out while the character window is closed")
+	Check(TooltipSays(O.cLookTipMenu), "the tooltip says right-click is the menu")
+
+	-- Swap two outfits
+	O:SetRightClickAction("swap")
+	printed = #W.printed
+	RightClick()
+	Check(#W.printed > printed and tostring(W.printed[#W.printed]):find(O.cLookSwapNotSet, 1, true),
+		"swap with no outfits picked says how to pick them")
+	Check(TooltipSays(O.cLookTipSwapNotSet), "and so does the tooltip")
+	local function Pick(outfit, label)
+		local menu = Recorder()
+		O:AddOutfitMenu(menu, outfit)
+		local toggle = menu.toggles[label]
+		Check(toggle ~= nil, "the outfit menu has " .. label)
+		if toggle then toggle.set() end
+		return toggle
+	end
+	Pick(battle, O.cLookSwapFirst)
+	Pick(fishing, O.cLookSwapSecond)
+	Check(battle.SwapSlot == 1 and fishing.SwapSlot == 2, "picking them is saved with the outfits")
+	local first = Pick(fishing, O.cLookSwapFirst)
+	Check(fishing.SwapSlot == 1 and battle.SwapSlot == nil, "an outfit can only be one of them: picking another first replaces it")
+	Pick(battle, O.cLookSwapFirst)
+	Pick(fishing, O.cLookSwapSecond)
+	O:WearOutfit(battle)
+	W.Tick(3)
+	Check(TooltipSays(string.format(O.cLookTipSwap, fishing:GetName())), "wearing the first, the tooltip names the second")
+	local errors = #W.uiErrors
+	RightClick()
+	W.Tick(3)
+	Check(O:WearingOutfit(fishing), "right-click puts on the second outfit")
+	Check(#W.uiErrors > errors, "with the message a key binding shows")
 	O.LDB:OnClick(nil, "RightButton")
-	W.Tick(0.2)
-	Check(not env.OutfitterFrame:IsVisible(), "right-click on the broker closes it")
-	switch:Click()
-	Check(not O.Settings.Options.DisableOpenShortcuts and switch:IsOn(), "switching it on again is saved")
-	W.PlayerTogglesCharacter()
-	W.Tick(0.2)
+	W.Tick(3)
+	Check(O:WearingOutfit(battle) and not O:WearingOutfit(fishing),
+		"right-click on the broker puts the first back on, and the second (an accessory) comes off")
+	Check(first and first.get() == false, "the menu shows which one is which")
+
+	-- Back to the default for the rest
+	O:SetRightClickAction("open")
+	Check(O.Settings.Options.RightClick == nil, "open is the default, saved as nothing")
 end
 NoErrors()
 
@@ -1621,10 +1682,29 @@ do
 	Check(look.ReloadNote:GetText() == "" and not look.Reload:IsShown(), "no reload note while the colors are the ones in use")
 
 	-- A bigger window, and its dialogs and menus
-	look.WindowSize:SetValue(150)
+	Check(look.DisplayPages[1]:IsVisible() and not look.DisplayPages[2]:IsVisible(), "it opens on Size and text")
+	local windowSize = look.WindowSize
+	windowSize.Slider:SetValue(150)
 	Check(env.OutfitterFrame:GetScale() == 1, "the window doesn't change size while the slider is dragged")
-	look.WindowSize:GetScript("OnMouseUp")(look.WindowSize)
+	Check(windowSize.Box:GetText() == "150", "the box follows the slider")
+	windowSize.Slider:GetScript("OnMouseUp")(windowSize.Slider)
 	Check(env.OutfitterFrame:GetScale() == 1.5, "it does when the mouse lets go")
+	-- Typed: any size in range, to two decimals, on Enter
+	windowSize.Box:SetText("90.555")
+	windowSize.Box:GetScript("OnEnterPressed")(windowSize.Box)
+	Check(math.abs(env.OutfitterFrame:GetScale() - 0.9056) < 0.0001 and windowSize.Box:GetText() == "90.56",
+		"typing 90.555 and Enter makes it 90.56% (" .. tostring(windowSize.Box:GetText()) .. ")")
+	windowSize.Box:SetText("90,5")
+	windowSize.Box:GetScript("OnEnterPressed")(windowSize.Box)
+	Check(math.abs(env.OutfitterFrame:GetScale() - 0.905) < 0.0001, "a comma works as the decimal point")
+	windowSize.Box:SetText("900")
+	windowSize.Box:GetScript("OnEnterPressed")(windowSize.Box)
+	Check(env.OutfitterFrame:GetScale() == 2 and windowSize.Box:GetText() == "200", "too big is the biggest size")
+	windowSize.Box:SetText("big")
+	windowSize.Box:GetScript("OnEnterPressed")(windowSize.Box)
+	Check(env.OutfitterFrame:GetScale() == 2 and windowSize.Box:GetText() == "200", "something that isn't a number changes nothing")
+	windowSize.Box:SetText("150")
+	windowSize.Box:GetScript("OnEnterPressed")(windowSize.Box)
 	O:OpenNameOutfitDialog(nil)
 	W.Tick(0.2)
 	Check(O.NameOutfitDialog:GetScale() == 1.5, "dialogs open at that size")
@@ -1639,13 +1719,26 @@ do
 	-- Bigger text
 	local name = env.OutfitterItem0OutfitName
 	local base = select(2, name:GetFont())
-	look.TextSizes[3]:Click()
-	Check(math.abs(select(2, name:GetFont()) - base * 1.3) < 0.01, "Larger text makes the window's text bigger")
+	look.TextSize.Box:SetText("130")
+	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
+	Check(math.abs(select(2, name:GetFont()) - base * 1.3) < 0.01, "130% text makes the window's text bigger")
+	-- A font from the menu, in the window and the menus
+	local font = look.Font
+	Check(font.text:GetText() == O.cLookFontDefault, "the font is the game's to start with")
+	font:Click()
+	Check(font.menu ~= nil, "the font field opens a menu")
+	font:Click()
+	env.gOutfitter_GlobalSettings.Display.Font = "Fonts\\MORPHEUS.ttf"
+	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
+	Check(name:GetFont() == "Fonts\\MORPHEUS.ttf", "a chosen font is used in the window")
+	font.Refresh()
+	Check(font.text:GetText() == "Morpheus", "and named in the field")
 	local line = Dropdown.StyleButton and env.CreateFrame("Button")
 	if line then
 		line.text = line:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		Dropdown.StyleButton(line)
-		Check(math.abs(select(2, line.text:GetFont()) - 12 * 1.3) < 0.01, "and the menus' text")
+		Check(math.abs(select(2, line.text:GetFont()) - 12 * 1.3) < 0.01 and line.text:GetFont() == "Fonts\\MORPHEUS.ttf",
+			"and the menus' text, in that font")
 	end
 	-- Options with bigger text: the window grows to fit the cards, and goes back after
 	look.Tabs[2]:Click()
@@ -1662,6 +1755,10 @@ do
 	-- A color style waits for a reload
 	look.Tabs[3]:Click()
 	W.Tick(0.2)
+	look.DisplaySwitch[2]:Click()
+	Check(look.DisplayPages[2]:IsVisible() and not look.DisplayPages[1]:IsVisible(), "the Colors page")
+	local cardInner = (env.OutfitterFrame:GetWidth() or 256) - 16 - 24
+	Check(math.abs(look.Swatches[2]:GetWidth() - (cardInner - 4) / 2) < 1, "the styles are two by two, each half the card wide")
 	look.Swatches[3]:Click()
 	Check(env.gOutfitter_GlobalSettings.Display.Colors == "blue", "picking Blue is saved")
 	Check(look.ReloadNote:GetText() == O.cLookReloadTyped, "and the tab says to /reload (this client has no reload function)")
@@ -1670,7 +1767,8 @@ do
 
 	-- Reset
 	look.DisplayReset:Click()
-	Check(env.OutfitterFrame:GetScale() == 1 and select(2, name:GetFont()) == base, "Reset puts the size and text back")
+	Check(env.OutfitterFrame:GetScale() == 1 and select(2, name:GetFont()) == base and name:GetFont() ~= "Fonts\\MORPHEUS.ttf",
+		"Reset puts the size, text and font back")
 	Check(next(env.gOutfitter_GlobalSettings.Display) == nil, "and clears the saved choices")
 	look.Tabs[1]:Click()
 	W.Tick(0.2)

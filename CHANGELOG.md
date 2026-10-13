@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0
+
+From a player's detailed feedback on 1.5.0, thank you!
+
+- **Right-click on the minimap button or your broker does what you pick** (Options > Quick access): open Outfitter Forever, show the outfit menu, or **swap between two outfits**. Pick the two in each outfit's menu (Right-click swap: first / second); every right-click puts on the other one, with the same message as a key binding. The tooltip says what a right-click will do. This replaces 1.4.2's "Open from minimap and broker" switch (turned off, it now reads as "show the outfit menu").
+- **Display tab** has two pages, Size and text, and Colors:
+  - **Type the exact size you want**, like 90.55, and press Enter. Window size goes from 50% to 200% and text size from 80% to 200%. The sliders still work.
+  - **Font:** pick the font for the window, its dialogs and its menus. Fonts from other addons (LibSharedMedia) are listed too.
+  - **Fixed:** "High contrast" was cut off. The four color styles are now two by two.
+- The minimap button's tooltip now also shows with the game's Enhanced Tooltips turned off.
+
 ## 1.5.0
 
 - **New Display tab**, for anyone who finds the window hard to read:

@@ -2068,6 +2068,13 @@ function Outfitter:AddOutfitMenu(menu, outfit)
 	menu:AddFunction(self.cSetCurrentItems, function ()
 		self:PerformAction("SET_CURRENT", outfit)
 	end)
+	-- Forever: the two outfits a right-click on the minimap button or broker swaps between
+	menu:AddToggle(self.cLookSwapFirst, function () return outfit.SwapSlot == 1 end, function ()
+		self:SetSwapOutfit(outfit, 1)
+	end)
+	menu:AddToggle(self.cLookSwapSecond, function () return outfit.SwapSlot == 2 end, function ()
+		self:SetSwapOutfit(outfit, 2)
+	end)
 
 	-- Place in the list
 	local vPlace, vCount, vCategoryID = self:GetOutfitPlace(outfit)
@@ -6768,12 +6775,96 @@ function Outfitter:OpenUI()
 	OutfitterFrame:Show()
 end
 
--- Forever: a right-click on the minimap button or the data broker entry, and
--- "Open Outfitter Forever" in their menu, can't open the character window (see
--- OpenUI). With the "Open from minimap and broker" option off they're left out
--- while it's closed, so they don't print the reminder.
+-- Forever: what a right-click on the minimap button or the data broker entry
+-- does (Options > Quick access): "open" Outfitter (it can't open the character
+-- window, see OpenUI, so with the window closed it only prints a reminder),
+-- show the outfit "menu", or "swap" between the two outfits picked in their
+-- menus. 1.4.2's "Open from minimap and broker" switch, turned off, was a
+-- right-click that did nothing; it reads as "menu".
+function Outfitter:RightClickAction()
+	local vOptions = self.Settings.Options
+	return vOptions.RightClick or (vOptions.DisableOpenShortcuts and "menu") or "open"
+end
+
+function Outfitter:SetRightClickAction(pAction)
+	self.Settings.Options.RightClick = pAction ~= "open" and pAction or nil
+	self.Settings.Options.DisableOpenShortcuts = nil
+end
+
+-- "Open Outfitter Forever" in those menus is left out while the character
+-- window is closed unless right-click opens Outfitter (it would only print
+-- the reminder)
 function Outfitter:OpenShortcutWorks()
-	return not (IsForever and self.Settings.Options.DisableOpenShortcuts and not PaperDollFrame:IsVisible())
+	return not (IsForever and self:RightClickAction() ~= "open" and not PaperDollFrame:IsVisible())
+end
+
+-- The two outfits a right-click swaps between: pSlot 1 or 2, kept on the
+-- outfit itself (SwapSlot), so a rename doesn't lose it
+function Outfitter:GetSwapOutfit(pSlot)
+	for _, vOutfits in pairs(self.Settings.Outfits) do
+		for _, vOutfit in ipairs(vOutfits) do
+			if vOutfit.SwapSlot == pSlot then return vOutfit end
+		end
+	end
+end
+
+function Outfitter:SetSwapOutfit(pOutfit, pSlot)
+	local vWasSet = pOutfit.SwapSlot == pSlot
+	for _, vOutfits in pairs(self.Settings.Outfits) do
+		for _, vOutfit in ipairs(vOutfits) do
+			if vOutfit.SwapSlot == pSlot then vOutfit.SwapSlot = nil end
+		end
+	end
+	if not vWasSet then pOutfit.SwapSlot = pSlot end
+end
+
+-- The outfit a right-click would put on: the first while the second is worn
+-- (an accessory can be worn over the first), the second while only the first
+-- is, else the first
+function Outfitter:GetSwapTarget()
+	local vFirst, vSecond = self:GetSwapOutfit(1), self:GetSwapOutfit(2)
+	if not vFirst or not vSecond then return nil end
+	if not self:WearingOutfit(vSecond) and self:WearingOutfit(vFirst) then return vSecond, vFirst end
+	return vFirst, vSecond
+end
+
+-- Puts on the other one, like a key binding does: the same message, and in
+-- combat the usual wait (WearOutfit says so in chat). An accessory being
+-- swapped out comes off; a complete outfit is replaced anyway.
+function Outfitter:SwapOutfits()
+	local vTarget, vOther = self:GetSwapTarget()
+	if not vTarget then
+		self:NoteMessage(self.cLookSwapNotSet)
+		return
+	end
+	vTarget.Disabled = nil
+	if vOther.CategoryID ~= "Complete" and self:WearingOutfit(vOther) then
+		self:RemoveOutfit(vOther)
+	end
+	self:WearOutfit(vTarget)
+	if not self.Settings.Options.DisableHotkeyMessages then
+		UIErrorsFrame:AddMessage(format(self.cEquipOutfitMessageFormat, vTarget:GetName()), self.OUTFIT_MESSAGE_COLOR.r, self.OUTFIT_MESSAGE_COLOR.g, self.OUTFIT_MESSAGE_COLOR.b)
+	end
+end
+
+-- The minimap button's and broker's tooltip: what they are, what a click and
+-- a right-click do. Always shown (AddNewbieTip showed nothing with the game's
+-- Enhanced Tooltips off).
+function Outfitter:ShowBrokerTooltip(pOwner)
+	GameTooltip:SetOwner(pOwner, "ANCHOR_BOTTOMLEFT")
+	GameTooltip:AddLine(self.cTitle)
+	GameTooltip:AddLine(self.cMinimapButtonDescription, 1, 1, 1, true)
+	local vAction, vLine = self:RightClickAction()
+	if vAction == "swap" then
+		local vTarget = self:GetSwapTarget()
+		vLine = vTarget and format(self.cLookTipSwap, vTarget:GetName()) or self.cLookTipSwapNotSet
+	elseif vAction == "menu" then
+		vLine = self.cLookTipMenu
+	else
+		vLine = self.cLookTipOpen
+	end
+	GameTooltip:AddLine(vLine, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+	GameTooltip:Show()
 end
 
 -- Forever: the character window was opened (by you). If you asked for Outfitter

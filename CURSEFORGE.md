@@ -18,7 +18,7 @@ It works like the Outfitter you know, with the same outfits, menus and scripts. 
 - **Extras.** An icon picker, item tooltips that show which outfits use the item, and a title, helm and cloak setting for each outfit.
 - **Works with Baganator.** With the Baganator bag addon, each outfit's gear gets its own group in your bags.
 - **The Forever look.** The window, its dialogs, the outfit bar and the menus share the flat dark look of TauntMaster Forever, ToppedOff Forever and BattleText Forever.
-- **Easy to read.** The Display tab makes the window, its dialogs and menus bigger, makes the text bigger, and has High contrast, Blue and Light colors.
+- **Easy to read.** The Display tab sets the size of the window, its dialogs and menus and of their text (type an exact size, like 90.55), the font, and High contrast, Blue or Light colors.
 - **In your language.** English, German, French, Chinese, Korean and Russian.
 
 ## On WoW: Forever
@@ -47,7 +47,7 @@ Don't install another copy of Outfitter alongside it.
 - **Keep an outfit up to date.** Gear you put on yourself stays on, but it isn't added to an outfit. To save what you're wearing into one (your **Normal** outfit as you level, say), open the menu to the right of the outfit and pick **Update to current items** (right under Rename).
 - **Automatic outfits.** Use the menu to the right of an outfit to pick a script or turn it off.
 - **Put outfits in your own order.** In the same menu, pick **Move up** or **Move down**. The order is saved for each character and is used in the list, the minimap menu and the outfit bar. **Sort this list by name** puts it back in A to Z order.
-- **Options.** The Options tab turns outfit scripts, the minimap button, the outfit bar (its **Settings** button sets its size, transparency and lock) and the tooltip lines on and off. Turn off **Open from minimap and broker** if you don't want right-click on the minimap button or broker to remind you to open your character window. Hover over an option to see what it does. Outfits and options are saved for each character, so a new character starts with the defaults.
+- **Options.** The Options tab turns outfit scripts, the minimap button, the outfit bar (its **Settings** button sets its size, transparency and lock) and the tooltip lines on and off. **Right-click on minimap and broker** picks what a right-click on the minimap button or your data broker entry does: open Outfitter Forever, show the outfit menu, or swap between two outfits (pick them with **Right-click swap: first / second** in each outfit's menu). Hover over an option to see what it does. Outfits and options are saved for each character, so a new character starts with the defaults.
 
 | Command | What it does |
 |---|---|

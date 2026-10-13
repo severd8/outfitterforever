@@ -38,8 +38,8 @@ local function CreateMinimapButton()
 end
 
 ---- Define button functions
-local function _OnEnter()
-	addon.AddNewbieTip(OutfitterMinimapButton, addon.cMinimapButtonTitle, 1, 1, 1, addon.cMinimapButtonDescription, 1)
+local function _OnEnter(pOwner)
+	addon:ShowBrokerTooltip(pOwner or OutfitterMinimapButton) -- Forever: see ShowBrokerTooltip
 end
 
 local function _OnLeave()
@@ -69,9 +69,17 @@ local function _MouseUp(pButton, down)
 	if pButton == "LeftButton" then
 		OutfitterMinimapButton:ToggleMenu()
 	elseif pButton == "RightButton" then
-		OutfitterMinimapButton:HideMenu()
-		if Outfitter:OpenShortcutWorks() then -- Forever: see OpenShortcutWorks
-			Outfitter:ToggleUI(true)
+		-- Forever: what right-click does is an option (see RightClickAction)
+		local vAction = Outfitter:RightClickAction()
+		if vAction == "menu" then
+			OutfitterMinimapButton:ToggleMenu()
+		else
+			OutfitterMinimapButton:HideMenu()
+			if vAction == "swap" then
+				Outfitter:SwapOutfits()
+			else
+				Outfitter:ToggleUI(true)
+			end
 		end
 	end
 
@@ -263,7 +271,7 @@ function addon:InitializeMinimapButton()
 	if addon.LDB and LDBIcon then
 		-- LibDBIcon is the base for the minimap button
 		addon.LDBIcon = LDBIcon
-		addon.LDB.DataObj.OnEnter = function () _OnEnter() end
+		addon.LDB.DataObj.OnEnter = function (pFrame) _OnEnter(pFrame) end -- Forever: the tooltip by the broker, not the minimap
 		addon.LDB.DataObj.OnLeave = function () _OnLeave() end
 		LDBIcon:Register("Outfitter", addon.LDB.DataObj, gOutfitter_Settings.Options.MinimapButton)
 		OutfitterMinimapButton = LDBIcon:GetMinimapButton("Outfitter")

@@ -15,10 +15,13 @@ local ARROW = "Interface\\Buttons\\Arrow-Down-Up"
 ---------------------------------------------------------------------------
 -- Display settings (the Display tab): window size, text size and colours, for
 -- players who need things bigger or clearer. Saved for the whole account in
--- gOutfitter_GlobalSettings.Display: Scale (percent), TextSize, Colors.
+-- gOutfitter_GlobalSettings.Display: Scale and TextSize (percent), Font (a font
+-- file, nil for the game's own), Colors.
 ---------------------------------------------------------------------------
-local TEXT_SIZES = { normal = 1, large = 1.15, larger = 1.3 }
-local TEXT_KEYS = { "normal", "large", "larger" }
+local SCALE_MIN, SCALE_MAX = 50, 200
+local TEXT_MIN, TEXT_MAX = 80, 200
+-- 1.5.0 saved the text size as a word
+local OLD_TEXT_SIZES = { large = 115, larger = 130 }
 local COLOR_KEYS = { "default", "contrast", "blue", "light" }
 
 -- Each colour style replaces the shared colours (Theme.lua's C) for this addon
@@ -69,8 +72,33 @@ local function DisplaySettings()
 	return gOutfitter_GlobalSettings.Display
 end
 
+local function TextPercent()
+	local size = DisplaySettings().TextSize
+	return OLD_TEXT_SIZES[size] or tonumber(size) or 100
+end
 local function WindowScale() return (tonumber(DisplaySettings().Scale) or 100) / 100 end
-local function TextScale() return TEXT_SIZES[DisplaySettings().TextSize] or 1 end
+local function TextScale() return TextPercent() / 100 end
+
+-- The fonts to pick from: those LibSharedMedia knows (other addons add theirs),
+-- else the game's own four, which have only Western letters
+local GAME_FONTS = {
+	{ "Friz Quadrata", "Fonts\\FRIZQT__.TTF" }, { "Arial Narrow", "Fonts\\ARIALN.TTF" },
+	{ "Skurri", "Fonts\\skurri.ttf" }, { "Morpheus", "Fonts\\MORPHEUS.ttf" },
+}
+local WESTERN = { enUS = true, enGB = true, deDE = true, frFR = true, esES = true, esMX = true, itIT = true, ptBR = true }
+local function FontChoices()
+	local fonts = {}
+	local media = LibStub and LibStub("LibSharedMedia-3.0", true)
+	if media then
+		for _, name in ipairs(media:List("font") or {}) do
+			local file = media:Fetch("font", name)
+			if file then fonts[#fonts + 1] = { name, file } end
+		end
+	elseif WESTERN[GetLocale()] then
+		for _, font in ipairs(GAME_FONTS) do fonts[#fonts + 1] = font end
+	end
+	return fonts
+end
 
 -- The colours in use: chosen at login (repainting everything that's already
 -- drawn would mean redrawing the whole window, so a new choice waits for a reload)
@@ -96,13 +124,13 @@ local function SizeText(region, factor)
 	if not region or not region.SetFont or not region.GetFont then return end
 	local base = region.OFTextBase
 	if not base then
-		if factor == 1 then return end
+		if factor == 1 and not DisplaySettings().Font then return end
 		local font, size, flags = region:GetFont()
 		if not font or not size then return end
 		base = { font, size, flags }
 		region.OFTextBase = base
 	end
-	region:SetFont(base[1], base[2] * factor, base[3] or "")
+	region:SetFont(DisplaySettings().Font or base[1], base[2] * factor, base[3] or "")
 end
 
 local function SizeTextIn(frame, factor)
@@ -491,6 +519,50 @@ local function HoverLabel(widget, label)
 	end
 end
 
+-- A field that opens one of Outfitter's own menus to pick from (the game's
+-- newer menus aren't on Forever). choices() returns { key, label } pairs.
+local function MenuField(parent, width, choices, get, set)
+	local b = CreateFrame("Button", nil, parent)
+	b:SetSize(width, 20)
+	T.Fill(b, C.field)
+	T.Border(b, C.fieldEdge)
+	local text = T.Text(b, "", "GameFontHighlightSmall", C.title)
+	text:SetPoint("LEFT", 6, 0)
+	text:SetPoint("RIGHT", -18, 0)
+	text:SetWordWrap(false)
+	T.MenuArrow(b, 6)
+	b.text = text
+	function b.Refresh()
+		local current = get()
+		for _, choice in ipairs(choices()) do
+			if choice[1] == current then text:SetText(choice[2]) return end
+		end
+		text:SetText(choices()[1] and choices()[1][2] or "")
+	end
+	local function Close()
+		if b.menu then
+			b.menu:Hide()
+			b.menu = nil
+		end
+	end
+	b:SetScript("OnClick", function()
+		if b.menu then Close() return end
+		local items = Outfitter:New(Outfitter.UIElementsLib._DropDownMenuItems, function()
+			Outfitter.SchedulerLib:ScheduleTask(0.1, Close)
+		end)
+		for _, choice in ipairs(choices()) do
+			items:AddToggle(choice[2], function() return get() == choice[1] end, function()
+				set(choice[1])
+				b.Refresh()
+			end)
+		end
+		b.menu = Outfitter:New(Outfitter.UIElementsLib._DropDownMenu)
+		b.menu:Show(items, "TOPLEFT", b, "BOTTOMLEFT", 0, -2)
+	end)
+	b:HookScript("OnHide", Close)
+	return b
+end
+
 -- Lays the option rows and cards out from the top: a hidden row takes no room
 -- and a two-line label makes its row taller. Clicks reach as far as the label's text.
 local function LayoutOptions(look)
@@ -499,7 +571,17 @@ local function LayoutOptions(look)
 	for _, card in ipairs(look.Cards) do
 		local rowY = -24
 		for _, row in ipairs(card.rows) do
-			if row.widget:IsShown() then
+			if row.field then
+				-- A label over a menu field, the card's full width
+				local width = LABEL_W + 36
+				row.label:SetWidth(width)
+				local lines = math.min(3, math.max(1, math.ceil(row.label:GetUnboundedStringWidth() / width)))
+				local height = lines * lineH + 4 + 20 + 6
+				row.widget:ClearAllPoints()
+				row.widget:SetPoint("TOPLEFT", card, "TOPLEFT", 12, rowY + 3)
+				row.widget:SetSize(width, height)
+				rowY = rowY - height
+			elseif row.widget:IsShown() then
 				local width = LABEL_W - (row.extra or 0)
 				row.label:SetWidth(width)
 				local full = row.label:GetUnboundedStringWidth()
@@ -537,7 +619,7 @@ local function StyleOptions(look)
 			{ "OutfitterShowMinimapButton", Outfitter.cShowMinimapButton, Outfitter.cLookMinimapButtonDescription },
 			{ "OutfitterShowOutfitBar", Outfitter.cShowOutfitBar, Outfitter.cLookOutfitBarDescription },
 			{ "OutfitterUseSidebarTab", Outfitter.cSidebarTab, Outfitter.cLookSidebarTabDescription },
-			{ "OpenShortcuts" } } },
+			{ "RightClick" } } },
 	}
 	look.CardsTop = -(24 + TAB_H + 6)
 	local width = (panel:GetWidth() or 256) - 16
@@ -561,22 +643,24 @@ local function StyleOptions(look)
 				switch.label:SetJustifyH("LEFT")
 				look.OptionsScripts = switch
 				row = { widget = switch, label = switch.label }
-			elseif checkName == "OpenShortcuts" then
-				-- Right-click on the minimap button or broker, and the menu's "Open
-				-- Outfitter Forever" (Outfitter:OpenShortcutWorks); on by default
-				local switch = T.SwitchWidget(card)
-				switch:SetFrameLevel(card:GetFrameLevel() + 2)
-				switch:SetScript("OnClick", function(self)
-					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-					Outfitter.Settings.Options.DisableOpenShortcuts = self:IsOn() or nil
-					self:SetOn(not Outfitter.Settings.Options.DisableOpenShortcuts)
-				end)
-				T.Tooltip(switch, Outfitter.cLookOpenShortcuts, Outfitter.cLookOpenShortcutsDescription)
-				switch.label = T.Text(switch, Outfitter.cLookOpenShortcuts, "GameFontHighlightSmall", C.title)
-				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
-				switch.label:SetJustifyH("LEFT")
-				look.OpenShortcuts = switch
-				row = { widget = switch, label = switch.label }
+			elseif checkName == "RightClick" then
+				-- What right-click on the minimap button or broker does
+				-- (Outfitter:RightClickAction): a label over a menu field
+				local box = CreateFrame("Frame", nil, card)
+				box:SetFrameLevel(card:GetFrameLevel() + 2)
+				local label = T.Text(box, Outfitter.cLookRightClick, "GameFontHighlightSmall", C.title)
+				label:SetPoint("TOPLEFT")
+				local field = MenuField(box, LABEL_W + 36,
+					function()
+						return { { "open", Outfitter.cLookRightClickOpen }, { "menu", Outfitter.cLookRightClickMenu },
+							{ "swap", Outfitter.cLookRightClickSwap } }
+					end,
+					function() return Outfitter:RightClickAction() end,
+					function(action) Outfitter:SetRightClickAction(action) end)
+				field:SetPoint("BOTTOMLEFT", 0, 6)
+				T.Tooltip(field, Outfitter.cLookRightClick, Outfitter.cLookRightClickDescription)
+				look.RightClick = field
+				row = { widget = box, label = label, field = field }
 			elseif check then
 				MakeSwitch(check)
 				check:SetFrameLevel(card:GetFrameLevel() + 2)
@@ -587,7 +671,7 @@ local function StyleOptions(look)
 			end
 			if row then
 				row.label:SetWordWrap(true)
-				HoverLabel(row.widget, row.label)
+				if not row.field then HoverLabel(row.widget, row.label) end
 				table.insert(card.rows, row)
 			end
 		end
@@ -650,7 +734,7 @@ local function ApplyDisplay(look)
 	LayoutOptions(look)
 end
 
--- A row of choices, one lit: the text sizes
+-- A row of choices, one lit: the two pages, the color styles
 local function Choices(parent, keys, labels, get, set)
 	local row = {}
 	for index, key in ipairs(keys) do
@@ -683,6 +767,77 @@ local function Choices(parent, keys, labels, get, set)
 	return row
 end
 
+-- A number you can slide or type. The slider moves in whole steps; the box
+-- takes any number in range (two decimals, like 90.55) when you press Enter.
+-- apply() runs when the slider is let go or Enter is pressed.
+local function SizeControl(parent, y, width, label, description, min, max, get, save, apply)
+	local title = T.Text(parent, label, "GameFontHighlightSmall", C.title)
+	title:SetPoint("TOPLEFT", 12, y)
+	local box = T.EditBox(parent, 56)
+	box:SetHeight(18)
+	box:SetPoint("TOPRIGHT", parent, "TOPLEFT", 12 + width, y + 3)
+	box:SetJustifyH("RIGHT")
+	local slider = CreateFrame("Slider", nil, parent)
+	slider:SetOrientation("HORIZONTAL")
+	slider:SetSize(width, 14)
+	slider:SetPoint("TOPLEFT", 12, y - 18)
+	slider:SetHitRectInsets(0, 0, -6, -6)
+	local track = slider:CreateTexture(nil, "BACKGROUND")
+	track:SetHeight(4)
+	track:SetPoint("LEFT")
+	track:SetPoint("RIGHT")
+	track:SetColorTexture(unpack(C.offTrack))
+	local thumb = slider:CreateTexture(nil, "OVERLAY")
+	thumb:SetSize(8, 14)
+	thumb:SetColorTexture(unpack(C.gold))
+	slider:SetThumbTexture(thumb)
+	local fill = slider:CreateTexture(nil, "ARTWORK")
+	fill:SetHeight(4)
+	fill:SetPoint("LEFT", track, "LEFT")
+	fill:SetPoint("RIGHT", thumb, "CENTER")
+	fill:SetColorTexture(unpack(C.fill))
+	slider:SetMinMaxValues(min, max)
+	slider:SetValueStep(1)
+
+	local control = { Slider = slider, Box = box, Title = title }
+	local syncing
+	local function Show(value)
+		box:SetText(value == math.floor(value) and string.format("%d", value) or string.format("%.2f", value))
+	end
+	function control.Refresh()
+		syncing = true
+		slider:SetValue(get())
+		syncing = false
+		Show(get())
+	end
+	slider:SetScript("OnValueChanged", function(_, value)
+		if syncing then return end
+		value = math.floor(value + 0.5)
+		save(value)
+		Show(value)
+	end)
+	-- The window changes size when the mouse lets go: changing it while
+	-- dragging would move the slider under the mouse
+	slider:HookScript("OnMouseUp", function() apply() end)
+	box:SetScript("OnEnterPressed", function(self)
+		local value = tonumber((self:GetText() or ""):gsub(",", "."):match("[%d%.]+") or "")
+		if value then
+			value = math.floor(math.max(min, math.min(max, value)) * 100 + 0.5) / 100
+			save(value)
+			apply()
+		end
+		control.Refresh()
+		self:ClearFocus()
+	end)
+	box:SetScript("OnEscapePressed", function(self)
+		control.Refresh()
+		self:ClearFocus()
+	end)
+	T.Tooltip(slider, label, description)
+	T.Tooltip(box, label, description .. "\n" .. Outfitter.cLookTypeSize)
+	return control
+end
+
 local function StyleDisplay(look)
 	local frame = OutfitterFrame
 	local panel = CreateFrame("Frame", nil, frame)
@@ -693,46 +848,61 @@ local function StyleDisplay(look)
 	local inner = width - 24
 	local top = -(24 + TAB_H + 6)
 
-	-- Size: the window (and dialogs and menus), and the text in them
-	local size = T.Card(panel, Outfitter.cLookSize, 8, top, width, 112)
-	local slider = T.Slider(size, Outfitter.cLookWindowSize, 12, -26, inner,
+	-- Two pages: Size and text, Colors
+	local pages = { CreateFrame("Frame", nil, panel), CreateFrame("Frame", nil, panel) }
+	for _, page in ipairs(pages) do page:SetAllPoints() end
+	look.DisplayPage = look.DisplayPage or 1
+	local switch = Choices(panel, { 1, 2 }, { Outfitter.cLookPageSize, Outfitter.cLookPageColors },
+		function() return look.DisplayPage end,
+		function(index)
+			look.DisplayPage = index
+			for i, page in ipairs(pages) do page:SetShown(i == index) end
+		end)
+	local half = (width - 4) / 2
+	for index, b in ipairs(switch) do
+		b:SetSize(half, 20)
+		b:SetPoint("TOPLEFT", panel, "TOPLEFT", 8 + (index - 1) * (half + 4), top)
+	end
+	look.DisplaySwitch, look.DisplayPages = switch, pages
+	top = top - 26
+
+	-- Page 1: the window's size (with its dialogs and menus), the text's size and font
+	local size = T.Card(pages[1], Outfitter.cLookSize, 8, top, width, 106)
+	look.WindowSize = SizeControl(size, -26, inner, Outfitter.cLookWindowSize, Outfitter.cLookWindowSizeDescription,
+		SCALE_MIN, SCALE_MAX,
 		function() return tonumber(DisplaySettings().Scale) or 100 end,
 		function(value) DisplaySettings().Scale = value ~= 100 and value or nil end,
-		80, 150, "%", 5)
-	slider.title:SetFontObject(GameFontHighlightSmall)
-	slider.title:SetTextColor(C.title[1], C.title[2], C.title[3])
-	-- The window changes size when the mouse lets go: changing it while
-	-- dragging would move the slider under the mouse
-	slider:HookScript("OnMouseUp", function() ApplyDisplay(look) end)
-	T.Tooltip(slider, Outfitter.cLookWindowSize, Outfitter.cLookWindowSizeDescription)
-	look.WindowSize = slider
+		function() ApplyDisplay(look) end)
+	look.TextSize = SizeControl(size, -66, inner, Outfitter.cLookTextSize, Outfitter.cLookTextSizeDescription,
+		TEXT_MIN, TEXT_MAX, TextPercent,
+		function(value) DisplaySettings().TextSize = value ~= 100 and value or nil end,
+		function() ApplyDisplay(look) end)
 
-	local textLabel = T.Text(size, Outfitter.cLookTextSize, "GameFontHighlightSmall", C.title)
-	textLabel:SetPoint("TOPLEFT", 12, -66)
-	local textSizes = Choices(size, TEXT_KEYS,
-		{ Outfitter.cLookTextNormal, Outfitter.cLookTextLarge, Outfitter.cLookTextLarger },
-		function() return DisplaySettings().TextSize or "normal" end,
-		function(key)
-			DisplaySettings().TextSize = key ~= "normal" and key or nil
+	local fontCard = T.Card(pages[1], Outfitter.cLookFont, 8, top - 106 - 4, width, 54)
+	local font = MenuField(fontCard, inner,
+		function()
+			local list = { { false, Outfitter.cLookFontDefault } }
+			for _, choice in ipairs(FontChoices()) do list[#list + 1] = { choice[2], choice[1] } end
+			return list
+		end,
+		function() return DisplaySettings().Font or false end,
+		function(file)
+			DisplaySettings().Font = file or nil
 			ApplyDisplay(look)
 		end)
-	local choiceW = (inner - 8) / 3
-	for index, b in ipairs(textSizes) do
-		b:SetSize(choiceW, 20)
-		b:SetPoint("TOPLEFT", size, "TOPLEFT", 12 + (index - 1) * (choiceW + 4), -82)
-		T.Tooltip(b, Outfitter.cLookTextSize, Outfitter.cLookTextSizeDescription)
-	end
-	look.TextSizes = textSizes
+	font:SetPoint("TOPLEFT", fontCard, "TOPLEFT", 12, -26)
+	T.Tooltip(font, Outfitter.cLookFont, Outfitter.cLookFontDescription)
+	look.Font = font
 
-	-- Colours: four styles, used from the next reload
-	local colors = T.Card(panel, Outfitter.cLookColors, 8, top - 112 - 4, width, 100)
+	-- Page 2: the color styles, used from the next reload
+	local colors = T.Card(pages[2], Outfitter.cLookColors, 8, top, width, 126)
 	local names = { Outfitter.cLookColorDefault, Outfitter.cLookColorContrast, Outfitter.cLookColorBlue, Outfitter.cLookColorLight }
 	local reloadNote = T.Text(colors, "", "GameFontHighlightSmall", C.muted)
-	reloadNote:SetPoint("TOPLEFT", 12, -66)
+	reloadNote:SetPoint("TOPLEFT", 12, -88)
 	reloadNote:SetWidth(inner - 84)
 	reloadNote:SetWordWrap(true)
 	local reload = FlatButton(colors, Outfitter.cLookReload, 78, 20)
-	reload:SetPoint("TOPRIGHT", colors, "TOPRIGHT", -12, -64)
+	reload:SetPoint("TOPRIGHT", colors, "TOPRIGHT", -12, -86)
 	reload:SetScript("OnClick", function() if RELOAD then RELOAD() end end)
 	look.Reload, look.ReloadNote = reload, reloadNote
 	local swatches
@@ -741,8 +911,6 @@ local function StyleDisplay(look)
 		for _, b in ipairs(swatches) do
 			for _, edge in ipairs(b.edges) do
 				edge:SetColorTexture(unpack(b.key == chosen and C.gold or C.line))
-				edge:SetWidth(b.key == chosen and 2 or 1)
-				edge:SetHeight(b.key == chosen and 2 or 1)
 			end
 		end
 		local waiting = chosen ~= appliedColors
@@ -751,35 +919,32 @@ local function StyleDisplay(look)
 	end
 	swatches = Choices(colors, COLOR_KEYS, names,
 		function() return DisplaySettings().Colors or "default" end,
-		function(key)
-			DisplaySettings().Colors = key ~= "default" and key or nil
-			PaintColors()
-		end)
-	local swatchW = (inner - 12) / 4
+		function(key) DisplaySettings().Colors = key ~= "default" and key or nil end)
+	-- Two by two, wide enough for the names
+	local swatchW = (inner - 4) / 2
 	for index, b in ipairs(swatches) do
-		b:SetSize(swatchW, 30)
-		b:SetPoint("TOPLEFT", colors, "TOPLEFT", 12 + (index - 1) * (swatchW + 4), -26)
+		b:SetSize(swatchW, 24)
+		b:SetPoint("TOPLEFT", colors, "TOPLEFT", 12 + ((index - 1) % 2) * (swatchW + 4), -26 - math.floor((index - 1) / 2) * 28)
 		local sample = SWATCHES[b.key]
 		b.bg:SetColorTexture(sample[1], sample[2], sample[3], 1)
 		-- light text on the dark swatches, dark on the light one
 		local dark = b.key == "light"
 		b.text:SetTextColor(dark and 0.1 or 1, dark and 0.08 or 1, dark and 0.06 or 1)
-		b.text:SetPoint("LEFT", 2, -6)
-		b.text:SetFontObject(GameFontHighlightSmall)
 		T.Tooltip(b, names[index], Outfitter.cLookColorsDescription)
 	end
-	-- The swatches show their own colours, not Choices' lit/unlit ones
+	-- The swatches show their own colors, not Choices' lit/unlit ones
 	function swatches.Paint() PaintColors() end
 	look.Swatches = swatches
 
-	-- Back to how it was
+	-- Back to how it was (both pages)
 	local reset = FlatButton(panel, Outfitter.cLookReset, 78, 22)
-	reset:SetPoint("TOPRIGHT", colors, "BOTTOMRIGHT", 0, -8)
+	reset:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
 	reset:SetScript("OnClick", function()
 		local settings = DisplaySettings()
-		settings.Scale, settings.TextSize, settings.Colors = nil, nil, nil
-		slider.Refresh()
-		textSizes.Paint()
+		settings.Scale, settings.TextSize, settings.Font, settings.Colors = nil, nil, nil, nil
+		look.WindowSize.Refresh()
+		look.TextSize.Refresh()
+		font.Refresh()
 		PaintColors()
 		ApplyDisplay(look)
 	end)
@@ -787,9 +952,12 @@ local function StyleDisplay(look)
 	look.DisplayReset = reset
 
 	panel:SetScript("OnShow", function()
-		slider.Refresh()
-		textSizes.Paint()
+		look.WindowSize.Refresh()
+		look.TextSize.Refresh()
+		font.Refresh()
 		PaintColors()
+		switch.Paint()
+		for i, page in ipairs(pages) do page:SetShown(i == look.DisplayPage) end
 	end)
 end
 
@@ -924,7 +1092,7 @@ function Outfitter:ApplyLook()
 		if not self.Settings then return end
 		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
 		if look.OptionsScripts then look.OptionsScripts:SetOn(scripts:IsOn()) end
-		if look.OpenShortcuts then look.OpenShortcuts:SetOn(not self.Settings.Options.DisableOpenShortcuts) end
+		if look.RightClick then look.RightClick.Refresh() end
 		bar:SetShown(highlight:IsShown())
 		-- The Equipment Manager tab's row is hidden when there's no tab
 		LayoutOptions(look)
