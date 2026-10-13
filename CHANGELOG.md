@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0
+
+- **New Display tab**, for anyone who finds the window hard to read:
+  - **Window size:** make the Outfitter Forever window, its dialogs and its menus bigger (up to 150%) or smaller.
+  - **Text size:** Normal, Large or Larger text in the window, dialogs and menus.
+  - **Colors:** Default, High contrast (black with white text and yellow highlights), Blue (no red, for red-green color blindness) or Light (dark text on a light background). New colors show after a reload; the tab has a Reload now button.
+  - **Reset** puts everything back. These settings are shared by all your characters.
+
 ## 1.4.2
 
 - **New option: Open from minimap and broker** (Options > Quick access). On WoW: Forever an addon can't open your character window, so right-clicking the minimap button or your data broker entry, or picking "Open Outfitter Forever" in their menu, only printed a reminder in chat while the window was closed. Turn this off and they're left out until you open your character window yourself; then they work as before. It's on by default.

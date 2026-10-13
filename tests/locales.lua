@@ -16,7 +16,11 @@ local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDe
 	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip", "cCombatWait", "cLookAutomation",
 	"cLookHotkeyMessagesDescription", "cLookTooltipInfoDescription", "cLookItemComparisons", "cLookItemComparisonsDescription",
 	"cLookMinimapButtonDescription", "cLookOutfitBarDescription", "cLookBarSettings", "cLookBarSettingsDescription",
-	"cLookSidebarTabDescription", "cLookOpenShortcuts", "cLookOpenShortcutsDescription" }
+	"cLookSidebarTabDescription", "cLookOpenShortcuts", "cLookOpenShortcutsDescription",
+	"cLookDisplayTab", "cLookSize", "cLookWindowSize", "cLookWindowSizeDescription", "cLookTextSize", "cLookTextSizeDescription",
+	"cLookTextNormal", "cLookTextLarge", "cLookTextLarger", "cLookColors", "cLookColorsDescription", "cLookColorDefault",
+	"cLookColorContrast", "cLookColorBlue", "cLookColorLight", "cLookReload", "cLookReloadNote", "cLookReloadTyped",
+	"cLookReset", "cLookResetDescription" }
 
 -- The option cards: the bottom of the last one, measured from the window's top
 local function CardsBottom(W, O)
@@ -55,7 +59,8 @@ local function Session(locale)
 end
 
 -- Words that are the same as in English
-local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true } }
+local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true, cLookTextNormal = true },
+	frFR = { cLookTextNormal = true } }
 
 local englishW, english = Session("enUS")
 local _, englishCard3 = CardsBottom(englishW, english)

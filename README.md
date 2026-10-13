@@ -20,6 +20,7 @@ It works like the Outfitter you know, with the same outfits, menus and scripts. 
 - **Extras.** An icon picker, item tooltips that show which outfits use the item, and a title, helm and cloak setting for each outfit.
 - **Works with Baganator.** With the Baganator bag addon, each outfit's gear gets its own group in your bags.
 - **The Forever look.** The window, its dialogs, the outfit bar and the menus share the flat dark look of TauntMaster Forever, ToppedOff Forever and BattleText Forever.
+- **Easy to read.** The Display tab makes the window, its dialogs and menus bigger, makes the text bigger, and has High contrast, Blue and Light colors.
 - **In your language.** English, German, French, Chinese, Korean and Russian.
 
 ## On WoW: Forever

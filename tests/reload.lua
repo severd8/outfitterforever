@@ -231,4 +231,66 @@ Session(state, function(S)
 	Check(S.gear() == STARTER, "and Normal puts the starter gear back on (" .. S.gear() .. ")")
 end)
 
+----------------------------------------
+-- The Display tab: sizes and colours are saved for the account and come back after a
+-- reload; a new colour style is used from the next session on
+----------------------------------------
+local function OpenWindow(S)
+	S.W.PlayerTogglesCharacter()
+	S.W.Tick(1)
+	if not S.env.OutfitterFrame:IsShown() then S.O:ToggleOutfitterFrame() end
+	S.W.Tick(0.5)
+end
+local function ShownOutfitRow(S)
+	for index = 0, S.O.cMaxDisplayedItems - 1 do
+		local item = S.env["OutfitterItem" .. index]
+		if item:IsShown() and not item.isCategory and item:GetOutfit() then return item end
+	end
+end
+state = Session(NewCharacter(), function(S)
+	OpenWindow(S)
+	local look = S.env.OutfitterFrame.Look
+	look.ShowDisplay()
+	S.W.Tick(0.2)
+	look.Swatches[2]:Click()        -- High contrast
+	look.TextSizes[3]:Click()       -- Larger
+	look.WindowSize:SetValue(130)
+	look.WindowSize:GetScript("OnMouseUp")(look.WindowSize)
+	local saved = S.env.gOutfitter_GlobalSettings.Display
+	Check(saved.Colors == "contrast" and saved.TextSize == "larger" and saved.Scale == 130, "the Display choices are saved for the account")
+	Check(S.O.Theme.C.win[1] ~= 0, "the colours wait for a reload")
+	Check(look.ReloadNote:GetText() ~= "", "and the tab says so")
+	Check(S.env.OutfitterFrame:GetScale() == 1.3, "the window size changes straight away")
+end)
+state = Session(state, function(S)
+	OpenWindow(S)
+	local C, look = S.O.Theme.C, S.env.OutfitterFrame.Look
+	Check(C.win[1] == 0 and C.title[1] == 1 and C.edge[1] == 1, "after a reload the window is in High contrast")
+	Check(look.Fill.__color[1] == 0 and look.Fill.__color[2] == 0, "and painted that way")
+	Check(look.ReloadNote:GetText() == "", "with no reload note")
+	Check(S.env.OutfitterFrame:GetScale() == 1.3, "it keeps its size")
+	local row = ShownOutfitRow(S)
+	local size = row and select(2, S.env[row:GetName() .. "OutfitName"]:GetFont())
+	Check(size and math.abs(size - 12 * 1.3) < 0.01, "and its text size (" .. tostring(size) .. ")")
+	-- Light colours: the game's gold outfit names are made dark on the light panel
+	S.env.gOutfitter_GlobalSettings.Display.Colors = "light"
+end)
+state = Session(state, function(S)
+	OpenWindow(S)
+	local C = S.O.Theme.C
+	local row = ShownOutfitRow(S)
+	local r, g, b
+	if row then r, g, b = S.env[row:GetName() .. "OutfitName"]:GetTextColor() end
+	Check(C.win[1] > 0.8 and r == C.title[1] and g == C.title[2] and b == C.title[3],
+		"Light colours: outfit names are dark (" .. tostring(r) .. ", " .. tostring(g) .. ", " .. tostring(b) .. ")")
+	local look = S.env.OutfitterFrame.Look
+	Check(not look.Header.text.OFKeep or select(1, look.Header.text:GetTextColor()) == C.gold[1], "the header's text stays gold")
+	look.ShowDisplay()
+	look.DisplayReset:Click()
+	Check(next(S.env.gOutfitter_GlobalSettings.Display) == nil, "Reset clears the Display settings")
+	Check(S.env.OutfitterFrame:GetScale() == 1, "and the window is its normal size")
+	local size = row and select(2, S.env[row:GetName() .. "OutfitName"]:GetFont())
+	Check(size == 12, "with normal text")
+end)
+
 return failures

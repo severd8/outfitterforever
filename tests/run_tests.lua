@@ -1607,6 +1607,77 @@ do
 end
 NoErrors()
 
+----------------------------------------
+Step("the Display tab: window size, text size and colors")
+do
+	local look = env.OutfitterFrame.Look
+	if not env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end
+	if not env.OutfitterFrame:IsShown() then O:ToggleOutfitterFrame() end
+	W.Tick(0.5)
+	look.Tabs[3]:Click()
+	W.Tick(0.2)
+	Check(look.Display:IsVisible() and look.Tabs[3].on and not look.Tabs[1].on and not look.Tabs[2].on, "the Display tab opens and is lit")
+	Check(not env.OutfitterMainFrame:IsShown() and not env.OutfitterOptionsFrame:IsShown(), "in place of Outfits and Options")
+	Check(look.ReloadNote:GetText() == "" and not look.Reload:IsShown(), "no reload note while the colors are the ones in use")
+
+	-- A bigger window, and its dialogs and menus
+	look.WindowSize:SetValue(150)
+	Check(env.OutfitterFrame:GetScale() == 1, "the window doesn't change size while the slider is dragged")
+	look.WindowSize:GetScript("OnMouseUp")(look.WindowSize)
+	Check(env.OutfitterFrame:GetScale() == 1.5, "it does when the mouse lets go")
+	O:OpenNameOutfitDialog(nil)
+	W.Tick(0.2)
+	Check(O.NameOutfitDialog:GetScale() == 1.5, "dialogs open at that size")
+	O.NameOutfitDialog:Cancel()
+	W.Tick(0.2)
+	local Dropdown = env.LibStub("LibDropdownMC-1.0")
+	local menu = env.CreateFrame("Frame")
+	menu:SetScale(0.9)
+	Dropdown.StyleFrame(menu)
+	Check(math.abs(menu:GetScale() - 0.9 * 1.5) < 0.001, "and menus, on top of the tooltip size the menu library gives them")
+
+	-- Bigger text
+	local name = env.OutfitterItem0OutfitName
+	local base = select(2, name:GetFont())
+	look.TextSizes[3]:Click()
+	Check(math.abs(select(2, name:GetFont()) - base * 1.3) < 0.01, "Larger text makes the window's text bigger")
+	local line = Dropdown.StyleButton and env.CreateFrame("Button")
+	if line then
+		line.text = line:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		Dropdown.StyleButton(line)
+		Check(math.abs(select(2, line.text:GetFont()) - 12 * 1.3) < 0.01, "and the menus' text")
+	end
+	-- Options with bigger text: the window grows to fit the cards, and goes back after
+	look.Tabs[2]:Click()
+	W.Tick(0.2)
+	local last = look.Cards[#look.Cards]
+	local point = last.__points[1]
+	local bottom = -point[#point] + last:GetHeight()
+	Check(bottom <= env.OutfitterFrame:GetHeight(), "Options with Larger text fits in the window ("
+		.. bottom .. " of " .. tostring(env.OutfitterFrame:GetHeight()) .. ")")
+	look.Tabs[1]:Click()
+	W.Tick(0.2)
+	Check(env.OutfitterFrame:GetHeight() == look.BaseHeight, "the Outfits tab is the window's own height")
+
+	-- A color style waits for a reload
+	look.Tabs[3]:Click()
+	W.Tick(0.2)
+	look.Swatches[3]:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Colors == "blue", "picking Blue is saved")
+	Check(look.ReloadNote:GetText() == O.cLookReloadTyped, "and the tab says to /reload (this client has no reload function)")
+	look.Swatches[1]:Click()
+	Check(look.ReloadNote:GetText() == "", "picking the colors in use again clears the note")
+
+	-- Reset
+	look.DisplayReset:Click()
+	Check(env.OutfitterFrame:GetScale() == 1 and select(2, name:GetFont()) == base, "Reset puts the size and text back")
+	Check(next(env.gOutfitter_GlobalSettings.Display) == nil, "and clears the saved choices")
+	look.Tabs[1]:Click()
+	W.Tick(0.2)
+	Check(not look.Display:IsShown() and env.OutfitterMainFrame:IsShown(), "the Outfits tab puts the Display tab away")
+end
+NoErrors()
+
 for name in pairs(W.replacedBlizzardScripts) do
 	Fail("the addon set (instead of hooking) the script " .. name .. " on Blizzard's frame")
 end

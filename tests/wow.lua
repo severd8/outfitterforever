@@ -283,8 +283,13 @@ function Frame:GetRight() return 100 + self.__width end
 function Frame:GetTop() return 500 end
 function Frame:GetBottom() return 500 - self.__height end
 function Frame:GetCenter() return 100 + self.__width / 2, 500 - self.__height / 2 end
-function Frame:GetScale() return 1 end
-function Frame:GetEffectiveScale() return 1 end
+function Frame:SetScale(scale) self.__scale = scale end
+function Frame:GetScale() return self.__scale or 1 end
+function Frame:GetEffectiveScale()
+	local scale, frame = 1, self
+	while frame do scale = scale * (frame.__scale or 1) frame = frame.__parent end
+	return scale
+end
 function Frame:GetAlpha() return self.__alpha or 1 end
 function Frame:SetAlpha(alpha) self.__alpha = alpha end
 function Frame:GetFrameLevel() return self.__level end
@@ -332,9 +337,14 @@ function Frame:GetUnboundedStringWidth() return self:GetStringWidth() end
 function Frame:GetStringHeight() return 12 end
 function Frame:GetTextWidth() return self:GetStringWidth() end
 function Frame:GetNumLetters() return #(tostring(self.__text or "")) end
-function Frame:GetFont() return "Fonts\\FRIZQT__.TTF", 12, "" end
+function Frame:GetFont()
+	local font = self.__font
+	if font then return font[1], font[2], font[3] end
+	return "Fonts\\FRIZQT__.TTF", 12, ""
+end
+function Frame:SetFont(file, size, flags) self.__font = { file, size, flags or "" } return true end
 function Frame:GetFontObject() return self.__fontObject end
-function Frame:SetFontObject(font) self.__fontObject = font end
+function Frame:SetFontObject(font) self.__fontObject = font self.__font = nil end
 function Frame:SetTextColor(r, g, b, a) self.__textColor = { r, g, b, a } end
 function Frame:GetTextColor() local c = self.__textColor or { 1, 1, 1, 1 } return c[1], c[2], c[3], c[4] end
 function Frame:SetVertexColor(r, g, b, a) self.__vertexColor = { r, g, b, a } end

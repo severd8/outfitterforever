@@ -13,6 +13,144 @@ Outfitter.ChatPrefix = T.CHAT_PREFIX .. ": "
 local ARROW = "Interface\\Buttons\\Arrow-Down-Up"
 
 ---------------------------------------------------------------------------
+-- Display settings (the Display tab): window size, text size and colours, for
+-- players who need things bigger or clearer. Saved for the whole account in
+-- gOutfitter_GlobalSettings.Display: Scale (percent), TextSize, Colors.
+---------------------------------------------------------------------------
+local TEXT_SIZES = { normal = 1, large = 1.15, larger = 1.3 }
+local TEXT_KEYS = { "normal", "large", "larger" }
+local COLOR_KEYS = { "default", "contrast", "blue", "light" }
+
+-- Each colour style replaces the shared colours (Theme.lua's C) for this addon
+-- only. hover: an option's label under the mouse; select: the selected outfit's
+-- row; menu: the menus' panel (the Light style keeps menus dark, since the
+-- menu library draws its text white); darkText: Blizzard's white, grey and gold
+-- text in the window is made dark (Light).
+local PRESETS = {
+	contrast = {
+		win = { 0, 0, 0, 0.98 }, side = { 0, 0, 0, 1 }, card = { 0.06, 0.06, 0.06, 1 }, field = { 0, 0, 0, 1 },
+		line = { 0.6, 0.6, 0.6, 1 }, edge = { 1, 1, 1, 1 }, fieldEdge = { 0.85, 0.85, 0.85, 1 },
+		red = { 0.2, 0.2, 0.2, 1 }, redHi = { 0.38, 0.38, 0.38, 1 }, btnEdge = { 1, 1, 1, 1 },
+		offTrack = { 0.35, 0.35, 0.35, 1 }, onTrack = { 0.6, 0.48, 0, 1 }, gold = { 1, 0.92, 0.2, 1 },
+		grey = { 0.75, 0.75, 0.75, 1 }, orange = { 1, 0.85, 0.2 }, muted = { 1, 1, 1 }, title = { 1, 1, 1 },
+		version = { 1, 0.92, 0.2 }, tabOn = { 0.22, 0.22, 0.22, 1 }, accent = { 1, 0.85, 0, 1 }, fill = { 1, 0.85, 0, 1 },
+		select = { 1, 0.85, 0, 0.3 },
+	},
+	blue = {
+		win = { 0.055, 0.063, 0.085, 0.98 }, side = { 0.04, 0.047, 0.063, 1 }, card = { 0.075, 0.09, 0.12, 1 },
+		field = { 0.043, 0.05, 0.07, 1 }, line = { 0.12, 0.16, 0.23, 1 }, edge = { 0.23, 0.3, 0.42, 1 },
+		fieldEdge = { 0.2, 0.27, 0.38, 1 }, red = { 0.09, 0.23, 0.42, 1 }, redHi = { 0.14, 0.33, 0.58, 1 },
+		btnEdge = { 0.45, 0.58, 0.75, 1 }, offTrack = { 0.18, 0.2, 0.25, 1 }, onTrack = { 0.11, 0.37, 0.66, 1 },
+		grey = { 0.5, 0.54, 0.6, 1 }, orange = { 0.5, 0.77, 1 }, muted = { 0.77, 0.81, 0.87 },
+		title = { 0.91, 0.93, 0.97 }, version = { 0.6, 0.75, 0.95 }, tabOn = { 0.07, 0.16, 0.29, 1 },
+		accent = { 0.29, 0.64, 1, 1 }, fill = { 0.15, 0.45, 0.8, 1 },
+	},
+	light = {
+		win = { 0.91, 0.886, 0.816, 0.98 }, side = { 0.85, 0.81, 0.72, 1 }, card = { 0.95, 0.93, 0.87, 1 },
+		field = { 1, 0.98, 0.94, 1 }, line = { 0.72, 0.67, 0.55, 1 }, edge = { 0.48, 0.39, 0.25, 1 },
+		fieldEdge = { 0.55, 0.47, 0.33, 1 }, red = { 0.45, 0.12, 0.06, 1 }, redHi = { 0.6, 0.18, 0.09, 1 },
+		btnEdge = { 0.48, 0.39, 0.25, 1 }, offTrack = { 0.7, 0.65, 0.56, 1 }, onTrack = { 0.72, 0.2, 0.11, 1 },
+		grey = { 0.4, 0.37, 0.33, 1 }, orange = { 0.6, 0.29, 0.06 }, muted = { 0.23, 0.2, 0.15 },
+		title = { 0.1, 0.08, 0.06 }, version = { 0.95, 0.85, 0.6 }, tabOn = { 0.45, 0.12, 0.06, 1 },
+		accent = { 0.72, 0.2, 0.11, 1 }, fill = { 0.72, 0.2, 0.11, 1 },
+		hover = { 0.6, 0.18, 0.09 }, select = { 0.72, 0.2, 0.11, 0.22 }, menu = { 0.07, 0.063, 0.063, 0.97 },
+		darkText = true,
+	},
+}
+
+-- What each style's swatch on the Display tab shows (fixed: C changes with the style)
+local SWATCHES = {
+	default = { 0.35, 0.075, 0.047 }, contrast = { 0, 0, 0 }, blue = { 0.09, 0.23, 0.42 }, light = { 0.91, 0.886, 0.816 },
+}
+
+local function DisplaySettings()
+	if type(gOutfitter_GlobalSettings) ~= "table" then return {} end
+	gOutfitter_GlobalSettings.Display = gOutfitter_GlobalSettings.Display or {}
+	return gOutfitter_GlobalSettings.Display
+end
+
+local function WindowScale() return (tonumber(DisplaySettings().Scale) or 100) / 100 end
+local function TextScale() return TEXT_SIZES[DisplaySettings().TextSize] or 1 end
+
+-- The colours in use: chosen at login (repainting everything that's already
+-- drawn would mean redrawing the whole window, so a new choice waits for a reload)
+local appliedColors = "default"
+local function ApplyColors()
+	local key = DisplaySettings().Colors
+	local preset = PRESETS[key]
+	if not preset then return end
+	appliedColors = key
+	for name, value in pairs(preset) do
+		local current = C[name]
+		if type(current) == "table" and type(value) == "table" then
+			for i, v in ipairs(value) do current[i] = v end
+		else
+			C[name] = value
+		end
+	end
+end
+
+-- Text in the chosen size: each font string and edit box keeps its original
+-- font and size, and gets that size times the factor
+local function SizeText(region, factor)
+	if not region or not region.SetFont or not region.GetFont then return end
+	local base = region.OFTextBase
+	if not base then
+		if factor == 1 then return end
+		local font, size, flags = region:GetFont()
+		if not font or not size then return end
+		base = { font, size, flags }
+		region.OFTextBase = base
+	end
+	region:SetFont(base[1], base[2] * factor, base[3] or "")
+end
+
+local function SizeTextIn(frame, factor)
+	if not frame then return end
+	factor = factor or TextScale()
+	for _, region in ipairs({ frame:GetRegions() }) do
+		if region:GetObjectType() == "FontString" then SizeText(region, factor) end
+	end
+	if frame:GetObjectType() == "EditBox" then SizeText(frame, factor) end
+	for _, child in ipairs({ frame:GetChildren() }) do SizeTextIn(child, factor) end
+end
+
+-- Light colours: the game's white, grey and gold text would be faint on the
+-- light panels, so it's made dark. Text on the dark header, tabs and buttons is
+-- marked OFKeep and left alone.
+local function DarkText(region)
+	if not C.darkText or not region or region.OFKeep or not region.GetTextColor then return end
+	local r, g, b = region:GetTextColor()
+	if not r then return end
+	local color
+	if r > 0.85 and g > 0.85 and b > 0.85 then
+		color = C.title
+	elseif r > 0.9 and g > 0.7 and g < 0.9 and b < 0.25 then
+		color = C.title
+	elseif math.abs(r - g) < 0.06 and math.abs(g - b) < 0.06 and r > 0.4 and r < 0.75 then
+		color = C.muted
+	end
+	if color then region:SetTextColor(color[1], color[2], color[3]) end
+end
+
+local function DarkTextIn(frame)
+	if not C.darkText or not frame then return end
+	for _, region in ipairs({ frame:GetRegions() }) do
+		if region:GetObjectType() == "FontString" then DarkText(region) end
+	end
+	if frame:GetObjectType() == "EditBox" then DarkText(frame) end
+	for _, child in ipairs({ frame:GetChildren() }) do DarkTextIn(child) end
+end
+
+-- A dialog in the chosen window size, text size and colours
+local function DisplayDialog(dialog)
+	if not dialog then return end
+	dialog:SetScale(WindowScale())
+	SizeTextIn(dialog)
+	DarkTextIn(dialog)
+end
+
+---------------------------------------------------------------------------
 -- Small pieces
 ---------------------------------------------------------------------------
 local function Fade(region)
@@ -54,8 +192,26 @@ local function Flatten(button, fill, hover, edge)
 	button:HookScript("OnEnter", function() bg:SetColorTexture(unpack(hover)) end)
 	button:HookScript("OnLeave", function() bg:SetColorTexture(unpack(fill)) end)
 	local fs = button.GetFontString and button:GetFontString() or button.Text
-	if fs then fs:SetTextColor(C.gold[1], C.gold[2], C.gold[3]) end
+	if fs then
+		fs:SetTextColor(C.gold[1], C.gold[2], C.gold[3])
+		fs.OFKeep = true
+	end
 	return bg
+end
+
+-- A flat button from the shared look, its text kept as is in Light colours
+local function FlatButton(parent, text, width, height)
+	local button = T.FlatButton(parent, text, width, height)
+	local fs = button:GetFontString()
+	if fs then fs.OFKeep = true end
+	return button
+end
+
+-- The header strip from the shared look, its text kept as is in Light colours
+local function HeaderStrip(header, text)
+	T.HeaderStrip(header, text)
+	header.text.OFKeep = true
+	return header
 end
 
 -- The small gold arrow that opens a menu, on a menu button's own textures
@@ -107,6 +263,7 @@ end
 hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
 	local look = self.Look
 	if not look then return end
+	DarkText(_G[self:GetName() .. "OutfitName"])
 	_G[self:GetName() .. "OutfitScriptIcon"]:Hide()
 	local name = ScriptName(outfit)
 	if not name then
@@ -123,6 +280,12 @@ hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
 	local color = off and C.offTrack or C.grey
 	look.Script:SetTextColor(color[1], color[2], color[3])
 	look.Script:Show()
+end)
+
+-- Light colours: outfit names (gold, white under the mouse) made dark
+hooksecurefunc(Outfitter._ListItem, "SetTextColor", function(self)
+	if not self.Look then return end
+	DarkText(_G[self:GetName() .. (self.isCategory and "CategoryName" or "OutfitName")])
 end)
 
 local function PaintCategory(self)
@@ -213,9 +376,12 @@ local function MakeTabs(frame, header, labels, choose, width)
 		tab.bar:SetPoint("BOTTOMRIGHT")
 		tab.bar:SetHeight(2)
 		tab.bar:SetColorTexture(unpack(C.accent))
-		tab.text = T.Text(tab, label, "GameFontNormal")
-		tab.text:SetPoint("CENTER")
+		tab.text = T.Text(tab, label, #labels > 2 and "GameFontNormalSmall" or "GameFontNormal")
+		tab.text:SetPoint("LEFT", 3, 0)
+		tab.text:SetPoint("RIGHT", -3, 0)
 		tab.text:SetJustifyH("CENTER")
+		tab.text:SetWordWrap(false)
+		tab.text.OFKeep = true
 		tab:SetScript("OnClick", function()
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
 			choose(index)
@@ -320,7 +486,7 @@ local LABEL_W, LINE_H = 180, 11
 -- Hovering a row turns its label gold
 local function HoverLabel(widget, label)
 	function widget:SetHover(on)
-		local color = on and C.gold or C.title
+		local color = on and (C.hover or C.gold) or C.title
 		label:SetTextColor(color[1], color[2], color[3])
 	end
 end
@@ -329,6 +495,7 @@ end
 -- and a two-line label makes its row taller. Clicks reach as far as the label's text.
 local function LayoutOptions(look)
 	local y = look.CardsTop
+	local lineH = LINE_H * TextScale()
 	for _, card in ipairs(look.Cards) do
 		local rowY = -24
 		for _, row in ipairs(card.rows) do
@@ -336,10 +503,10 @@ local function LayoutOptions(look)
 				local width = LABEL_W - (row.extra or 0)
 				row.label:SetWidth(width)
 				local full = row.label:GetUnboundedStringWidth()
-				local lines = full > width and 2 or 1
-				local height = ROW_H + (lines - 1) * LINE_H
+				local lines = math.min(3, math.max(1, math.ceil(full / width)))
+				local height = ROW_H + (lines - 1) * lineH
 				row.widget:ClearAllPoints()
-				row.widget:SetPoint("TOPLEFT", card, "TOPLEFT", 12, rowY - (lines - 1) * LINE_H / 2)
+				row.widget:SetPoint("TOPLEFT", card, "TOPLEFT", 12, rowY - (lines - 1) * lineH / 2)
 				row.widget:SetHitRectInsets(0, -(8 + math.min(full, width)), -4, -4)
 				rowY = rowY - height
 			end
@@ -348,6 +515,11 @@ local function LayoutOptions(look)
 		card:SetPoint("TOPLEFT", 8, y)
 		card:SetHeight(-rowY + 2)
 		y = y + rowY - 2 - 4
+	end
+	-- Bigger text can need more room than the window has: on the Options tab
+	-- the window grows to fit (and goes back to its size on the other tabs)
+	if OutfitterOptionsFrame:IsShown() and look.BaseHeight then
+		OutfitterFrame:SetHeight(math.max(look.BaseHeight, -y))
 	end
 end
 
@@ -425,7 +597,7 @@ local function StyleOptions(look)
 	-- The outfit bar's own settings (also on a right-click on the bar's handle)
 	local barRow = look.Cards[3].rows[2]
 	if barRow and Outfitter.OutfitBar then
-		local settings = T.FlatButton(look.Cards[3], Outfitter.cLookBarSettings, 1, 16)
+		local settings = FlatButton(look.Cards[3], Outfitter.cLookBarSettings, 1, 16)
 		local text = settings:GetFontString()
 		text:SetFontObject(GameFontHighlightSmall)
 		settings:SetWidth(math.ceil(text:GetStringWidth()) + 12)
@@ -461,6 +633,167 @@ local function StyleSlotEnables()
 end
 
 ---------------------------------------------------------------------------
+-- The Display tab: window size, text size and colours
+---------------------------------------------------------------------------
+local RELOAD = ReloadUI or (C_UI and C_UI.Reload)
+
+-- The window, the open dialogs and (as they open) the menus in the chosen
+-- window size and text size
+local function ApplyDisplay(look)
+	local frame = OutfitterFrame
+	frame:SetScale(WindowScale())
+	SizeTextIn(frame)
+	for _, dialog in ipairs({ Outfitter.NameOutfitDialog, OutfitterEditScriptDialog, OutfitterChooseIconDialog,
+		Outfitter.OutfitBar and Outfitter.OutfitBar.SettingsDialog }) do
+		if dialog and dialog.Look then DisplayDialog(dialog) end
+	end
+	LayoutOptions(look)
+end
+
+-- A row of choices, one lit: the text sizes
+local function Choices(parent, keys, labels, get, set)
+	local row = {}
+	for index, key in ipairs(keys) do
+		local b = CreateFrame("Button", nil, parent)
+		b.bg = T.Fill(b, C.field)
+		b.edges = T.Border(b, C.line)
+		b.text = T.Text(b, labels[index], "GameFontHighlightSmall")
+		b.text:SetPoint("LEFT", 2, 0)
+		b.text:SetPoint("RIGHT", -2, 0)
+		b.text:SetJustifyH("CENTER")
+		b.text:SetWordWrap(false)
+		b.text.OFKeep = true
+		b.key = key
+		b:SetScript("OnClick", function()
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+			set(key)
+			row.Paint()
+		end)
+		row[index] = b
+	end
+	function row.Paint()
+		for _, b in ipairs(row) do
+			local on = get() == b.key
+			b.bg:SetColorTexture(unpack(on and C.tabOn or C.field))
+			for _, edge in ipairs(b.edges) do edge:SetColorTexture(unpack(on and C.btnEdge or C.line)) end
+			local color = on and C.gold or (C.darkText and C.title or C.muted)
+			b.text:SetTextColor(color[1], color[2], color[3])
+		end
+	end
+	return row
+end
+
+local function StyleDisplay(look)
+	local frame = OutfitterFrame
+	local panel = CreateFrame("Frame", nil, frame)
+	panel:SetAllPoints()
+	panel:Hide()
+	look.Display = panel
+	local width = (frame:GetWidth() or 256) - 16
+	local inner = width - 24
+	local top = -(24 + TAB_H + 6)
+
+	-- Size: the window (and dialogs and menus), and the text in them
+	local size = T.Card(panel, Outfitter.cLookSize, 8, top, width, 112)
+	local slider = T.Slider(size, Outfitter.cLookWindowSize, 12, -26, inner,
+		function() return tonumber(DisplaySettings().Scale) or 100 end,
+		function(value) DisplaySettings().Scale = value ~= 100 and value or nil end,
+		80, 150, "%", 5)
+	slider.title:SetFontObject(GameFontHighlightSmall)
+	slider.title:SetTextColor(C.title[1], C.title[2], C.title[3])
+	-- The window changes size when the mouse lets go: changing it while
+	-- dragging would move the slider under the mouse
+	slider:HookScript("OnMouseUp", function() ApplyDisplay(look) end)
+	T.Tooltip(slider, Outfitter.cLookWindowSize, Outfitter.cLookWindowSizeDescription)
+	look.WindowSize = slider
+
+	local textLabel = T.Text(size, Outfitter.cLookTextSize, "GameFontHighlightSmall", C.title)
+	textLabel:SetPoint("TOPLEFT", 12, -66)
+	local textSizes = Choices(size, TEXT_KEYS,
+		{ Outfitter.cLookTextNormal, Outfitter.cLookTextLarge, Outfitter.cLookTextLarger },
+		function() return DisplaySettings().TextSize or "normal" end,
+		function(key)
+			DisplaySettings().TextSize = key ~= "normal" and key or nil
+			ApplyDisplay(look)
+		end)
+	local choiceW = (inner - 8) / 3
+	for index, b in ipairs(textSizes) do
+		b:SetSize(choiceW, 20)
+		b:SetPoint("TOPLEFT", size, "TOPLEFT", 12 + (index - 1) * (choiceW + 4), -82)
+		T.Tooltip(b, Outfitter.cLookTextSize, Outfitter.cLookTextSizeDescription)
+	end
+	look.TextSizes = textSizes
+
+	-- Colours: four styles, used from the next reload
+	local colors = T.Card(panel, Outfitter.cLookColors, 8, top - 112 - 4, width, 100)
+	local names = { Outfitter.cLookColorDefault, Outfitter.cLookColorContrast, Outfitter.cLookColorBlue, Outfitter.cLookColorLight }
+	local reloadNote = T.Text(colors, "", "GameFontHighlightSmall", C.muted)
+	reloadNote:SetPoint("TOPLEFT", 12, -66)
+	reloadNote:SetWidth(inner - 84)
+	reloadNote:SetWordWrap(true)
+	local reload = FlatButton(colors, Outfitter.cLookReload, 78, 20)
+	reload:SetPoint("TOPRIGHT", colors, "TOPRIGHT", -12, -64)
+	reload:SetScript("OnClick", function() if RELOAD then RELOAD() end end)
+	look.Reload, look.ReloadNote = reload, reloadNote
+	local swatches
+	local function PaintColors()
+		local chosen = DisplaySettings().Colors or "default"
+		for _, b in ipairs(swatches) do
+			for _, edge in ipairs(b.edges) do
+				edge:SetColorTexture(unpack(b.key == chosen and C.gold or C.line))
+				edge:SetWidth(b.key == chosen and 2 or 1)
+				edge:SetHeight(b.key == chosen and 2 or 1)
+			end
+		end
+		local waiting = chosen ~= appliedColors
+		reloadNote:SetText(waiting and (RELOAD and Outfitter.cLookReloadNote or Outfitter.cLookReloadTyped) or "")
+		reload:SetShown(waiting and RELOAD ~= nil)
+	end
+	swatches = Choices(colors, COLOR_KEYS, names,
+		function() return DisplaySettings().Colors or "default" end,
+		function(key)
+			DisplaySettings().Colors = key ~= "default" and key or nil
+			PaintColors()
+		end)
+	local swatchW = (inner - 12) / 4
+	for index, b in ipairs(swatches) do
+		b:SetSize(swatchW, 30)
+		b:SetPoint("TOPLEFT", colors, "TOPLEFT", 12 + (index - 1) * (swatchW + 4), -26)
+		local sample = SWATCHES[b.key]
+		b.bg:SetColorTexture(sample[1], sample[2], sample[3], 1)
+		-- light text on the dark swatches, dark on the light one
+		local dark = b.key == "light"
+		b.text:SetTextColor(dark and 0.1 or 1, dark and 0.08 or 1, dark and 0.06 or 1)
+		b.text:SetPoint("LEFT", 2, -6)
+		b.text:SetFontObject(GameFontHighlightSmall)
+		T.Tooltip(b, names[index], Outfitter.cLookColorsDescription)
+	end
+	-- The swatches show their own colours, not Choices' lit/unlit ones
+	function swatches.Paint() PaintColors() end
+	look.Swatches = swatches
+
+	-- Back to how it was
+	local reset = FlatButton(panel, Outfitter.cLookReset, 78, 22)
+	reset:SetPoint("TOPRIGHT", colors, "BOTTOMRIGHT", 0, -8)
+	reset:SetScript("OnClick", function()
+		local settings = DisplaySettings()
+		settings.Scale, settings.TextSize, settings.Colors = nil, nil, nil
+		slider.Refresh()
+		textSizes.Paint()
+		PaintColors()
+		ApplyDisplay(look)
+	end)
+	T.Tooltip(reset, Outfitter.cLookReset, Outfitter.cLookResetDescription)
+	look.DisplayReset = reset
+
+	panel:SetScript("OnShow", function()
+		slider.Refresh()
+		textSizes.Paint()
+		PaintColors()
+	end)
+end
+
+---------------------------------------------------------------------------
 -- The whole window. Called once, after the original code has built its frame art.
 ---------------------------------------------------------------------------
 function Outfitter:ApplyLook()
@@ -468,6 +801,9 @@ function Outfitter:ApplyLook()
 	if not frame or frame.Look then return end
 	local look = {}
 	frame.Look = look
+	-- The colour style first: everything below is painted in it
+	ApplyColors()
+	look.BaseHeight = frame:GetHeight()
 
 	-- The original stone frame art goes; a flat dark panel takes its place.
 	-- These are the frame's own textures, so they stay behind everything in it.
@@ -480,13 +816,13 @@ function Outfitter:ApplyLook()
 	header:SetPoint("TOPLEFT")
 	header:SetPoint("TOPRIGHT")
 	header:SetHeight(24)
-	T.HeaderStrip(header, OutfitterFrameTitle:GetText())
+	HeaderStrip(header, OutfitterFrameTitle:GetText())
 	header:FitLogo(24)
 	OutfitterFrameTitle:Hide()
 	look.Header = header
 
 	-- A flat X in the header instead of the game's round close button
-	local close = T.FlatButton(header, "X", 18, 18)
+	local close = FlatButton(header, "X", 18, 18)
 	close:SetPoint("RIGHT", -3, 0)
 	close:SetScript("OnClick", function() frame:Hide() end)
 	header.text:SetPoint("RIGHT", close, "LEFT", -4, 0)
@@ -494,14 +830,29 @@ function Outfitter:ApplyLook()
 	look.Close = close
 
 	-- Outfits / Options tabs under the header, in place of the game's tabs below the window
-	look.Tabs = MakeTabs(frame, header, { self.cOutfitterTabTitle, self.cOptionsTabTitle },
-		function(index) Outfitter:ShowPanel(index) end)
+	-- The Display tab is the look's own panel: Outfitter's panel is put away
+	-- (HidePanel) while it shows, and showing one of Outfitter's puts it away
+	local function ShowDisplay()
+		if self.CurrentPanel > 0 then self:HidePanel(self.CurrentPanel) end
+		frame:SetHeight(look.BaseHeight)
+		look.Display:Show()
+		look.Tabs.Paint(3)
+	end
+	look.Tabs = MakeTabs(frame, header, { self.cOutfitterTabTitle, self.cOptionsTabTitle, self.cLookDisplayTab },
+		function(index)
+			if index == 3 then ShowDisplay() else Outfitter:ShowPanel(index) end
+		end)
 	for index = 1, #look.Tabs do
 		local old = _G["OutfitterFrameTab" .. index]
 		if old then old:Hide() end
 	end
 	look.Tabs.Paint(self.CurrentPanel)
-	hooksecurefunc(self, "ShowPanel", function(_, index) look.Tabs.Paint(index) end)
+	hooksecurefunc(self, "ShowPanel", function(_, index)
+		look.Display:Hide()
+		if index ~= 2 then frame:SetHeight(look.BaseHeight) end
+		look.Tabs.Paint(index)
+	end)
+	look.ShowDisplay = ShowDisplay
 
 	-- Outfits panel
 	HideTitles(OutfitterMainFrame, self.cTitle, "Outfitter_cTitle")
@@ -512,7 +863,8 @@ function Outfitter:ApplyLook()
 
 	-- The selected outfit: a dark red row with a red bar at its left
 	local highlight = OutfitterMainFrameHighlight
-	highlight:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.28)
+	local selected = C.select or { C.redHi[1], C.redHi[2], C.redHi[3], 0.28 }
+	highlight:SetColorTexture(selected[1], selected[2], selected[3], selected[4])
 	highlight:SetBlendMode("BLEND")
 	local bar = OutfitterMainFrame:CreateTexture(nil, "OVERLAY")
 	bar:SetPoint("TOPLEFT", highlight, "TOPLEFT")
@@ -561,6 +913,11 @@ function Outfitter:ApplyLook()
 
 	-- Slot checkboxes on the character
 	StyleSlotEnables()
+
+	-- Display tab, and the window in the chosen sizes (and, for Light, dark text)
+	StyleDisplay(look)
+	ApplyDisplay(look)
+	DarkTextIn(frame)
 
 	-- Keep the switches and the selected row's bar in step with Outfitter's own updates
 	local function Refresh()
@@ -612,7 +969,7 @@ function Outfitter:StyleDialog(dialog)
 	header:SetPoint("TOPLEFT")
 	header:SetPoint("TOPRIGHT")
 	header:SetHeight(22)
-	T.HeaderStrip(header, dialog.Title and dialog.Title:GetText())
+	HeaderStrip(header, dialog.Title and dialog.Title:GetText())
 	header:FitLogo(22)
 	dialog.Look.Header = header
 	if dialog.Title then
@@ -641,6 +998,7 @@ end
 
 hooksecurefunc(Outfitter, "OpenNameOutfitDialog", function(self)
 	self:StyleDialog(self.NameOutfitDialog)
+	DisplayDialog(self.NameOutfitDialog)
 end)
 
 ---------------------------------------------------------------------------
@@ -698,12 +1056,12 @@ function Outfitter:StyleScriptDialog(dialog)
 	header:SetPoint("TOPRIGHT")
 	header:SetHeight(22)
 	local title = dialog.Widgets.Title
-	T.HeaderStrip(header, title:GetText())
+	HeaderStrip(header, title:GetText())
 	header:FitLogo(22)
 	title:Hide()
 	hooksecurefunc(title, "SetText", function(_, text) header.text:SetText(text) end)
 	if dialog.CloseButton then dialog.CloseButton:Hide() end
-	local close = T.FlatButton(header, "X", 18, 18)
+	local close = FlatButton(header, "X", 18, 18)
 	close:SetPoint("RIGHT", -3, 0)
 	close:SetScript("OnClick", function() dialog:Done() end)
 	header.text:SetPoint("RIGHT", close, "LEFT", -4, 0)
@@ -760,6 +1118,7 @@ end
 hooksecurefunc(Outfitter._EditScriptDialog, "Open", function(self)
 	Outfitter:StyleScriptDialog(self)
 	StyleSettingsFields(self)
+	DisplayDialog(self)
 end)
 
 hooksecurefunc(Outfitter._EditScriptDialog, "ConstructSettingsFields", function(self)
@@ -916,7 +1275,7 @@ local function StyleSlider(slider)
 end
 
 -- The bar's settings (right-click a drag handle): flat panel, switches, flat sliders
-hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
+local function StyleBarSettings(self)
 	if self.Look then return end
 	self.Look = true
 	self:SetBackdrop(nil)
@@ -944,6 +1303,19 @@ hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
 		end
 	end
 	self:SetHeight(166 + 3 * 16 + 2 * 8 + 14)
+end
+
+hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
+	StyleBarSettings(self)
+	-- ShowDialog put it under the mouse; at another size the same spot needs
+	-- the offset in the dialog's own scale
+	local point, relativeTo, relativePoint, x, y = self:GetPoint(1)
+	DisplayDialog(self)
+	local scale = self:GetScale()
+	if point and x and y and scale ~= 1 then
+		self:ClearAllPoints()
+		self:SetPoint(point, relativeTo, relativePoint, x / scale, y / scale)
+	end
 end)
 
 -- The icon picker: header bar with its title, flat fields, buttons and icons
@@ -968,7 +1340,7 @@ local function StyleIconDialog(dialog)
 	header:SetPoint("TOPRIGHT")
 	header:SetHeight(22)
 	local title = dialog.Widgets.Title
-	T.HeaderStrip(header, title:GetText())
+	HeaderStrip(header, title:GetText())
 	header:FitLogo(22)
 	title:SetAlpha(0) -- it stays as the anchor for the fields below it
 	hooksecurefunc(title, "SetText", function(_, text) header.text:SetText(text) end)
@@ -1021,6 +1393,7 @@ end
 
 hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", StyleIconDialog)
 hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", LayoutIconButtons)
+hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", DisplayDialog)
 
 ---------------------------------------------------------------------------
 -- Outfitter's menus (its own copy of LibDropdown): a flat dark panel with a
@@ -1030,10 +1403,13 @@ hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", LayoutIconButtons)
 local Dropdown = LibStub("LibDropdownMC-1.0")
 
 function Dropdown.StyleFrame(frame)
+	-- The library has just set the menu to the tooltip's size; the window size applies on top
+	frame:SetScale(frame:GetScale() * WindowScale())
 	if frame.NineSlice then frame.NineSlice:Hide() end
 	if frame.SetBackdrop and not frame.NineSlice then frame:SetBackdrop(nil) end
 	if not frame.Look then
-		frame.Look = { Fill = T.Fill(frame, { C.win[1], C.win[2], C.win[3], 0.97 }), Edges = T.Border(frame, C.btnEdge) }
+		local menu = C.menu or { C.win[1], C.win[2], C.win[3], 0.97 }
+		frame.Look = { Fill = T.Fill(frame, menu), Edges = T.Border(frame, C.btnEdge) }
 	end
 end
 
@@ -1043,6 +1419,7 @@ function Dropdown.StyleButton(button)
 		highlight:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.35)
 		highlight:SetBlendMode("BLEND")
 	end
+	if button.text then SizeText(button.text, TextScale()) end
 	if button.check then button.check:SetVertexColor(C.gold[1], C.gold[2], C.gold[3]) end
 	if button.expand then button.expand:SetVertexColor(C.orange[1], C.orange[2], C.orange[3]) end
 end
