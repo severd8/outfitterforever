@@ -69,7 +69,7 @@ Outfitter Forever is free. If it has saved you some gear juggling, you can [leav
 - **TauntMaster Forever**: one-click taunts off your healers and DPS, for tanks. Free on CurseForge.
 - **ToppedOff Forever**: reminds you when buffs, food, reagents, ammo or gear need topping off. Free on CurseForge.
 - **BattleText Forever**: scrolling combat text for your hits, heals and the damage you take. Free on CurseForge.
-- **[AuctionHouse Forever](https://www.curseforge.com/wow/addons/auctionhouse-forever)**: an auction house addon for WoW: Forever. Free on CurseForge.
+- **[AuctionHouse Forever](https://www.curseforge.com/wow/addons/auctionhouse-forever)**: a bigger Auction House window, so long item names stop getting cut off and you see more results at once. Free on CurseForge.
 
 ## Credits
 
