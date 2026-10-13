@@ -297,6 +297,8 @@ if GetLocale() == "koKR" then
 	Outfitter.cLookBarSettings = "설정"
 	Outfitter.cLookBarSettingsDescription = "장비 세트 막대의 크기, 투명도, 방향, 고정, 배경. 막대 손잡이를 오른쪽 클릭해도 열립니다."
 	Outfitter.cLookSidebarTabDescription = "캐릭터 창 위쪽의 장비 관리자 탭이 Outfitter Forever를 엽니다. 끄기: 게임의 장비 관리자가 돌아오고, 작은 Outfitter 버튼이 장비 세트를 엽니다."
+	Outfitter.cLookOpenShortcuts = "미니맵과 브로커에서 열기"
+	Outfitter.cLookOpenShortcutsDescription = "미니맵 버튼이나 데이터 브로커 항목을 오른쪽 클릭하거나 메뉴에서 \"Outfitter Forever 열기\"를 고르면 Outfitter Forever가 열립니다. Forever에서는 애드온이 캐릭터 창을 열 수 없어서, 창이 닫혀 있으면 채팅에 안내만 나옵니다. 끄기: 캐릭터 창을 열기 전까지는 이 기능이 빠집니다."
 	Outfitter.cOpenCharacterWindow = "캐릭터 창(%s)을 열면 Outfitter Forever도 함께 열립니다. WoW: Forever에서는 애드온이 이 창을 대신 열 수 없습니다."
 	Outfitter.cMoveUp = "위로 이동"
 	Outfitter.cMoveDown = "아래로 이동"

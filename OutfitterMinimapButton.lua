@@ -70,7 +70,9 @@ local function _MouseUp(pButton, down)
 		OutfitterMinimapButton:ToggleMenu()
 	elseif pButton == "RightButton" then
 		OutfitterMinimapButton:HideMenu()
-		Outfitter:ToggleUI(true)
+		if Outfitter:OpenShortcutWorks() then -- Forever: see OpenShortcutWorks
+			Outfitter:ToggleUI(true)
+		end
 	end
 
 end
@@ -302,9 +304,11 @@ function addon:GetMinimapDropdownItems(items)
 
 	-- Add controls for the addon
 	items:AddCategoryTitle(self.cTitleVersion)
-	items:AddFunction(self.cOpenOutfitter, function ()
-		self:OpenUI()
-		end)
+	if self:OpenShortcutWorks() then -- Forever: see OpenShortcutWorks
+		items:AddFunction(self.cOpenOutfitter, function ()
+			self:OpenUI()
+			end)
+	end
 	items:AddToggle(self.cAutoSwitch,
 		function ()
 			return self.Settings.Options.DisableAutoSwitch

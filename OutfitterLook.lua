@@ -330,7 +330,7 @@ end
 local function LayoutOptions(look)
 	local y = look.CardsTop
 	for _, card in ipairs(look.Cards) do
-		local rowY = -26
+		local rowY = -24
 		for _, row in ipairs(card.rows) do
 			if row.widget:IsShown() then
 				local width = LABEL_W - (row.extra or 0)
@@ -346,8 +346,8 @@ local function LayoutOptions(look)
 		end
 		card:ClearAllPoints()
 		card:SetPoint("TOPLEFT", 8, y)
-		card:SetHeight(-rowY + 4)
-		y = y + rowY - 4 - 6
+		card:SetHeight(-rowY + 2)
+		y = y + rowY - 2 - 4
 	end
 end
 
@@ -364,9 +364,10 @@ local function StyleOptions(look)
 		{ Outfitter.cLookQuickAccess, {
 			{ "OutfitterShowMinimapButton", Outfitter.cShowMinimapButton, Outfitter.cLookMinimapButtonDescription },
 			{ "OutfitterShowOutfitBar", Outfitter.cShowOutfitBar, Outfitter.cLookOutfitBarDescription },
-			{ "OutfitterUseSidebarTab", Outfitter.cSidebarTab, Outfitter.cLookSidebarTabDescription } } },
+			{ "OutfitterUseSidebarTab", Outfitter.cSidebarTab, Outfitter.cLookSidebarTabDescription },
+			{ "OpenShortcuts" } } },
 	}
-	look.CardsTop = -(24 + TAB_H + 8)
+	look.CardsTop = -(24 + TAB_H + 6)
 	local width = (panel:GetWidth() or 256) - 16
 	look.Cards = {}
 	for index, info in ipairs(cards) do
@@ -387,6 +388,22 @@ local function StyleOptions(look)
 				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
 				switch.label:SetJustifyH("LEFT")
 				look.OptionsScripts = switch
+				row = { widget = switch, label = switch.label }
+			elseif checkName == "OpenShortcuts" then
+				-- Right-click on the minimap button or broker, and the menu's "Open
+				-- Outfitter Forever" (Outfitter:OpenShortcutWorks); on by default
+				local switch = T.SwitchWidget(card)
+				switch:SetFrameLevel(card:GetFrameLevel() + 2)
+				switch:SetScript("OnClick", function(self)
+					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+					Outfitter.Settings.Options.DisableOpenShortcuts = self:IsOn() or nil
+					self:SetOn(not Outfitter.Settings.Options.DisableOpenShortcuts)
+				end)
+				T.Tooltip(switch, Outfitter.cLookOpenShortcuts, Outfitter.cLookOpenShortcutsDescription)
+				switch.label = T.Text(switch, Outfitter.cLookOpenShortcuts, "GameFontHighlightSmall", C.title)
+				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
+				switch.label:SetJustifyH("LEFT")
+				look.OpenShortcuts = switch
 				row = { widget = switch, label = switch.label }
 			elseif check then
 				MakeSwitch(check)
@@ -550,6 +567,7 @@ function Outfitter:ApplyLook()
 		if not self.Settings then return end
 		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
 		if look.OptionsScripts then look.OptionsScripts:SetOn(scripts:IsOn()) end
+		if look.OpenShortcuts then look.OpenShortcuts:SetOn(not self.Settings.Options.DisableOpenShortcuts) end
 		bar:SetShown(highlight:IsShown())
 		-- The Equipment Manager tab's row is hidden when there's no tab
 		LayoutOptions(look)

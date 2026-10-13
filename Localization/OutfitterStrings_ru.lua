@@ -410,6 +410,8 @@ if GetLocale() == "ruRU" then
 	Outfitter.cLookBarSettings = "Настройки"
 	Outfitter.cLookBarSettingsDescription = "Размер, прозрачность, направление, закрепление и фон панели комплектов. Их также открывает правый щелчок по ручке панели."
 	Outfitter.cLookSidebarTabDescription = "Вкладка менеджера экипировки вверху окна персонажа открывает Outfitter Forever. Выкл.: возвращается менеджер экипировки игры, а комплекты открывает маленькая кнопка Outfitter."
+	Outfitter.cLookOpenShortcuts = "Открытие: мини-карта, брокер"
+	Outfitter.cLookOpenShortcutsDescription = "Правый щелчок по кнопке у мини-карты или записи брокера данных, а также «Открыть Outfitter Forever» в их меню открывают Outfitter Forever. На Forever аддон не может открыть окно персонажа, поэтому, пока оно закрыто, они лишь пишут подсказку в чат. Выкл.: их нет, пока вы не откроете окно персонажа."
 	Outfitter.cOpenCharacterWindow = "Откройте окно персонажа (%s), и Outfitter Forever откроется вместе с ним. В WoW: Forever аддон не может открыть это окно за вас."
 	Outfitter.cMoveUp = "Переместить вверх"
 	Outfitter.cMoveDown = "Переместить вниз"

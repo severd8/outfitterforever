@@ -418,6 +418,8 @@ if GetLocale() == "zhCN" then
 	Outfitter.cLookBarSettings = "设置"
 	Outfitter.cLookBarSettingsDescription = "套装条的大小、透明度、方向、锁定和背景。右键点击套装条的把手也能打开。"
 	Outfitter.cLookSidebarTabDescription = "角色窗口顶部的装备管理标签会打开 Outfitter Forever。关闭：恢复游戏自带的装备管理，并由 Outfitter 小按钮打开你的套装。"
+	Outfitter.cLookOpenShortcuts = "从小地图和信息条打开"
+	Outfitter.cLookOpenShortcutsDescription = "右键点击小地图按钮或信息条项目，或在其菜单中选择“打开 Outfitter Forever”，会打开 Outfitter Forever。在 Forever 上插件无法打开角色窗口，所以角色窗口关闭时它们只会在聊天中提示。关闭：在你打开角色窗口之前不提供这些操作。"
 	Outfitter.cOpenCharacterWindow = "打开你的角色窗口（%s），Outfitter Forever 会随之打开。在 WoW: Forever 中，插件无法替你打开该窗口。"
 	Outfitter.cMoveUp = "上移"
 	Outfitter.cMoveDown = "下移"

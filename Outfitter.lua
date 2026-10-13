@@ -6768,6 +6768,14 @@ function Outfitter:OpenUI()
 	OutfitterFrame:Show()
 end
 
+-- Forever: a right-click on the minimap button or the data broker entry, and
+-- "Open Outfitter Forever" in their menu, can't open the character window (see
+-- OpenUI). With the "Open from minimap and broker" option off they're left out
+-- while it's closed, so they don't print the reminder.
+function Outfitter:OpenShortcutWorks()
+	return not (IsForever and self.Settings.Options.DisableOpenShortcuts and not PaperDollFrame:IsVisible())
+end
+
 -- Forever: the character window was opened (by you). If you asked for Outfitter
 -- a moment ago, it opens now.
 function Outfitter:CharacterWindowShown()

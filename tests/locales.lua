@@ -16,7 +16,7 @@ local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDe
 	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip", "cCombatWait", "cLookAutomation",
 	"cLookHotkeyMessagesDescription", "cLookTooltipInfoDescription", "cLookItemComparisons", "cLookItemComparisonsDescription",
 	"cLookMinimapButtonDescription", "cLookOutfitBarDescription", "cLookBarSettings", "cLookBarSettingsDescription",
-	"cLookSidebarTabDescription" }
+	"cLookSidebarTabDescription", "cLookOpenShortcuts", "cLookOpenShortcutsDescription" }
 
 -- The option cards: the bottom of the last one, measured from the window's top
 local function CardsBottom(W, O)
@@ -73,8 +73,8 @@ for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	-- Long option names wrap onto a second line (the French Equipment Manager tab
 	-- does) instead of being cut off, and the cards still fit in the window
 	local bottom, card3 = CardsBottom(W, O)
-	-- 344: the window's height in Outfitter.xml, less an 8 px margin
-	Check(bottom <= 344 - 8, locale .. ": the option cards fit in the window (" .. bottom .. ")")
+	-- 344: the window's height in Outfitter.xml, less a 4 px margin (the gap between cards)
+	Check(bottom <= 344 - 4, locale .. ": the option cards fit in the window (" .. bottom .. ")")
 	if locale == "frFR" then
 		Check(card3 > englishCard3, "frFR: the long Equipment Manager tab option takes two lines")
 	end

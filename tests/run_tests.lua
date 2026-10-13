@@ -697,6 +697,7 @@ do
 		{ env.OutfitterShowMinimapButton, O.cShowMinimapButton, O.cLookMinimapButtonDescription },
 		{ env.OutfitterShowOutfitBar, O.cShowOutfitBar, O.cLookOutfitBarDescription },
 		{ env.OutfitterUseSidebarTab, O.cSidebarTab, O.cLookSidebarTabDescription },
+		{ look.OpenShortcuts, O.cLookOpenShortcuts, O.cLookOpenShortcutsDescription },
 	}
 	local function TooltipFor(widget)
 		widget:GetScript("OnEnter")(widget)
@@ -1554,6 +1555,56 @@ W.Tick(0.2)
 Check(not env.OutfitterFrame:IsVisible(), "an old request doesn't open Outfitter out of the blue")
 W.PlayerTogglesCharacter()
 W.Tick(0.2)
+NoErrors()
+
+----------------------------------------
+Step("the Open from minimap and broker option")
+-- Asked for by a player: right-click on the minimap button or the broker, and
+-- "Open Outfitter Forever" in their menu, only print a reminder while the
+-- character window is closed. With the option off they're left out then.
+do
+	local look = env.OutfitterFrame.Look
+	local switch = look.OpenShortcuts
+	local function MenuHasOpen()
+		local found = false
+		local items = setmetatable({}, { __index = function(_, key)
+			return function(_, text) if key == "AddFunction" and text == O.cOpenOutfitter then found = true end end
+		end })
+		O:GetMinimapDropdownItems(items)
+		return found
+	end
+	local minimapClick = env.OutfitterMinimapButton:GetScript("OnMouseUp") or env.OutfitterMinimapButton:GetScript("OnClick")
+	Check(switch and AnchoredTo(switch, look.Cards[3]), "Options has it, in Quick access")
+	Check(switch and switch:IsOn() and not O.Settings.Options.DisableOpenShortcuts, "on to start with")
+	if env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end
+	env.OutfitterFrame:Hide()
+	W.Tick(0.2)
+	Check(MenuHasOpen(), "while it's on the menu has Open Outfitter Forever")
+	switch:Click()
+	Check(O.Settings.Options.DisableOpenShortcuts == true and not switch:IsOn(), "switching it off is saved")
+	Check(env.gOutfitter_Settings.Options.DisableOpenShortcuts == true, "in this character's settings")
+	local printedBefore = #W.printed
+	W.SafeCall(minimapClick, env.OutfitterMinimapButton, "RightButton")
+	O.LDB:OnClick(nil, "RightButton")
+	W.Tick(0.2)
+	Check(#W.printed == printedBefore, "off: right-clicking with the character window closed prints nothing")
+	Check(not O.OpenWithCharacterWindow, "and doesn't wait for the character window")
+	Check(not MenuHasOpen(), "the menu leaves Open Outfitter Forever out")
+	W.PlayerTogglesCharacter()
+	W.Tick(0.2)
+	Check(not env.OutfitterFrame:IsVisible(), "opening the character window doesn't open Outfitter")
+	Check(MenuHasOpen(), "with the character window open the menu has Open Outfitter Forever")
+	W.SafeCall(minimapClick, env.OutfitterMinimapButton, "RightButton")
+	W.Tick(0.2)
+	Check(env.OutfitterFrame:IsVisible(), "and right-click on the minimap button opens Outfitter")
+	O.LDB:OnClick(nil, "RightButton")
+	W.Tick(0.2)
+	Check(not env.OutfitterFrame:IsVisible(), "right-click on the broker closes it")
+	switch:Click()
+	Check(not O.Settings.Options.DisableOpenShortcuts and switch:IsOn(), "switching it on again is saved")
+	W.PlayerTogglesCharacter()
+	W.Tick(0.2)
+end
 NoErrors()
 
 for name in pairs(W.replacedBlizzardScripts) do

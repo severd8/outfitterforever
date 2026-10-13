@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2
+
+- **New option: Open from minimap and broker** (Options > Quick access). On WoW: Forever an addon can't open your character window, so right-clicking the minimap button or your data broker entry, or picking "Open Outfitter Forever" in their menu, only printed a reminder in chat while the window was closed. Turn this off and they're left out until you open your character window yourself; then they work as before. It's on by default.
+
 ## 1.4.1
 
 - **Fixed: icons sticking out of the icon picker.** On some setups the last column of icons in "Choose an icon" went past the right edge of the window. The icons are now sized to fit.

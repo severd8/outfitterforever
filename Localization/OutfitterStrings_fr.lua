@@ -393,6 +393,8 @@ if GetLocale() == "frFR" then
 	Outfitter.cLookBarSettings = "Réglages"
 	Outfitter.cLookBarSettingsDescription = "Taille, transparence, orientation, verrouillage et fond de la barre de tenues. Un clic droit sur la poignée de la barre les ouvre aussi."
 	Outfitter.cLookSidebarTabDescription = "L'onglet du gestionnaire d'équipement en haut de votre fenêtre de personnage ouvre Outfitter Forever. Désactivé : le gestionnaire d'équipement du jeu revient, et un petit bouton Outfitter ouvre vos tenues."
+	Outfitter.cLookOpenShortcuts = "Ouvrir via minicarte/broker"
+	Outfitter.cLookOpenShortcutsDescription = "Un clic droit sur le bouton de la minicarte ou votre entrée data broker, ou \"Ouvrir Outfitter Forever\" dans leur menu, ouvre Outfitter Forever. Sur Forever, un addon ne peut pas ouvrir votre fenêtre de personnage : tant qu'elle est fermée, ils n'affichent qu'un rappel dans le chat. Désactivé : ils sont absents tant que la fenêtre de personnage est fermée."
 	Outfitter.cOpenCharacterWindow = "Ouvrez votre fenêtre de personnage (%s) et Outfitter Forever s'ouvrira avec elle. Sur WoW: Forever, un addon ne peut pas ouvrir cette fenêtre à votre place."
 	Outfitter.cMoveUp = "Monter"
 	Outfitter.cMoveDown = "Descendre"

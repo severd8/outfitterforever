@@ -33,7 +33,9 @@ function Outfitter.LDB:OnClick(pFrame, pButton)
 		self:ToggleMenu()
 	else
 		self:HideMenu()
-		Outfitter:ToggleUI(true)
+		if Outfitter:OpenShortcutWorks() then -- Forever: see OpenShortcutWorks
+			Outfitter:ToggleUI(true)
+		end
 	end
 end
 

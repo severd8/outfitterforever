@@ -279,6 +279,8 @@ if GetLocale() == "deDE" then
 	Outfitter.cLookBarSettings = "Optionen"
 	Outfitter.cLookBarSettingsDescription = "Größe, Transparenz, Ausrichtung, Sperre und Hintergrund der Outfit-Leiste. Ein Rechtsklick auf den Griff der Leiste öffnet sie auch."
 	Outfitter.cLookSidebarTabDescription = "Der Reiter des Ausrüstungsmanagers oben in deinem Charakterfenster öffnet Outfitter Forever. Aus: Der Ausrüstungsmanager des Spiels kommt zurück, und ein kleiner Outfitter-Knopf öffnet deine Outfits."
+	Outfitter.cLookOpenShortcuts = "Über Minimap und Broker öffnen"
+	Outfitter.cLookOpenShortcutsDescription = "Ein Rechtsklick auf den Minimapknopf oder deinen Data-Broker-Eintrag oder \"Outfitter Forever öffnen\" in ihrem Menü öffnet Outfitter Forever. Auf Forever kann ein Addon dein Charakterfenster nicht öffnen, solange es geschlossen ist, erscheint daher nur ein Hinweis im Chat. Aus: Sie fehlen, bis du dein Charakterfenster öffnest."
 	Outfitter.cOpenCharacterWindow = "Öffne dein Charakterfenster (%s), dann öffnet sich Outfitter Forever mit. In WoW: Forever kann ein Addon dieses Fenster nicht für dich öffnen."
 	Outfitter.cMoveUp = "Nach oben"
 	Outfitter.cMoveDown = "Nach unten"
