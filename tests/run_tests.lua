@@ -924,8 +924,21 @@ do
 
 	-- The icon picker (outfit menu > choose icon)
 	local picker = env.OutfitterChooseIconDialog
+	-- In game the icon area is 270 x 260 and upstream fits 6 columns of 45-wide
+	-- icons in it, forgetting the gaps between them (reported in 1.4.0)
+	local area = picker.Widgets.ScrollFrame
+	area:SetSize(270, 260)
+	picker.NumColumns, picker.NumRows = 6, 5
+	while #picker.IconButtons < 30 do table.insert(picker.IconButtons, picker:NewIconButton()) end
+	for _, button in ipairs(picker.IconButtons) do button:SetSize(45, 45) end
 	O.OutfitMenuActions.OUTFITBAR_CHOOSEICON(O, fishing)
 	W.Tick(0.2)
+	local fits = true
+	for _, button in ipairs(picker.IconButtons) do
+		local _, relativeTo, _, x, y = button:GetPoint(1)
+		if relativeTo ~= area or x + button:GetWidth() > 270 or -y + button:GetHeight() > 260 then fits = false end
+	end
+	Check(fits, "every icon in the icon picker fits inside its area")
 	Check(picker:IsShown() and picker.Look and picker.Look.Header.text:GetText() == env.OutfitterChooseIconDialogTitle:GetText(),
 		"the icon picker has the header bar with its title")
 	if picker.Look then

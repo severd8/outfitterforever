@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.1
+
+- **Fixed: icons sticking out of the icon picker.** On some setups the last column of icons in "Choose an icon" went past the right edge of the window. The icons are now sized to fit.
+
 ## 1.4.0
 
 - **Options tab, tidied up.**

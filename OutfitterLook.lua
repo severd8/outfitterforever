@@ -980,7 +980,29 @@ local function StyleIconDialog(dialog)
 	for _, button in ipairs(dialog.IconButtons or {}) do StyleIconButton(button) end
 end
 
+-- Upstream counts how many icons fit across by the icon's width alone, then puts
+-- 10 px between them, so with 45-wide icons it makes 6 columns in a 270-wide
+-- area and the last one sticks out on the right (reported in 1.4.0). Keep its
+-- rows and columns and size the icons so the grid fits.
+local ICON_GAP = 8
+local function LayoutIconButtons(dialog)
+	local area = dialog.Widgets.ScrollFrame
+	local columns, rows = dialog.NumColumns or 1, dialog.NumRows or 1
+	local width, height = area:GetWidth() or 0, area:GetHeight() or 0
+	local size = math.floor(math.min((width - (columns - 1) * ICON_GAP) / columns,
+		(height - (rows - 1) * ICON_GAP) / rows))
+	if size < 16 then return end
+	for index, button in ipairs(dialog.IconButtons or {}) do
+		StyleIconButton(button)
+		local column, row = (index - 1) % columns, math.floor((index - 1) / columns)
+		button:SetSize(size, size)
+		button:ClearAllPoints()
+		button:SetPoint("TOPLEFT", area, "TOPLEFT", column * (size + ICON_GAP), -row * (size + ICON_GAP))
+	end
+end
+
 hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", StyleIconDialog)
+hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", LayoutIconButtons)
 
 ---------------------------------------------------------------------------
 -- Outfitter's menus (its own copy of LibDropdown): a flat dark panel with a
