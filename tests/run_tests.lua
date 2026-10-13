@@ -1679,7 +1679,6 @@ do
 	W.Tick(0.2)
 	Check(look.Display:IsVisible() and look.Tabs[3].on and not look.Tabs[1].on and not look.Tabs[2].on, "the Display tab opens and is lit")
 	Check(not env.OutfitterMainFrame:IsShown() and not env.OutfitterOptionsFrame:IsShown(), "in place of Outfits and Options")
-	Check(look.ReloadNote:GetText() == "" and not look.Reload:IsShown(), "no reload note while the colors are the ones in use")
 
 	-- A bigger window, and its dialogs and menus
 	Check(look.DisplayPages[1]:IsVisible() and not look.DisplayPages[2]:IsVisible(), "it opens on Size and text")
@@ -1752,24 +1751,74 @@ do
 	W.Tick(0.2)
 	Check(env.OutfitterFrame:GetHeight() == look.BaseHeight, "the Outfits tab is the window's own height")
 
-	-- A color style waits for a reload
+	-- Color styles and your own colors show at once
 	look.Tabs[3]:Click()
 	W.Tick(0.2)
 	look.DisplaySwitch[2]:Click()
 	Check(look.DisplayPages[2]:IsVisible() and not look.DisplayPages[1]:IsVisible(), "the Colors page")
 	local cardInner = (env.OutfitterFrame:GetWidth() or 256) - 16 - 24
 	Check(math.abs(look.Swatches[2]:GetWidth() - (cardInner - 4) / 2) < 1, "the styles are two by two, each half the card wide")
+	local C = O.Theme.C
+	local defaultWin = { unpack(C.win) }
+	local function Near(color, r, g, b) return math.abs(color[1] - r) < 0.002 and math.abs(color[2] - g) < 0.002 and math.abs(color[3] - b) < 0.002 end
 	look.Swatches[3]:Click()
 	Check(env.gOutfitter_GlobalSettings.Display.Colors == "blue", "picking Blue is saved")
-	Check(look.ReloadNote:GetText() == O.cLookReloadTyped, "and the tab says to /reload (this client has no reload function)")
+	Check(Near(C.win, 0.055, 0.063, 0.085) and Near(look.Fill.__color, 0.055, 0.063, 0.085), "and the window turns blue at once")
+	Check(Near(look.Header.bg.__color, 0.09, 0.23, 0.42), "its header too")
+	Check(Near(look.Cards[1].title.__textColor or { 0, 0, 0 }, 0.5, 0.77, 1), "and the Options cards' titles")
+
+	-- Your own colors, typed
+	local own = look.OwnColors
+	Check(own.background.Hex:GetText() == "#0E1016", "each own color shows the code in use (" .. tostring(own.background.Hex:GetText()) .. ")")
+	own.background.Hex:SetText("203040")
+	own.background.Hex:GetScript("OnEnterPressed")(own.background.Hex)
+	Check(env.gOutfitter_GlobalSettings.Display.Custom.background == "#203040", "a typed code is saved")
+	Check(Near(look.Fill.__color, 0x20 / 255, 0x30 / 255, 0x40 / 255), "and the window's background is that color at once")
+	Check(own.background.Hex:GetText() == "#203040", "the box shows it with its #")
+	own.background.Hex:SetText("zz")
+	own.background.Hex:GetScript("OnEnterPressed")(own.background.Hex)
+	Check(own.background.Hex:GetText() == "#203040" and Near(look.Fill.__color, 0x20 / 255, 0x30 / 255, 0x40 / 255),
+		"something that isn't a color code changes nothing")
+	own.buttons.Hex:SetText("#00FF00")
+	own.buttons.Hex:GetScript("OnEnterPressed")(own.buttons.Hex)
+	Check(Near(look.Close.bg.__color, 0, 1, 0), "buttons take the buttons color")
+	own.text.Hex:SetText("#FFFF00")
+	own.text.Hex:GetScript("OnEnterPressed")(own.text.Hex)
+	Check(Near(look.Cards[1].rows[2].label.__textColor, 1, 1, 0), "option names take the text color")
+	-- Right-click a swatch: back to the style's color
+	own.background.Chip:GetScript("OnClick")(own.background.Chip, "RightButton")
+	Check(env.gOutfitter_GlobalSettings.Display.Custom.background == nil and Near(look.Fill.__color, 0.055, 0.063, 0.085),
+		"right-clicking a color goes back to the style's")
+	-- Left-click without the game's color wheel (this client has none) puts you in the box
+	own.headings.Chip:GetScript("OnClick")(own.headings.Chip, "LeftButton")
+	Check(own.headings.Hex:HasFocus(), "clicking a color without a color wheel puts you in its box")
+	own.headings.Hex:ClearFocus()
+
+	-- Light, live: the game's gold outfit names turn dark, and back
+	own.text.Chip:GetScript("OnClick")(own.text.Chip, "RightButton")
+	look.Swatches[4]:Click()
+	O:Update(true)
+	local row
+	for index = 0, O.cMaxDisplayedItems - 1 do
+		local item = env["OutfitterItem" .. index]
+		if item:IsShown() and not item.isCategory and item:GetOutfit() then row = item break end
+	end
+	local nameField = row and env[row:GetName() .. "OutfitName"]
+	local r = nameField and nameField:GetTextColor()
+	Check(r and r == C.title[1] and C.title[1] < 0.5, "Light: outfit names are dark at once")
 	look.Swatches[1]:Click()
-	Check(look.ReloadNote:GetText() == "", "picking the colors in use again clears the note")
+	O:Update(true)
+	r = nameField and nameField:GetTextColor()
+	Check(r and r > 0.5, "back to Default: they're light again")
+	Check(next(env.gOutfitter_GlobalSettings.Display.Custom or {}) ~= nil, "your own colors stay through a style change")
 
 	-- Reset
 	look.DisplayReset:Click()
 	Check(env.OutfitterFrame:GetScale() == 1 and select(2, name:GetFont()) == base and name:GetFont() ~= "Fonts\\MORPHEUS.ttf",
 		"Reset puts the size, text and font back")
 	Check(next(env.gOutfitter_GlobalSettings.Display) == nil, "and clears the saved choices")
+	Check(Near(C.win, defaultWin[1], defaultWin[2], defaultWin[3]) and Near(look.Fill.__color, defaultWin[1], defaultWin[2], defaultWin[3]),
+		"and the colors are the default ones again")
 	look.Tabs[1]:Click()
 	W.Tick(0.2)
 	Check(not look.Display:IsShown() and env.OutfitterMainFrame:IsShown(), "the Outfits tab puts the Display tab away")

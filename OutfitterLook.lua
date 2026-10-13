@@ -100,22 +100,199 @@ local function FontChoices()
 	return fonts
 end
 
--- The colours in use: chosen at login (repainting everything that's already
--- drawn would mean redrawing the whole window, so a new choice waits for a reload)
+-- The colours as Theme.lua sets them, kept so a style or your own colours can
+-- be applied (and taken off) at any time. Every entry of C stays the same
+-- table: what's painted keeps a reference to it (see Paint) and is repainted
+-- from it. hover, select and menu are the look's own (see PRESETS).
+local DEFAULTS = {}
+for name, value in pairs(C) do
+	if type(value) == "table" then DEFAULTS[name] = { unpack(value) } end
+end
+C.hover = { unpack(C.gold) }
+C.select = { C.redHi[1], C.redHi[2], C.redHi[3], 0.28 }
+C.menu = { C.win[1], C.win[2], C.win[3], 0.97 }
+for _, name in ipairs({ "hover", "select", "menu" }) do DEFAULTS[name] = { unpack(C[name]) } end
+
+local function SetColor(name, value)
+	local color = C[name]
+	color[1], color[2], color[3] = value[1], value[2], value[3]
+	if value[4] then color[4] = value[4] end
+end
+
+local function Mix(a, b, amount)
+	return { a[1] + (b[1] - a[1]) * amount, a[2] + (b[2] - a[2]) * amount, a[3] + (b[3] - a[3]) * amount }
+end
+local WHITE = { 1, 1, 1 }
+
+-- Your own colours (the Colors page): six, each with the shades made from it
+local CUSTOM_KEYS = { "background", "panels", "text", "headings", "buttons", "highlight" }
+local CUSTOM = {
+	background = function(c)
+		SetColor("win", c)
+		SetColor("side", Mix(c, { 0, 0, 0 }, 0.3))
+		SetColor("field", Mix(c, { 0, 0, 0 }, 0.2))
+		SetColor("menu", c)
+	end,
+	panels = function(c)
+		SetColor("card", c)
+		SetColor("line", Mix(c, WHITE, 0.1))
+	end,
+	text = function(c)
+		SetColor("title", c)
+		SetColor("muted", Mix(c, C.win, 0.2))
+		SetColor("grey", Mix(c, C.win, 0.45))
+		SetColor("offTrack", Mix(c, C.win, 0.75))
+	end,
+	headings = function(c) SetColor("orange", c) end,
+	buttons = function(c)
+		SetColor("red", c)
+		SetColor("redHi", Mix(c, WHITE, 0.18))
+		SetColor("onTrack", c)
+		SetColor("tabOn", Mix(c, C.win, 0.5))
+		SetColor("select", Mix(c, WHITE, 0.18))
+	end,
+	highlight = function(c)
+		for _, name in ipairs({ "gold", "hover", "accent", "fill", "version" }) do SetColor(name, c) end
+		SetColor("btnEdge", Mix(c, C.card, 0.3))
+		SetColor("edge", Mix(c, C.win, 0.5))
+		SetColor("fieldEdge", Mix(c, C.win, 0.6))
+	end,
+}
+
+-- "#RRGGBB" (or without the #) to a colour, and back
+local function FromHex(text)
+	local hex = type(text) == "string" and text:match("^%s*#?(%x%x%x%x%x%x)%s*$")
+	if not hex then return nil end
+	return { tonumber(hex:sub(1, 2), 16) / 255, tonumber(hex:sub(3, 4), 16) / 255, tonumber(hex:sub(5, 6), 16) / 255 }
+end
+local function ToHex(color)
+	return string.format("#%02X%02X%02X", math.floor(color[1] * 255 + 0.5), math.floor(color[2] * 255 + 0.5),
+		math.floor(color[3] * 255 + 0.5))
+end
+
+-- The colours in use: the defaults, then the chosen style, then your own colours
 local appliedColors = "default"
 local function ApplyColors()
+	for name, value in pairs(DEFAULTS) do SetColor(name, value) end
+	C.darkText = nil
 	local key = DisplaySettings().Colors
 	local preset = PRESETS[key]
-	if not preset then return end
-	appliedColors = key
-	for name, value in pairs(preset) do
-		local current = C[name]
-		if type(current) == "table" and type(value) == "table" then
-			for i, v in ipairs(value) do current[i] = v end
-		else
-			C[name] = value
+	appliedColors = preset and key or "default"
+	if preset then
+		for name, value in pairs(preset) do
+			if name == "darkText" then
+				C.darkText = value
+			elseif C[name] then
+				SetColor(name, value)
+			end
+		end
+		if not preset.hover then SetColor("hover", C.gold) end
+		if not preset.select then SetColor("select", { C.redHi[1], C.redHi[2], C.redHi[3], 0.28 }) end
+		if not preset.menu then SetColor("menu", { C.win[1], C.win[2], C.win[3], 0.97 }) end
+	end
+	local custom = DisplaySettings().Custom or {}
+	for _, slot in ipairs(CUSTOM_KEYS) do
+		local color = FromHex(custom[slot])
+		if color then CUSTOM[slot](color) end
+	end
+end
+
+---------------------------------------------------------------------------
+-- Painting that can be redone: every colour the look sets goes through Paint
+-- (textures), Ink (text) or Tint (vertex colour), which remember which of the
+-- shared colours it was. Repaint() sets them all again from the colours as
+-- they are now, so a new colour style or your own colours show at once.
+---------------------------------------------------------------------------
+local painted = setmetatable({}, { __mode = "k" })
+local inked = setmetatable({}, { __mode = "k" })
+local tinted = setmetatable({}, { __mode = "k" })
+local repainters = {}
+
+local function Paint(texture, color, alpha)
+	if not texture then return end
+	painted[texture] = { color, alpha }
+	texture:SetColorTexture(color[1], color[2], color[3], alpha or color[4] or 1)
+	return texture
+end
+
+local function Ink(region, color)
+	if not region then return end
+	inked[region] = color
+	region:SetTextColor(color[1], color[2], color[3])
+end
+
+local function Tint(texture, color)
+	if not texture then return end
+	tinted[texture] = color
+	texture:SetVertexColor(color[1], color[2], color[3])
+end
+
+-- Something that paints itself by its state (a switch, a tab row): run again on Repaint
+local function OnRepaint(func) repainters[#repainters + 1] = func end
+
+local function Repaint()
+	for texture, p in pairs(painted) do
+		local color = p[1]
+		texture:SetColorTexture(color[1], color[2], color[3], p[2] or color[4] or 1)
+	end
+	for region, color in pairs(inked) do region:SetTextColor(color[1], color[2], color[3]) end
+	for texture, color in pairs(tinted) do texture:SetVertexColor(color[1], color[2], color[3]) end
+	for _, func in ipairs(repainters) do func() end
+end
+
+-- The shared look's pieces, with their colours remembered. Theme.lua stays as
+-- it is (it's shared with the other Forever addons): its pieces are painted,
+-- then their parts are found by draw layer and painted again here.
+local function Fill(frame, color, layer, sub, alpha)
+	local texture = T.Fill(frame, color, layer, sub)
+	return Paint(texture, color, alpha)
+end
+
+local function Border(frame, color)
+	local edges = T.Border(frame, color)
+	for _, edge in ipairs(edges) do Paint(edge, color) end
+	return edges
+end
+
+local function Text(parent, text, template, color, size)
+	local fs = T.Text(parent, text, template, color, size)
+	if color then Ink(fs, color) end
+	return fs
+end
+
+local function PaintParts(frame, fill, edge)
+	for _, region in ipairs({ frame:GetRegions() }) do
+		if region:GetObjectType() == "Texture" and not painted[region] then
+			local layer = region:GetDrawLayer()
+			if layer == "BACKGROUND" and fill then Paint(region, fill)
+			elseif layer == "BORDER" and edge then Paint(region, edge) end
 		end
 	end
+end
+
+local function Card(parent, title, x, y, w, h)
+	local card = T.Card(parent, title, x, y, w, h)
+	PaintParts(card, C.card, C.line)
+	Ink(card.title, C.orange)
+	return card
+end
+
+local function EditBox(parent, width)
+	local box = T.EditBox(parent, width)
+	PaintParts(box, C.field, C.fieldEdge)
+	return box
+end
+
+local function SwitchWidget(parent)
+	local switch = T.SwitchWidget(parent)
+	OnRepaint(function() switch:SetOn(switch:IsOn()) end)
+	return switch
+end
+
+local function MenuArrow(button, inset)
+	local arrow = T.MenuArrow(button, inset)
+	Tint(arrow, C.orange)
+	return arrow
 end
 
 -- Text in the chosen size: each font string and edit box keeps its original
@@ -158,7 +335,22 @@ local function DarkText(region)
 	elseif math.abs(r - g) < 0.06 and math.abs(g - b) < 0.06 and r > 0.4 and r < 0.75 then
 		color = C.muted
 	end
-	if color then region:SetTextColor(color[1], color[2], color[3]) end
+	if color then
+		region.OFOrigColor = region.OFOrigColor or { r, g, b }
+		Ink(region, color)
+	end
+end
+
+-- Leaving Light colours: the darkened text gets its own colour back
+local function UndarkText()
+	for region in pairs(inked) do
+		local color = region.OFOrigColor
+		if color then
+			inked[region] = nil
+			region.OFOrigColor = nil
+			region:SetTextColor(color[1], color[2], color[3])
+		end
+	end
 end
 
 local function DarkTextIn(frame)
@@ -192,7 +384,7 @@ local function Box(frame, size, fill, edge)
 	local bg = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
 	bg:SetSize(size, size)
 	bg:SetPoint("CENTER")
-	bg:SetColorTexture(unpack(fill))
+	Paint(bg, fill)
 	local edges = {
 		{ size, 1, 0, half - 0.5 }, { size, 1, 0, 0.5 - half },
 		{ 1, size, 0.5 - half, 0 }, { 1, size, half - 0.5, 0 },
@@ -201,7 +393,7 @@ local function Box(frame, size, fill, edge)
 		local t = frame:CreateTexture(nil, "BORDER")
 		t:SetSize(e[1], e[2])
 		t:SetPoint("CENTER", e[3], e[4])
-		t:SetColorTexture(unpack(edge))
+		Paint(t, edge)
 	end
 	return bg
 end
@@ -215,13 +407,13 @@ local function Flatten(button, fill, hover, edge)
 	for _, key in ipairs({ "Left", "Middle", "Right", "LeftTexture", "MiddleTexture", "RightTexture", "HighlightTexture" }) do
 		if type(button[key]) == "table" then Fade(button[key]) end
 	end
-	local bg = T.Fill(button, fill)
-	T.Border(button, edge or C.btnEdge)
-	button:HookScript("OnEnter", function() bg:SetColorTexture(unpack(hover)) end)
-	button:HookScript("OnLeave", function() bg:SetColorTexture(unpack(fill)) end)
+	local bg = Fill(button, fill)
+	Border(button, edge or C.btnEdge)
+	button:HookScript("OnEnter", function() Paint(bg, hover) end)
+	button:HookScript("OnLeave", function() Paint(bg, fill) end)
 	local fs = button.GetFontString and button:GetFontString() or button.Text
 	if fs then
-		fs:SetTextColor(C.gold[1], C.gold[2], C.gold[3])
+		Ink(fs, C.gold)
 		fs.OFKeep = true
 	end
 	return bg
@@ -230,14 +422,22 @@ end
 -- A flat button from the shared look, its text kept as is in Light colours
 local function FlatButton(parent, text, width, height)
 	local button = T.FlatButton(parent, text, width, height)
+	Paint(button.bg, C.red)
+	PaintParts(button, nil, C.btnEdge)
 	local fs = button:GetFontString()
-	if fs then fs.OFKeep = true end
+	if fs then
+		Ink(fs, C.gold)
+		fs.OFKeep = true
+	end
 	return button
 end
 
 -- The header strip from the shared look, its text kept as is in Light colours
 local function HeaderStrip(header, text)
 	T.HeaderStrip(header, text)
+	Paint(header.bg, C.red)
+	PaintParts(header, nil, C.edge)
+	Ink(header.text, C.gold)
 	header.text.OFKeep = true
 	return header
 end
@@ -251,11 +451,11 @@ local function ArrowButton(button)
 			t:ClearAllPoints()
 			t:SetSize(10, 10)
 			t:SetPoint("CENTER")
-			t:SetVertexColor(C.orange[1], C.orange[2], C.orange[3])
+			Tint(t, C.orange)
 		end
 	end
 	local disabled = button:GetDisabledTexture()
-	if disabled then disabled:SetVertexColor(C.grey[1], C.grey[2], C.grey[3]) end
+	if disabled then Tint(disabled, C.grey) end
 end
 
 -- A scroll bar with only a thin gold thumb left showing
@@ -266,7 +466,7 @@ local function FlatScrollBar(scrollBar)
 		if region ~= thumb and region:GetObjectType() == "Texture" then region:SetAlpha(0) end
 	end
 	if thumb then
-		thumb:SetColorTexture(unpack(C.btnEdge))
+		Paint(thumb, C.btnEdge)
 		thumb:SetSize(6, 40)
 	end
 	Fade(scrollBar.ScrollUpButton)
@@ -306,7 +506,7 @@ hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
 	look.Script:SetText(name)
 	local off = Outfitter.Settings.Options.DisableAutoSwitch or outfit.Disabled
 	local color = off and C.offTrack or C.grey
-	look.Script:SetTextColor(color[1], color[2], color[3])
+	Ink(look.Script, color)
 	look.Script:Show()
 end)
 
@@ -318,7 +518,7 @@ end)
 
 local function PaintCategory(self)
 	local nameField = _G[self:GetName() .. "CategoryName"]
-	nameField:SetTextColor(C.orange[1], C.orange[2], C.orange[3])
+	Ink(nameField, C.orange)
 end
 
 hooksecurefunc(Outfitter._ListItem, "SetToCategory", function(self, categoryID)
@@ -334,7 +534,7 @@ hooksecurefunc(Outfitter._ListItem, "SetToCategory", function(self, categoryID)
 		arrow:ClearAllPoints()
 		arrow:SetSize(10, 10)
 		arrow:SetPoint("CENTER")
-		arrow:SetVertexColor(C.orange[1], C.orange[2], C.orange[3])
+		Tint(arrow, C.orange)
 		arrow:SetRotation(Outfitter.Collapsed[categoryID] and math.pi / 2 or 0)
 	end
 end)
@@ -398,13 +598,13 @@ local function MakeTabs(frame, header, labels, choose, width)
 		local tab = CreateFrame("Button", nil, frame)
 		tab:SetSize(width, TAB_H)
 		tab:SetPoint("TOPLEFT", header, "BOTTOMLEFT", (index - 1) * width, 0)
-		tab.bg = T.Fill(tab, C.side)
+		tab.bg = Fill(tab, C.side)
 		tab.bar = tab:CreateTexture(nil, "ARTWORK")
 		tab.bar:SetPoint("BOTTOMLEFT")
 		tab.bar:SetPoint("BOTTOMRIGHT")
 		tab.bar:SetHeight(2)
-		tab.bar:SetColorTexture(unpack(C.accent))
-		tab.text = T.Text(tab, label, #labels > 2 and "GameFontNormalSmall" or "GameFontNormal")
+		Paint(tab.bar, C.accent)
+		tab.text = Text(tab, label, #labels > 2 and "GameFontNormalSmall" or "GameFontNormal")
 		tab.text:SetPoint("LEFT", 3, 0)
 		tab.text:SetPoint("RIGHT", -3, 0)
 		tab.text:SetJustifyH("CENTER")
@@ -415,10 +615,10 @@ local function MakeTabs(frame, header, labels, choose, width)
 			choose(index)
 		end)
 		tab:SetScript("OnEnter", function(self)
-			if not self.on then self.bg:SetColorTexture(unpack(C.card)) end
+			if not self.on then Paint(self.bg, C.card) end
 		end)
 		tab:SetScript("OnLeave", function(self)
-			if not self.on then self.bg:SetColorTexture(unpack(C.side)) end
+			if not self.on then Paint(self.bg, C.side) end
 		end)
 		tabs[index] = tab
 	end
@@ -427,15 +627,21 @@ local function MakeTabs(frame, header, labels, choose, width)
 	line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -TAB_H)
 	line:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -TAB_H)
 	line:SetHeight(1)
-	line:SetColorTexture(unpack(C.line))
+	Paint(line, C.line)
 
+	-- A new colour style: the lit tab painted again
+	OnRepaint(function()
+		for index, tab in ipairs(tabs) do
+			if tab.on then tabs.Paint(index) return end
+		end
+	end)
 	function tabs.Paint(current)
 		for index, tab in ipairs(tabs) do
 			tab.on = index == current
-			tab.bg:SetColorTexture(unpack(tab.on and C.tabOn or C.side))
+			Paint(tab.bg, tab.on and C.tabOn or C.side)
 			tab.bar:SetShown(tab.on)
 			local color = tab.on and C.gold or C.muted
-			tab.text:SetTextColor(color[1], color[2], color[3])
+			Ink(tab.text, color)
 		end
 	end
 	return tabs
@@ -467,23 +673,23 @@ local function MakeSwitch(check)
 	track:SetAllPoints()
 	local knob = check:CreateTexture(nil, "ARTWORK")
 	knob:SetSize(12, 12)
-	local function Paint()
+	local function PaintSwitch()
 		local on = check:GetChecked()
-		track:SetColorTexture(unpack(on and C.onTrack or C.offTrack))
-		knob:SetColorTexture(unpack(on and C.gold or C.grey))
+		Paint(track, on and C.onTrack or C.offTrack)
+		Paint(knob, on and C.gold or C.grey)
 		knob:ClearAllPoints()
 		knob:SetPoint("LEFT", check, "LEFT", on and 16 or 2, 0)
 	end
-	hooksecurefunc(check, "SetChecked", Paint)
-	check:HookScript("OnClick", Paint)
-	Paint()
+	hooksecurefunc(check, "SetChecked", PaintSwitch)
+	check:HookScript("OnClick", PaintSwitch)
+	PaintSwitch()
 
 	local label = _G[check:GetName() .. "Text"] or check.Text
 	if label then
 		label:ClearAllPoints()
 		label:SetPoint("LEFT", check, "RIGHT", 8, 0)
 		label:SetFontObject(GameFontHighlightSmall)
-		label:SetTextColor(C.title[1], C.title[2], C.title[3])
+		Ink(label, C.title)
 		label:SetJustifyH("LEFT")
 		label:SetWidth(180)
 		label:SetWordWrap(false)
@@ -501,7 +707,7 @@ local function ScriptsSwitchClick(switch)
 end
 
 local function ScriptsSwitch(parent)
-	local switch = T.SwitchWidget(parent)
+	local switch = SwitchWidget(parent)
 	switch:SetScript("OnClick", ScriptsSwitchClick)
 	T.Tooltip(switch, Outfitter.cLookOutfitScripts, Outfitter.cLookOutfitScriptsDescription)
 	return switch
@@ -514,8 +720,8 @@ local LABEL_W, LINE_H = 180, 11
 -- Hovering a row turns its label gold
 local function HoverLabel(widget, label)
 	function widget:SetHover(on)
-		local color = on and (C.hover or C.gold) or C.title
-		label:SetTextColor(color[1], color[2], color[3])
+		local color = on and C.hover or C.title
+		Ink(label, color)
 	end
 end
 
@@ -524,13 +730,13 @@ end
 local function MenuField(parent, width, choices, get, set)
 	local b = CreateFrame("Button", nil, parent)
 	b:SetSize(width, 20)
-	T.Fill(b, C.field)
-	T.Border(b, C.fieldEdge)
-	local text = T.Text(b, "", "GameFontHighlightSmall", C.title)
+	Fill(b, C.field)
+	Border(b, C.fieldEdge)
+	local text = Text(b, "", "GameFontHighlightSmall", C.title)
 	text:SetPoint("LEFT", 6, 0)
 	text:SetPoint("RIGHT", -18, 0)
 	text:SetWordWrap(false)
-	T.MenuArrow(b, 6)
+	MenuArrow(b, 6)
 	b.text = text
 	function b.Refresh()
 		local current = get()
@@ -625,7 +831,7 @@ local function StyleOptions(look)
 	local width = (panel:GetWidth() or 256) - 16
 	look.Cards = {}
 	for index, info in ipairs(cards) do
-		local card = T.Card(panel, info[1], 8, 0, width, ROW_H)
+		local card = Card(panel, info[1], 8, 0, width, ROW_H)
 		card:SetFrameLevel(panel:GetFrameLevel())
 		card.rows = {}
 		for _, option in ipairs(info[2]) do
@@ -638,7 +844,7 @@ local function StyleOptions(look)
 				check:Hide()
 				local switch = ScriptsSwitch(card)
 				switch:SetFrameLevel(card:GetFrameLevel() + 2)
-				switch.label = T.Text(switch, Outfitter.cLookOutfitScripts, "GameFontHighlightSmall", C.title)
+				switch.label = Text(switch, Outfitter.cLookOutfitScripts, "GameFontHighlightSmall", C.title)
 				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
 				switch.label:SetJustifyH("LEFT")
 				look.OptionsScripts = switch
@@ -648,7 +854,7 @@ local function StyleOptions(look)
 				-- (Outfitter:RightClickAction): a label over a menu field
 				local box = CreateFrame("Frame", nil, card)
 				box:SetFrameLevel(card:GetFrameLevel() + 2)
-				local label = T.Text(box, Outfitter.cLookRightClick, "GameFontHighlightSmall", C.title)
+				local label = Text(box, Outfitter.cLookRightClick, "GameFontHighlightSmall", C.title)
 				label:SetPoint("TOPLEFT")
 				local field = MenuField(box, LABEL_W + 36,
 					function()
@@ -712,14 +918,13 @@ local function StyleSlotEnables()
 	end
 	for _, name in ipairs({ "OutfitterEnableAll", "OutfitterEnableNone" }) do
 		local button = _G[name]
-		if button then Flatten(button, C.card, C.line, C.edge) end
+		if button then Flatten(button, C.red, C.redHi) end
 	end
 end
 
 ---------------------------------------------------------------------------
 -- The Display tab: window size, text size and colours
 ---------------------------------------------------------------------------
-local RELOAD = ReloadUI or (C_UI and C_UI.Reload)
 
 -- The window, the open dialogs and (as they open) the menus in the chosen
 -- window size and text size
@@ -734,14 +939,31 @@ local function ApplyDisplay(look)
 	LayoutOptions(look)
 end
 
+-- The colours, straight away: the style and your own colours into C, then
+-- everything painted again. Light's dark text is put on, or taken off, and the
+-- outfit list redrawn (its rows paint themselves).
+local function ApplyTheme(look)
+	ApplyColors()
+	if not C.darkText then UndarkText() end
+	Repaint()
+	if C.darkText then
+		DarkTextIn(OutfitterFrame)
+		for _, dialog in ipairs({ Outfitter.NameOutfitDialog, OutfitterEditScriptDialog, OutfitterChooseIconDialog,
+			Outfitter.OutfitBar and Outfitter.OutfitBar.SettingsDialog }) do
+			if dialog and dialog.Look then DarkTextIn(dialog) end
+		end
+	end
+	if Outfitter.Settings then Outfitter:Update(true) end
+end
+
 -- A row of choices, one lit: the two pages, the color styles
 local function Choices(parent, keys, labels, get, set)
 	local row = {}
 	for index, key in ipairs(keys) do
 		local b = CreateFrame("Button", nil, parent)
-		b.bg = T.Fill(b, C.field)
-		b.edges = T.Border(b, C.line)
-		b.text = T.Text(b, labels[index], "GameFontHighlightSmall")
+		b.bg = Fill(b, C.field)
+		b.edges = Border(b, C.line)
+		b.text = Text(b, labels[index], "GameFontHighlightSmall")
 		b.text:SetPoint("LEFT", 2, 0)
 		b.text:SetPoint("RIGHT", -2, 0)
 		b.text:SetJustifyH("CENTER")
@@ -758,10 +980,10 @@ local function Choices(parent, keys, labels, get, set)
 	function row.Paint()
 		for _, b in ipairs(row) do
 			local on = get() == b.key
-			b.bg:SetColorTexture(unpack(on and C.tabOn or C.field))
-			for _, edge in ipairs(b.edges) do edge:SetColorTexture(unpack(on and C.btnEdge or C.line)) end
+			Paint(b.bg, on and C.tabOn or C.field)
+			for _, edge in ipairs(b.edges) do Paint(edge, on and C.btnEdge or C.line) end
 			local color = on and C.gold or (C.darkText and C.title or C.muted)
-			b.text:SetTextColor(color[1], color[2], color[3])
+			Ink(b.text, color)
 		end
 	end
 	return row
@@ -771,9 +993,9 @@ end
 -- takes any number in range (two decimals, like 90.55) when you press Enter.
 -- apply() runs when the slider is let go or Enter is pressed.
 local function SizeControl(parent, y, width, label, description, min, max, get, save, apply)
-	local title = T.Text(parent, label, "GameFontHighlightSmall", C.title)
+	local title = Text(parent, label, "GameFontHighlightSmall", C.title)
 	title:SetPoint("TOPLEFT", 12, y)
-	local box = T.EditBox(parent, 56)
+	local box = EditBox(parent, 56)
 	box:SetHeight(18)
 	box:SetPoint("TOPRIGHT", parent, "TOPLEFT", 12 + width, y + 3)
 	box:SetJustifyH("RIGHT")
@@ -786,16 +1008,16 @@ local function SizeControl(parent, y, width, label, description, min, max, get, 
 	track:SetHeight(4)
 	track:SetPoint("LEFT")
 	track:SetPoint("RIGHT")
-	track:SetColorTexture(unpack(C.offTrack))
+	Paint(track, C.offTrack)
 	local thumb = slider:CreateTexture(nil, "OVERLAY")
 	thumb:SetSize(8, 14)
-	thumb:SetColorTexture(unpack(C.gold))
+	Paint(thumb, C.gold)
 	slider:SetThumbTexture(thumb)
 	local fill = slider:CreateTexture(nil, "ARTWORK")
 	fill:SetHeight(4)
 	fill:SetPoint("LEFT", track, "LEFT")
 	fill:SetPoint("RIGHT", thumb, "CENTER")
-	fill:SetColorTexture(unpack(C.fill))
+	Paint(fill, C.fill)
 	slider:SetMinMaxValues(min, max)
 	slider:SetValueStep(1)
 
@@ -867,7 +1089,7 @@ local function StyleDisplay(look)
 	top = top - 26
 
 	-- Page 1: the window's size (with its dialogs and menus), the text's size and font
-	local size = T.Card(pages[1], Outfitter.cLookSize, 8, top, width, 106)
+	local size = Card(pages[1], Outfitter.cLookSize, 8, top, width, 106)
 	look.WindowSize = SizeControl(size, -26, inner, Outfitter.cLookWindowSize, Outfitter.cLookWindowSizeDescription,
 		SCALE_MIN, SCALE_MAX,
 		function() return tonumber(DisplaySettings().Scale) or 100 end,
@@ -878,7 +1100,7 @@ local function StyleDisplay(look)
 		function(value) DisplaySettings().TextSize = value ~= 100 and value or nil end,
 		function() ApplyDisplay(look) end)
 
-	local fontCard = T.Card(pages[1], Outfitter.cLookFont, 8, top - 106 - 4, width, 54)
+	local fontCard = Card(pages[1], Outfitter.cLookFont, 8, top - 106 - 4, width, 54)
 	local font = MenuField(fontCard, inner,
 		function()
 			local list = { { false, Outfitter.cLookFontDefault } }
@@ -894,59 +1116,129 @@ local function StyleDisplay(look)
 	T.Tooltip(font, Outfitter.cLookFont, Outfitter.cLookFontDescription)
 	look.Font = font
 
-	-- Page 2: the color styles, used from the next reload
-	local colors = T.Card(pages[2], Outfitter.cLookColors, 8, top, width, 126)
+	-- Page 2: the color styles, and your own colors on top; both show at once
+	local colors = Card(pages[2], Outfitter.cLookColors, 8, top, width, 88)
 	local names = { Outfitter.cLookColorDefault, Outfitter.cLookColorContrast, Outfitter.cLookColorBlue, Outfitter.cLookColorLight }
-	local reloadNote = T.Text(colors, "", "GameFontHighlightSmall", C.muted)
-	reloadNote:SetPoint("TOPLEFT", 12, -88)
-	reloadNote:SetWidth(inner - 84)
-	reloadNote:SetWordWrap(true)
-	local reload = FlatButton(colors, Outfitter.cLookReload, 78, 20)
-	reload:SetPoint("TOPRIGHT", colors, "TOPRIGHT", -12, -86)
-	reload:SetScript("OnClick", function() if RELOAD then RELOAD() end end)
-	look.Reload, look.ReloadNote = reload, reloadNote
 	local swatches
 	local function PaintColors()
 		local chosen = DisplaySettings().Colors or "default"
 		for _, b in ipairs(swatches) do
 			for _, edge in ipairs(b.edges) do
-				edge:SetColorTexture(unpack(b.key == chosen and C.gold or C.line))
+				Paint(edge, b.key == chosen and C.gold or C.line)
 			end
 		end
-		local waiting = chosen ~= appliedColors
-		reloadNote:SetText(waiting and (RELOAD and Outfitter.cLookReloadNote or Outfitter.cLookReloadTyped) or "")
-		reload:SetShown(waiting and RELOAD ~= nil)
 	end
 	swatches = Choices(colors, COLOR_KEYS, names,
 		function() return DisplaySettings().Colors or "default" end,
-		function(key) DisplaySettings().Colors = key ~= "default" and key or nil end)
+		function(key)
+			DisplaySettings().Colors = key ~= "default" and key or nil
+			ApplyTheme(look)
+		end)
 	-- Two by two, wide enough for the names
 	local swatchW = (inner - 4) / 2
 	for index, b in ipairs(swatches) do
 		b:SetSize(swatchW, 24)
 		b:SetPoint("TOPLEFT", colors, "TOPLEFT", 12 + ((index - 1) % 2) * (swatchW + 4), -26 - math.floor((index - 1) / 2) * 28)
+		-- Each style's button shows that style, whatever colors are in use
 		local sample = SWATCHES[b.key]
+		painted[b.bg] = nil
 		b.bg:SetColorTexture(sample[1], sample[2], sample[3], 1)
-		-- light text on the dark swatches, dark on the light one
 		local dark = b.key == "light"
 		b.text:SetTextColor(dark and 0.1 or 1, dark and 0.08 or 1, dark and 0.06 or 1)
 		T.Tooltip(b, names[index], Outfitter.cLookColorsDescription)
 	end
-	-- The swatches show their own colors, not Choices' lit/unlit ones
+	-- The style buttons show their own colors, not Choices' lit/unlit ones
 	function swatches.Paint() PaintColors() end
 	look.Swatches = swatches
+
+	-- Your own colors: a swatch (click for the game's color wheel, right-click
+	-- for the style's color again) and a hex code (Enter to use it)
+	local own = Card(pages[2], Outfitter.cLookOwnColors, 8, top - 88 - 4, width, 26 + #CUSTOM_KEYS * 18 + 4)
+	local ownNames = {
+		background = Outfitter.cLookColorBackground, panels = Outfitter.cLookColorPanels, text = Outfitter.cLookColorText,
+		headings = Outfitter.cLookColorHeadings, buttons = Outfitter.cLookColorButtons, highlight = Outfitter.cLookColorHighlight,
+	}
+	-- What each one shows: the colour in use for it
+	local shows = { background = C.win, panels = C.card, text = C.title, headings = C.orange, buttons = C.red, highlight = C.gold }
+	local rows = {}
+	local function Custom()
+		local settings = DisplaySettings()
+		settings.Custom = settings.Custom or {}
+		return settings.Custom
+	end
+	local function SetCustom(slot, hex)
+		Custom()[slot] = hex
+		if next(Custom()) == nil then DisplaySettings().Custom = nil end
+		ApplyTheme(look)
+	end
+	for index, slot in ipairs(CUSTOM_KEYS) do
+		local y = -26 - (index - 1) * 18
+		local chip = CreateFrame("Button", nil, own)
+		chip:SetSize(22, 14)
+		chip:SetPoint("TOPLEFT", own, "TOPLEFT", 12, y)
+		chip:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+		chip.color = Fill(chip, shows[slot])
+		Border(chip, C.btnEdge)
+		local label = Text(own, ownNames[slot], "GameFontHighlightSmall", C.title)
+		label:SetPoint("LEFT", chip, "RIGHT", 8, 0)
+		local hex = EditBox(own, 70)
+		hex:SetHeight(16)
+		hex:SetPoint("TOPRIGHT", own, "TOPLEFT", 12 + inner, y + 1)
+		hex:SetMaxLetters(7)
+		local row = { Chip = chip, Hex = hex, Label = label }
+		function row.Refresh() hex:SetText(ToHex(shows[slot])) end
+		hex:SetScript("OnEnterPressed", function(self)
+			if FromHex(self:GetText()) then
+				SetCustom(slot, ToHex(FromHex(self:GetText())))
+			end
+			row.Refresh()
+			self:ClearFocus()
+		end)
+		hex:SetScript("OnEscapePressed", function(self)
+			row.Refresh()
+			self:ClearFocus()
+		end)
+		chip:SetScript("OnClick", function(_, button)
+			if button == "RightButton" then
+				SetCustom(slot, nil)
+				return
+			end
+			local picker = ColorPickerFrame
+			if picker and picker.SetupColorPickerAndShow then
+				local before = Custom()[slot]
+				local start = shows[slot]
+				picker:SetupColorPickerAndShow({
+					r = start[1], g = start[2], b = start[3], hasOpacity = false,
+					swatchFunc = function()
+						local r, g, b = picker:GetColorRGB()
+						SetCustom(slot, ToHex({ r, g, b }))
+					end,
+					cancelFunc = function() SetCustom(slot, before) end,
+				})
+			else
+				-- No color wheel on this client: type the code instead
+				hex:SetFocus()
+				hex:HighlightText()
+			end
+		end)
+		T.Tooltip(chip, ownNames[slot], Outfitter.cLookOwnColorDescription)
+		T.Tooltip(hex, ownNames[slot], Outfitter.cLookHexDescription)
+		rows[slot] = row
+	end
+	look.OwnColors = rows
+	OnRepaint(function() for _, row in pairs(rows) do row.Refresh() end end)
 
 	-- Back to how it was (both pages)
 	local reset = FlatButton(panel, Outfitter.cLookReset, 78, 22)
 	reset:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
 	reset:SetScript("OnClick", function()
 		local settings = DisplaySettings()
-		settings.Scale, settings.TextSize, settings.Font, settings.Colors = nil, nil, nil, nil
+		settings.Scale, settings.TextSize, settings.Font, settings.Colors, settings.Custom = nil, nil, nil, nil, nil
 		look.WindowSize.Refresh()
 		look.TextSize.Refresh()
 		font.Refresh()
-		PaintColors()
 		ApplyDisplay(look)
+		ApplyTheme(look)
 	end)
 	T.Tooltip(reset, Outfitter.cLookReset, Outfitter.cLookResetDescription)
 	look.DisplayReset = reset
@@ -956,6 +1248,7 @@ local function StyleDisplay(look)
 		look.TextSize.Refresh()
 		font.Refresh()
 		PaintColors()
+		for _, row in pairs(rows) do row.Refresh() end
 		switch.Paint()
 		for i, page in ipairs(pages) do page:SetShown(i == look.DisplayPage) end
 	end)
@@ -976,8 +1269,8 @@ function Outfitter:ApplyLook()
 	-- The original stone frame art goes; a flat dark panel takes its place.
 	-- These are the frame's own textures, so they stay behind everything in it.
 	for _, piece in pairs(frame.Background or {}) do piece:Hide() end
-	look.Fill = T.Fill(frame, C.win)
-	look.Edges = T.Border(frame, C.edge)
+	look.Fill = Fill(frame, C.win)
+	look.Edges = Border(frame, C.edge)
 
 	-- Header bar: logo, then the name and version
 	local header = CreateFrame("Frame", nil, frame)
@@ -1031,14 +1324,13 @@ function Outfitter:ApplyLook()
 
 	-- The selected outfit: a dark red row with a red bar at its left
 	local highlight = OutfitterMainFrameHighlight
-	local selected = C.select or { C.redHi[1], C.redHi[2], C.redHi[3], 0.28 }
-	highlight:SetColorTexture(selected[1], selected[2], selected[3], selected[4])
+	Paint(highlight, C.select)
 	highlight:SetBlendMode("BLEND")
 	local bar = OutfitterMainFrame:CreateTexture(nil, "OVERLAY")
 	bar:SetPoint("TOPLEFT", highlight, "TOPLEFT")
 	bar:SetPoint("BOTTOMLEFT", highlight, "BOTTOMLEFT")
 	bar:SetWidth(2)
-	bar:SetColorTexture(unpack(C.accent))
+	Paint(bar, C.accent)
 	look.SelectedBar = bar
 
 	-- The outfit list's scroll track: flat and dark like the panel, a thin gold thumb
@@ -1046,13 +1338,13 @@ function Outfitter:ApplyLook()
 	for _, part in ipairs({ "Top", "Middle", "Bottom" }) do
 		_G[track:GetName() .. part]:Hide()
 	end
-	look.Track = T.Fill(track, C.side)
-	T.Border(track, C.line)
+	look.Track = Fill(track, C.side)
+	Border(track, C.line)
 	local rail = track:CreateTexture(nil, "BORDER")
 	rail:SetPoint("TOP", 0, -6)
 	rail:SetPoint("BOTTOM", 0, 6)
 	rail:SetWidth(6)
-	rail:SetColorTexture(unpack(C.offTrack))
+	Paint(rail, C.offTrack)
 	FlatScrollBar(OutfitterMainFrameScrollFrameScrollBar)
 
 	-- Footer: the outfit scripts switch, and New Outfit as a flat red button
@@ -1061,17 +1353,17 @@ function Outfitter:ApplyLook()
 	footer:SetPoint("BOTTOMLEFT", 1, 1)
 	footer:SetPoint("BOTTOMRIGHT", -1, 1)
 	footer:SetHeight(32)
-	footer:SetColorTexture(unpack(C.side))
+	Paint(footer, C.side)
 	local footerLine = OutfitterMainFrame:CreateTexture(nil, "BORDER")
 	footerLine:SetPoint("BOTTOMLEFT", footer, "TOPLEFT")
 	footerLine:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT")
 	footerLine:SetHeight(1)
-	footerLine:SetColorTexture(unpack(C.line))
+	Paint(footerLine, C.line)
 	Flatten(OutfitterNewButton, C.red, C.redHi)
 
 	local scripts = ScriptsSwitch(OutfitterMainFrame)
 	scripts:SetPoint("BOTTOMLEFT", 8, 10)
-	scripts.label = T.Text(scripts, self.cLookOutfitScripts, "GameFontHighlightSmall", C.muted)
+	scripts.label = Text(scripts, self.cLookOutfitScripts, "GameFontHighlightSmall", C.muted)
 	scripts.label:SetPoint("LEFT", scripts, "RIGHT", 6, 0)
 	scripts:SetHitRectInsets(0, -80, -4, -4)
 	look.Scripts = scripts
@@ -1107,11 +1399,11 @@ end
 local function StyleSection(section)
 	if not section then return end
 	if section.SetBackdrop then section:SetBackdrop(nil) end
-	T.Fill(section, C.card)
-	T.Border(section, C.line)
+	Fill(section, C.card)
+	Border(section, C.line)
 	if section.Title then
 		section.Title:SetFontObject(GameFontNormalSmall)
-		section.Title:SetTextColor(C.orange[1], C.orange[2], C.orange[3])
+		Ink(section.Title, C.orange)
 		section.Title:SetText((section.Title:GetText() or ""):upper())
 	end
 end
@@ -1121,17 +1413,17 @@ local function StyleField(field)
 	Fade(field.LeftTexture)
 	Fade(field.MiddleTexture)
 	Fade(field.RightTexture)
-	T.Fill(field, C.field)
-	T.Border(field, C.fieldEdge)
-	if field.Title then field.Title:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+	Fill(field, C.field)
+	Border(field, C.fieldEdge)
+	if field.Title then Ink(field.Title, C.muted) end
 end
 
 function Outfitter:StyleDialog(dialog)
 	if not dialog or dialog.Look then return end
 	dialog.Look = {}
 	if dialog.SetBackdrop then dialog:SetBackdrop(nil) end
-	T.Fill(dialog, C.win)
-	T.Border(dialog, C.edge)
+	Fill(dialog, C.win)
+	Border(dialog, C.edge)
 
 	local header = CreateFrame("Frame", nil, dialog)
 	header:SetPoint("TOPLEFT")
@@ -1180,10 +1472,10 @@ local function StyleInput(frame)
 	for _, part in ipairs({ "TopLeft", "TopRight", "BottomLeft", "BottomRight", "Left", "Right", "Top", "Bottom", "Center" }) do
 		Fade(_G[name .. part])
 	end
-	T.Fill(frame, C.field)
-	T.Border(frame, C.fieldEdge)
+	Fill(frame, C.field)
+	Border(frame, C.fieldEdge)
 	local label = _G[name .. "Label"]
-	if label then label:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+	if label then Ink(label, C.muted) end
 	FlatScrollBar(_G[name .. "ScrollBar"] or frame.ScrollBar)
 	local zoneButton = _G[name .. "ZoneButton"]
 	if zoneButton then Flatten(zoneButton, C.card, C.line, C.edge) end
@@ -1215,8 +1507,8 @@ function Outfitter:StyleScriptDialog(dialog)
 	for _, region in ipairs({ dialog:GetRegions() }) do
 		if region:GetObjectType() == "Texture" then region:Hide() end
 	end
-	T.Fill(dialog, C.win)
-	T.Border(dialog, C.edge)
+	Fill(dialog, C.win)
+	Border(dialog, C.edge)
 
 	-- Header bar with the dialog's title, and a flat X (it saves, like the old one)
 	local header = CreateFrame("Frame", nil, dialog)
@@ -1260,21 +1552,21 @@ function Outfitter:StyleScriptDialog(dialog)
 	-- The script's text box and its status line
 	StyleInput(_G[name .. "SourceScript"])
 	local statusLabel = _G[name .. "SourceStatusLabel"]
-	if statusLabel then statusLabel:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+	if statusLabel then Ink(statusLabel, C.muted) end
 	local description = dialog.Widgets.SettingsDescription
-	if description then description:SetTextColor(C.title[1], C.title[2], C.title[3]) end
+	if description then Ink(description, C.title) end
 
 	-- Footer: a flat strip with Done (red) and Cancel
 	local footer = dialog:CreateTexture(nil, "BACKGROUND", nil, -7)
 	footer:SetPoint("BOTTOMLEFT", 1, 1)
 	footer:SetPoint("BOTTOMRIGHT", -1, 1)
 	footer:SetHeight(34)
-	footer:SetColorTexture(unpack(C.side))
+	Paint(footer, C.side)
 	local footerLine = dialog:CreateTexture(nil, "BORDER")
 	footerLine:SetPoint("BOTTOMLEFT", footer, "TOPLEFT")
 	footerLine:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT")
 	footerLine:SetHeight(1)
-	footerLine:SetColorTexture(unpack(C.line))
+	Paint(footerLine, C.line)
 	Flatten(_G[name .. "DoneButton"], C.red, C.redHi)
 	Flatten(_G[name .. "CancelButton"], C.card, C.line, C.edge)
 
@@ -1319,14 +1611,14 @@ local function StyleIconButton(button)
 		if button.IconMask and icon.RemoveMaskTexture then icon:RemoveMaskTexture(button.IconMask) end
 		icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	end
-	T.Fill(button, C.field)
-	T.Border(button, C.btnEdge)
+	Fill(button, C.field)
+	Border(button, C.btnEdge)
 	-- Worn (checked): a bright gold edge, 2 wide, in place of the template's check art,
 	Fade(button:GetCheckedTexture())
 	local worn = {}
 	for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
 		local edge = button:CreateTexture(nil, "OVERLAY", nil, 7)
-		edge:SetColorTexture(unpack(C.gold))
+		Paint(edge, C.gold)
 		if side == "TOP" or side == "BOTTOM" then
 			edge:SetPoint(side .. "LEFT")
 			edge:SetPoint(side .. "RIGHT")
@@ -1343,12 +1635,12 @@ local function StyleIconButton(button)
 	local badge = button:CreateTexture(nil, "OVERLAY", nil, 6)
 	badge:SetSize(12, 12)
 	badge:SetPoint("BOTTOMRIGHT")
-	badge:SetColorTexture(unpack(C.gold))
+	Paint(badge, C.gold)
 	local tick = button:CreateTexture(nil, "OVERLAY", nil, 7)
 	tick:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
 	tick:SetSize(16, 16)
 	tick:SetPoint("CENTER", badge, "CENTER", 1, 0)
-	tick:SetVertexColor(C.win[1], C.win[2], C.win[3])
+	Tint(tick, C.win)
 	button.WornTick = tick
 	worn[#worn + 1] = badge
 	worn[#worn + 1] = tick
@@ -1376,7 +1668,7 @@ end
 -- hides the flat panel instead
 local function StyleBar(bar)
 	if not bar.Look then
-		bar.Look = { Fill = T.Fill(bar, { C.win[1], C.win[2], C.win[3], 0.9 }), Edges = T.Border(bar, C.btnEdge) }
+		bar.Look = { Fill = Fill(bar, C.win, nil, nil, 0.9), Edges = Border(bar, C.btnEdge) }
 	end
 	for _, texture in ipairs(bar.BackgroundTextures or {}) do texture:Hide() end
 	local show = not bar.HideBackground
@@ -1415,7 +1707,7 @@ hooksecurefunc(Outfitter._ButtonBar, "ShowBackground", StyleBar)
 hooksecurefunc(Outfitter.OutfitBar._DragBar, "SetVerticalOrientation", function(self, vertical)
 	local texture = self.DragTexture
 	texture:SetTexCoord(0, 1, 0, 1)
-	texture:SetColorTexture(C.btnEdge[1], C.btnEdge[2], C.btnEdge[3], 0.9)
+	Paint(texture, C.btnEdge, 0.9)
 	if vertical then texture:SetHeight(4) else texture:SetWidth(4) end
 end)
 
@@ -1429,17 +1721,17 @@ local function StyleSlider(slider)
 	track:SetPoint("LEFT", 4, 0)
 	track:SetPoint("RIGHT", -4, 0)
 	track:SetHeight(4)
-	track:SetColorTexture(unpack(C.offTrack))
+	Paint(track, C.offTrack)
 	local thumb = slider:GetThumbTexture()
 	if thumb then
-		thumb:SetColorTexture(unpack(C.gold))
+		Paint(thumb, C.gold)
 		thumb:SetSize(8, 14)
 	end
 	for _, key in ipairs({ "Text", "Low", "High" }) do
 		local label = slider[key] or _G[slider:GetName() .. key]
-		if label then label:SetTextColor(C.muted[1], C.muted[2], C.muted[3]) end
+		if label then Ink(label, C.muted) end
 	end
-	if slider.Text then slider.Text:SetTextColor(C.title[1], C.title[2], C.title[3]) end
+	if slider.Text then Ink(slider.Text, C.title) end
 end
 
 -- The bar's settings (right-click a drag handle): flat panel, switches, flat sliders
@@ -1447,8 +1739,8 @@ local function StyleBarSettings(self)
 	if self.Look then return end
 	self.Look = true
 	self:SetBackdrop(nil)
-	T.Fill(self, C.win)
-	T.Border(self, C.btnEdge)
+	Fill(self, C.win)
+	Border(self, C.btnEdge)
 	for _, key in ipairs({ "SizeSlider", "AlphaSlider", "CombatAlphaSlider" }) do StyleSlider(self[key]) end
 	-- Upstream stacked its checkboxes overlapping (they were 24 high, 7 apart);
 	-- the switches get a row each, under the sliders
@@ -1500,8 +1792,8 @@ local function StyleIconDialog(dialog)
 			child:Hide()
 		end
 	end
-	T.Fill(dialog, C.win)
-	T.Border(dialog, C.edge)
+	Fill(dialog, C.win)
+	Border(dialog, C.edge)
 
 	local header = CreateFrame("Frame", nil, dialog)
 	header:SetPoint("TOPLEFT")
@@ -1528,8 +1820,8 @@ local function StyleIconDialog(dialog)
 		for _, region in ipairs({ filter:GetRegions() }) do
 			if region:GetObjectType() == "Texture" then region:Hide() end
 		end
-		T.Fill(filter, C.field)
-		T.Border(filter, C.fieldEdge)
+		Fill(filter, C.field)
+		Border(filter, C.fieldEdge)
 		filter:SetTextInsets(6, 6, 0, 0)
 	end
 	FlatScrollBar(_G[name .. "ScrollFrameScrollBar"])
@@ -1576,18 +1868,17 @@ function Dropdown.StyleFrame(frame)
 	if frame.NineSlice then frame.NineSlice:Hide() end
 	if frame.SetBackdrop and not frame.NineSlice then frame:SetBackdrop(nil) end
 	if not frame.Look then
-		local menu = C.menu or { C.win[1], C.win[2], C.win[3], 0.97 }
-		frame.Look = { Fill = T.Fill(frame, menu), Edges = T.Border(frame, C.btnEdge) }
+		frame.Look = { Fill = Fill(frame, C.menu), Edges = Border(frame, C.btnEdge) }
 	end
 end
 
 function Dropdown.StyleButton(button)
 	local highlight = button:GetHighlightTexture()
 	if highlight then
-		highlight:SetColorTexture(C.redHi[1], C.redHi[2], C.redHi[3], 0.35)
+		Paint(highlight, C.redHi, 0.35)
 		highlight:SetBlendMode("BLEND")
 	end
 	if button.text then SizeText(button.text, TextScale()) end
-	if button.check then button.check:SetVertexColor(C.gold[1], C.gold[2], C.gold[3]) end
-	if button.expand then button.expand:SetVertexColor(C.orange[1], C.orange[2], C.orange[3]) end
+	if button.check then Tint(button.check, C.gold) end
+	if button.expand then Tint(button.expand, C.orange) end
 end

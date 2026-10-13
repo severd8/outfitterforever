@@ -18,11 +18,13 @@ local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDe
 	"cLookMinimapButtonDescription", "cLookOutfitBarDescription", "cLookBarSettings", "cLookBarSettingsDescription",
 	"cLookSidebarTabDescription", "cLookDisplayTab", "cLookSize", "cLookWindowSize", "cLookWindowSizeDescription", "cLookTextSize", "cLookTextSizeDescription",
 	"cLookColors", "cLookColorsDescription", "cLookColorDefault",
-	"cLookColorContrast", "cLookColorBlue", "cLookColorLight", "cLookReload", "cLookReloadNote", "cLookReloadTyped",
+	"cLookColorContrast", "cLookColorBlue", "cLookColorLight", 
 	"cLookReset", "cLookResetDescription", "cLookPageSize", "cLookPageColors", "cLookFont", "cLookFontDescription",
 	"cLookFontDefault", "cLookTypeSize", "cLookRightClick", "cLookRightClickDescription", "cLookRightClickOpen",
 	"cLookRightClickMenu", "cLookRightClickSwap", "cLookSwapFirst", "cLookSwapSecond", "cLookSwapNotSet", "cLookTipOpen",
-	"cLookTipMenu", "cLookTipSwap", "cLookTipSwapNotSet" }
+	"cLookTipMenu", "cLookTipSwap", "cLookTipSwapNotSet", "cLookOwnColors", "cLookOwnColorDescription",
+	"cLookHexDescription", "cLookColorBackground", "cLookColorPanels", "cLookColorText", "cLookColorHeadings", "cLookColorButtons",
+	"cLookColorHighlight" }
 
 -- The option cards: the bottom of the last one, measured from the window's top
 local function CardsBottom(W, O)
@@ -62,7 +64,7 @@ local function Session(locale)
 end
 
 -- Words that are the same as in English
-local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true } }
+local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true, cLookColorText = true } }
 
 local englishW, english = Session("enUS")
 local englishBottom, englishCard3 = CardsBottom(englishW, english)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.1
+
+- **Your own colors** (Display > Colors): pick the background, panels, text, headings, buttons (Enable all and Enable none included) and highlight. Click a color for the game's color wheel, or type a code like #FFD100 and press Enter. Right-click a color to go back to the style's. They go on top of the style you picked.
+- **Colors change at once.** Picking a color style or your own colors repaints the window, dialogs, outfit bar and menus straight away; no more reload.
+- Enable all and Enable none are now buttons like the others.
+
 ## 1.6.0
 
 From a player's detailed feedback on 1.5.0, thank you!
