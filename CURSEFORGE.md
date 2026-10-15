@@ -39,4 +39,4 @@ Outfitter Forever is free. If it has saved you some gear juggling, you can [leav
 
 ## Credits
 
-John Stephen (Mundocani), who created Outfitter; GovtGeek, for Outfitter (Retrofit), and Miv, Gogo and LemonDrake, credited there. WoW: Forever port by severd8. MIT license, see [LICENSE](https://github.com/severd8/outfitterforever/blob/main/LICENSE).
+John Stephen (Mundocani), who created Outfitter; GovtGeek, for Outfitter (Retrofit), and Miv, Gogo and LemonDrake, credited there. WoW: Forever port by severd8, with thanks to omeglidan for his extensive testing. MIT license, see [LICENSE](https://github.com/severd8/outfitterforever/blob/main/LICENSE).

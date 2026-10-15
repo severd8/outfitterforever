@@ -3,7 +3,7 @@
 ## Notes: Clothing and weapon management and automated equipment changes. Outfitter, ported to WoW: Forever.
 ## Author: severd8
 ## X-Original-Author: John Stephen
-## X-Credits: GovtGeek (Outfitter Retrofit), Mundocani, Miv, Gogo, LemonDrake
+## X-Credits: GovtGeek (Outfitter Retrofit), Mundocani, Miv, Gogo, LemonDrake, omeglidan (testing)
 ## Version: @project-version@
 ## X-Outfitter-Base: 5.5.4.3
 ## AddonCompartmentFunc: Outfitter_OnAddonCompartmentClick
