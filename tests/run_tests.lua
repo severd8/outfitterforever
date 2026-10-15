@@ -1979,6 +1979,20 @@ do
 	Check(next(env.gOutfitter_GlobalSettings.Display) == nil, "Reset puts everything back")
 	look.Tabs[1]:Click()
 	W.Tick(0.2)
+
+	-- The tabs sit inside the window's edge (they covered it at both ends)
+	local frameWidth = env.OutfitterFrame:GetWidth() or 256
+	local _, _, _, firstX = look.Tabs[1]:GetPoint(1)
+	local _, _, _, lastX = look.Tabs[#look.Tabs]:GetPoint(1)
+	Check(firstX == 1 and math.abs(lastX + look.Tabs[#look.Tabs]:GetWidth() - (frameWidth - 1)) < 0.01,
+		"the tabs leave the window's edge showing on both sides")
+	-- Edges are a whole screen pixel on every side (this client can't tell the
+	-- screen's size, so they aren't snapped to the pixel grid)
+	local unsnapped = 0
+	for _, edge in ipairs(look.Edges) do
+		if edge.__snap == false then unsnapped = unsnapped + 1 end
+	end
+	Check(unsnapped == 4, "the window's four edges are drawn the same on every side")
 end
 NoErrors()
 

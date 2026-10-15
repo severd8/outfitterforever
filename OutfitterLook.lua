@@ -245,6 +245,47 @@ local function Repaint()
 	for _, func in ipairs(repainters) do func() end
 end
 
+-- Edges one screen pixel thick. A 1-unit line at a window size or UI scale
+-- other than 100% falls on part of a pixel, and the game rounds some sides to
+-- a pixel and others to none (a player saw half-thin edges at 90%). So each
+-- edge is sized to a pixel at its own scale, and again when the scale changes
+-- (FitEdges). Without the screen's size, the edges just aren't snapped.
+local edgeList = setmetatable({}, { __mode = "k" })
+
+local function PixelSize(region)
+	if not GetPhysicalScreenSize then return nil end
+	local _, height = GetPhysicalScreenSize()
+	local scale = region:GetEffectiveScale()
+	if not height or height <= 0 or not scale or scale <= 0 then return nil end
+	return 768 / height / scale
+end
+
+local function FitEdge(texture, horizontal)
+	local pixel = PixelSize(texture)
+	if pixel then
+		if horizontal then texture:SetHeight(pixel) else texture:SetWidth(pixel) end
+	else
+		texture:SetSnapToPixelGrid(false)
+		texture:SetTexelSnappingBias(0)
+	end
+end
+
+local function Edge(texture, horizontal)
+	edgeList[texture] = horizontal and true or false
+	FitEdge(texture, horizontal)
+	return texture
+end
+
+local function FitEdges()
+	for texture, horizontal in pairs(edgeList) do FitEdge(texture, horizontal) end
+end
+
+-- An edge laid along its frame's top or bottom (both its points on one side)
+local function Horizontal(texture)
+	local first, second = texture:GetPoint(1), texture:GetPoint(2)
+	return first and second and first:sub(1, 3) == second:sub(1, 3)
+end
+
 -- The shared look's pieces, with their colours remembered. Theme.lua stays as
 -- it is (it's shared with the other Forever addons): its pieces are painted,
 -- then their parts are found by draw layer and painted again here.
@@ -255,7 +296,10 @@ end
 
 local function Border(frame, color)
 	local edges = T.Border(frame, color)
-	for _, edge in ipairs(edges) do Paint(edge, color) end
+	for index, edge in ipairs(edges) do
+		Paint(edge, color)
+		Edge(edge, index <= 2) -- top, bottom, left, right
+	end
 	return edges
 end
 
@@ -270,7 +314,10 @@ local function PaintParts(frame, fill, edge)
 		if region:GetObjectType() == "Texture" and not painted[region] then
 			local layer = region:GetDrawLayer()
 			if layer == "BACKGROUND" and fill then Paint(region, fill)
-			elseif layer == "BORDER" and edge then Paint(region, edge) end
+			elseif layer == "BORDER" and edge then
+				Paint(region, edge)
+				Edge(region, Horizontal(region))
+			end
 		end
 	end
 end
@@ -393,7 +440,14 @@ local function DisplayDialog(dialog)
 	dialog:SetScale(WindowScale())
 	SizeTextIn(dialog)
 	DarkTextIn(dialog)
+	FitEdges()
 end
+
+-- The game's UI scale or screen size changed: every edge to a pixel again
+local scaleWatch = CreateFrame("Frame")
+scaleWatch:RegisterEvent("UI_SCALE_CHANGED")
+scaleWatch:RegisterEvent("DISPLAY_SIZE_CHANGED")
+scaleWatch:SetScript("OnEvent", function() FitEdges() end)
 
 ---------------------------------------------------------------------------
 -- Small pieces
@@ -419,6 +473,7 @@ local function Box(frame, size, fill, edge)
 		t:SetSize(e[1], e[2])
 		t:SetPoint("CENTER", e[3], e[4])
 		Paint(t, edge)
+		Edge(t, e[2] == 1)
 	end
 	return bg
 end
@@ -620,11 +675,12 @@ local TAB_H = 24
 -- without a width the tabs share the frame's width.
 local function MakeTabs(frame, header, labels, choose, width)
 	local tabs = {}
-	width = width or (frame:GetWidth() or 256) / #labels
+	-- inside the window's 1-pixel edge, which the tabs used to cover at both ends
+	width = width or ((frame:GetWidth() or 256) - 2) / #labels
 	for index, label in ipairs(labels) do
 		local tab = CreateFrame("Button", nil, frame)
 		tab:SetSize(width, TAB_H)
-		tab:SetPoint("TOPLEFT", header, "BOTTOMLEFT", (index - 1) * width, 0)
+		tab:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 1 + (index - 1) * width, 0)
 		tab.bg = Fill(tab, C.side)
 		tab.bar = tab:CreateTexture(nil, "ARTWORK")
 		tab.bar:SetPoint("BOTTOMLEFT")
@@ -655,6 +711,7 @@ local function MakeTabs(frame, header, labels, choose, width)
 	line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -TAB_H)
 	line:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -TAB_H)
 	line:SetHeight(1)
+	Edge(line, true)
 	Paint(line, C.line)
 
 	-- A new colour style: the lit tab painted again
@@ -844,6 +901,7 @@ local function MenuField(parent, width, choices, get, set)
 		list.scroll:SetContent(width - 18, #items * LIST_ROW)
 		SizeTextIn(list)
 		list:Show()
+		FitEdges()
 	end)
 	b:HookScript("OnHide", Close)
 	return b
@@ -1034,6 +1092,7 @@ local function ApplyDisplay(look)
 		if dialog and dialog.Look then DisplayDialog(dialog) end
 	end
 	LayoutOptions(look)
+	FitEdges()
 end
 
 -- The colours, straight away: the style and your own colours into C, then
@@ -1529,6 +1588,7 @@ function Outfitter:ApplyLook()
 	footerLine:SetPoint("BOTTOMLEFT", footer, "TOPLEFT")
 	footerLine:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT")
 	footerLine:SetHeight(1)
+	Edge(footerLine, true)
 	Paint(footerLine, C.line)
 	Flatten(OutfitterNewButton, C.red, C.redHi)
 
@@ -1739,6 +1799,7 @@ function Outfitter:StyleScriptDialog(dialog)
 	footerLine:SetPoint("BOTTOMLEFT", footer, "TOPLEFT")
 	footerLine:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT")
 	footerLine:SetHeight(1)
+	Edge(footerLine, true)
 	Paint(footerLine, C.line)
 	Flatten(_G[name .. "DoneButton"], C.red, C.redHi)
 	Flatten(_G[name .. "CancelButton"], C.red, C.redHi)
@@ -2040,7 +2101,9 @@ function Dropdown.StyleFrame(frame)
 	frame:SetScale(frame:GetScale() * WindowScale())
 	if frame.NineSlice then frame.NineSlice:Hide() end
 	if frame.SetBackdrop and not frame.NineSlice then frame:SetBackdrop(nil) end
-	if not frame.Look then
+	if frame.Look then
+		for _, edge in ipairs(frame.Look.Edges) do FitEdge(edge, edgeList[edge]) end
+	else
 		frame.Look = { Fill = Fill(frame, C.menu), Edges = Border(frame, C.btnEdge) }
 	end
 end

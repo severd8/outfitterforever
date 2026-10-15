@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.1
+
+- **Fixed:** the window's edge was missing beside the Outfits and Display tabs.
+- **Fixed:** edges (around buttons, cards and the window) could be thinner on some sides than others at a window size or UI scale other than 100%. Every edge is now exactly one screen pixel.
+
 ## 1.7.0
 
 From a player's feedback on 1.6, thank you again!

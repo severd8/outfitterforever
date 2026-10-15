@@ -275,6 +275,8 @@ function Frame:SetHeight(h) self.__height = h end
 function Frame:GetWidth() return self.__width end
 function Frame:GetHeight() return self.__height end
 function Frame:SetHitRectInsets(l, r, t, b) self.__hitRect = { l, r, t, b } end
+function Frame:SetSnapToPixelGrid(snap) self.__snap = snap end
+function Frame:IsSnappingToPixelGrid() return self.__snap ~= false end
 function Frame:GetHitRectInsets() return unpack(self.__hitRect or { 0, 0, 0, 0 }) end
 function Frame:GetSize() return self.__width, self.__height end
 function Frame:GetRect() return 100, 100, self.__width, self.__height end
