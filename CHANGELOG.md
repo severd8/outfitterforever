@@ -2,6 +2,7 @@
 
 ## 1.7.2
 
+- **Fixed:** after picking a font, some text (like the font field itself) could go blank. Text is drawn again once the font has loaded, and a font the game can't use leaves the text in its own font.
 - **Fixed:** a Lua error that stopped Outfitter Forever when another addon (like Remove Sell Price NG) blanked a line of an item's tooltip.
 
 ## 1.7.1

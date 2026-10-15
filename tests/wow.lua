@@ -344,7 +344,12 @@ function Frame:GetFont()
 	if font then return font[1], font[2], font[3] end
 	return "Fonts\\FRIZQT__.TTF", 12, ""
 end
-function Frame:SetFont(file, size, flags) self.__font = { file, size, flags or "" } return true end
+-- A font file the game can't use (here: one with "Missing" in its name) is refused
+function Frame:SetFont(file, size, flags)
+	if tostring(file):find("Missing", 1, true) then return false end
+	self.__font = { file, size, flags or "" }
+	return true
+end
 function Frame:GetFontObject() return self.__fontObject end
 function Frame:SetFontObject(font) self.__fontObject = font self.__font = nil end
 function Frame:SetTextColor(r, g, b, a) self.__textColor = { r, g, b, a } end

@@ -1918,6 +1918,16 @@ do
 	Check(env.gOutfitter_GlobalSettings.Display.Font == "Fonts\\Font19.ttf" and not list:IsShown(), "picking one uses it and closes the list")
 	local name = env.OutfitterItem0OutfitName
 	Check(name:GetFont() == "Fonts\\Font19.ttf", "the window's text is in it")
+	-- A font the game won't use: the text keeps its own instead of going blank
+	local before = name:GetFont()
+	env.gOutfitter_GlobalSettings.Display.Font = "Fonts\\Missing.ttf"
+	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
+	W.Tick(2)
+	Check(name:GetFont() ~= nil and name:GetFont() ~= "Fonts\\Missing.ttf", "a font the game refuses leaves the text in its own font")
+	Check(font.text:GetText() ~= nil, "and the font field still shows text")
+	env.gOutfitter_GlobalSettings.Display.Font = "Fonts\\Font19.ttf"
+	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
+	W.Tick(2)
 	-- A heading font of its own
 	look.HeadingFont:Click()
 	look.HeadingFont.list.rows[3]:Click()

@@ -371,7 +371,20 @@ local function SizeText(region, factor)
 		region.OFTextBase = base
 	end
 	local font = region.OFHeading and settings.HeadingFont or settings.Font or base[1]
-	region:SetFont(font, base[2] * factor, settings.Outline or base[3] or "")
+	local size, flags = base[2] * factor, settings.Outline or base[3] or ""
+	-- A font the game won't use leaves the text blank (a player saw it in the
+	-- font field): the text keeps its own font then
+	if not region:SetFont(font, size, flags) then
+		region:SetFont(base[1], size, flags)
+	end
+	-- A font that's still loading can leave the text blank until it's set again
+	if region:GetObjectType() == "FontString" then
+		local text = region:GetText()
+		if text and text ~= "" then
+			region:SetText("")
+			region:SetText(text)
+		end
+	end
 	if region.SetShadowOffset then
 		if settings.Shadow then
 			region:SetShadowOffset(1, -1)
@@ -1095,6 +1108,16 @@ local function ApplyDisplay(look)
 	FitEdges()
 end
 
+-- After a font change: again a moment later, when the game has loaded the
+-- font (text given a font that's still loading stays blank: a player saw the
+-- font field empty while the list, drawn later, showed the font)
+local function ApplyDisplaySoon(look)
+	ApplyDisplay(look)
+	for _, delay in ipairs({ 0.3, 1.5 }) do
+		Outfitter.SchedulerLib:ScheduleTask(delay, function() ApplyDisplay(look) end)
+	end
+end
+
 -- The colours, straight away: the style and your own colours into C, then
 -- everything painted again. Light's dark text is put on, or taken off, and the
 -- outfit list redrawn (its rows paint themselves).
@@ -1297,14 +1320,14 @@ local function StyleDisplay(look)
 			function() return DisplaySettings()[key] or false end,
 			function(value)
 				DisplaySettings()[key] = value or nil
-				ApplyDisplay(look)
+				ApplyDisplaySoon(look)
 			end)
 		field:SetPoint("TOPLEFT", fonts, "TOPLEFT", 12, y - 14)
 		T.Tooltip(field, label, description)
 		field.Reset = ResetButton(fonts, function()
 			DisplaySettings()[key] = nil
 			field.Refresh()
-			ApplyDisplay(look)
+			ApplyDisplaySoon(look)
 		end)
 		field.Reset:SetPoint("LEFT", field, "RIGHT", 4, 0)
 		fontRows[#fontRows + 1] = field
@@ -1607,7 +1630,7 @@ function Outfitter:ApplyLook()
 
 	-- Display tab, and the window in the chosen sizes (and, for Light, dark text)
 	StyleDisplay(look)
-	ApplyDisplay(look)
+	ApplyDisplaySoon(look)
 	DarkTextIn(frame)
 
 	-- Keep the switches and the selected row's bar in step with Outfitter's own updates
