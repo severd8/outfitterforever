@@ -111,7 +111,8 @@ end
 C.hover = { unpack(C.gold) }
 C.select = { C.redHi[1], C.redHi[2], C.redHi[3], 0.28 }
 C.menu = { C.win[1], C.win[2], C.win[3], 0.97 }
-for _, name in ipairs({ "hover", "select", "menu" }) do DEFAULTS[name] = { unpack(C[name]) } end
+C.header = { unpack(C.red) } -- the header bars (their own colour since 1.7.0, not the buttons')
+for _, name in ipairs({ "hover", "select", "menu", "header" }) do DEFAULTS[name] = { unpack(C[name]) } end
 
 local function SetColor(name, value)
 	local color = C[name]
@@ -125,7 +126,7 @@ end
 local WHITE = { 1, 1, 1 }
 
 -- Your own colours (the Colors page): six, each with the shades made from it
-local CUSTOM_KEYS = { "background", "panels", "text", "headings", "buttons", "highlight" }
+local CUSTOM_KEYS = { "background", "panels", "header", "text", "headings", "buttons", "highlight" }
 local CUSTOM = {
 	background = function(c)
 		SetColor("win", c)
@@ -143,6 +144,7 @@ local CUSTOM = {
 		SetColor("grey", Mix(c, C.win, 0.45))
 		SetColor("offTrack", Mix(c, C.win, 0.75))
 	end,
+	header = function(c) SetColor("header", c) end,
 	headings = function(c) SetColor("orange", c) end,
 	buttons = function(c)
 		SetColor("red", c)
@@ -153,7 +155,9 @@ local CUSTOM = {
 	end,
 	highlight = function(c)
 		for _, name in ipairs({ "gold", "hover", "accent", "fill", "version" }) do SetColor(name, c) end
-		SetColor("btnEdge", Mix(c, C.card, 0.3))
+		-- every button and switch is edged in it, so a button stays visible even
+		-- in the colour of what's behind it
+		SetColor("btnEdge", c)
 		SetColor("edge", Mix(c, C.win, 0.5))
 		SetColor("fieldEdge", Mix(c, C.win, 0.6))
 	end,
@@ -189,6 +193,7 @@ local function ApplyColors()
 		if not preset.hover then SetColor("hover", C.gold) end
 		if not preset.select then SetColor("select", { C.redHi[1], C.redHi[2], C.redHi[3], 0.28 }) end
 		if not preset.menu then SetColor("menu", { C.win[1], C.win[2], C.win[3], 0.97 }) end
+		if not preset.header then SetColor("header", C.red) end
 	end
 	local custom = DisplaySettings().Custom or {}
 	for _, slot in ipairs(CUSTOM_KEYS) do
@@ -274,6 +279,7 @@ local function Card(parent, title, x, y, w, h)
 	local card = T.Card(parent, title, x, y, w, h)
 	PaintParts(card, C.card, C.line)
 	Ink(card.title, C.orange)
+	card.title.OFHeading = true
 	return card
 end
 
@@ -285,6 +291,7 @@ end
 
 local function SwitchWidget(parent)
 	local switch = T.SwitchWidget(parent)
+	Border(switch, C.btnEdge)
 	OnRepaint(function() switch:SetOn(switch:IsOn()) end)
 	return switch
 end
@@ -297,17 +304,35 @@ end
 
 -- Text in the chosen size: each font string and edit box keeps its original
 -- font and size, and gets that size times the factor
+-- Headings (header bars, card titles, tabs, categories: marked OFHeading) can
+-- have a font of their own. Outline and shadow are for all text.
 local function SizeText(region, factor)
 	if not region or not region.SetFont or not region.GetFont then return end
+	local settings = DisplaySettings()
 	local base = region.OFTextBase
 	if not base then
-		if factor == 1 and not DisplaySettings().Font then return end
+		if factor == 1 and not settings.Font and not settings.HeadingFont and not settings.Outline and not settings.Shadow then
+			return
+		end
 		local font, size, flags = region:GetFont()
 		if not font or not size then return end
 		base = { font, size, flags }
+		if region.GetShadowOffset then
+			local x, y = region:GetShadowOffset()
+			if x then base.shadow = { x, y } end
+		end
 		region.OFTextBase = base
 	end
-	region:SetFont(DisplaySettings().Font or base[1], base[2] * factor, base[3] or "")
+	local font = region.OFHeading and settings.HeadingFont or settings.Font or base[1]
+	region:SetFont(font, base[2] * factor, settings.Outline or base[3] or "")
+	if region.SetShadowOffset then
+		if settings.Shadow then
+			region:SetShadowOffset(1, -1)
+			region:SetShadowColor(0, 0, 0, 1)
+		elseif base.shadow then
+			region:SetShadowOffset(base.shadow[1], base.shadow[2])
+		end
+	end
 end
 
 local function SizeTextIn(frame, factor)
@@ -435,10 +460,11 @@ end
 -- The header strip from the shared look, its text kept as is in Light colours
 local function HeaderStrip(header, text)
 	T.HeaderStrip(header, text)
-	Paint(header.bg, C.red)
+	Paint(header.bg, C.header)
 	PaintParts(header, nil, C.edge)
 	Ink(header.text, C.gold)
 	header.text.OFKeep = true
+	header.text.OFHeading = true
 	return header
 end
 
@@ -580,6 +606,7 @@ local function StyleRow(item)
 
 	-- Category rows: orange capitals
 	_G[name .. "CategoryName"]:SetFontObject(GameFontNormalSmall)
+	_G[name .. "CategoryName"].OFHeading = true
 	local expand = _G[name .. "CategoryExpand"]
 	Fade(expand:GetHighlightTexture())
 end
@@ -610,6 +637,7 @@ local function MakeTabs(frame, header, labels, choose, width)
 		tab.text:SetJustifyH("CENTER")
 		tab.text:SetWordWrap(false)
 		tab.text.OFKeep = true
+		tab.text.OFHeading = true
 		tab:SetScript("OnClick", function()
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
 			choose(index)
@@ -669,6 +697,7 @@ local function MakeSwitch(check)
 		Fade(check[get](check))
 	end
 	check:SetSize(30, 16)
+	Border(check, C.btnEdge)
 	local track = check:CreateTexture(nil, "BACKGROUND", nil, -8)
 	track:SetAllPoints()
 	local knob = check:CreateTexture(nil, "ARTWORK")
@@ -725,8 +754,10 @@ local function HoverLabel(widget, label)
 	end
 end
 
--- A field that opens one of Outfitter's own menus to pick from (the game's
--- newer menus aren't on Forever). choices() returns { key, label } pairs.
+-- A field that opens a list to pick from: the look's own list, which scrolls
+-- (mouse wheel or the thin bar) when there are more than LIST_ROWS choices, and
+-- stays on the screen. choices() returns { key, label } pairs.
+local LIST_ROW, LIST_ROWS = 18, 10
 local function MenuField(parent, width, choices, get, set)
 	local b = CreateFrame("Button", nil, parent)
 	b:SetSize(width, 20)
@@ -745,25 +776,74 @@ local function MenuField(parent, width, choices, get, set)
 		end
 		text:SetText(choices()[1] and choices()[1][2] or "")
 	end
+
+	local list
 	local function Close()
-		if b.menu then
-			b.menu:Hide()
-			b.menu = nil
-		end
+		if list then list:Hide() end
+	end
+	b.Close = Close
+	local function Build()
+		list = CreateFrame("Frame", nil, b)
+		list:SetFrameStrata("DIALOG")
+		list:SetClampedToScreen(true)
+		list:EnableMouse(true)
+		Fill(list, C.menu)
+		Border(list, C.btnEdge)
+		local scroll = T.ScrollArea(list, LIST_ROWS * LIST_ROW)
+		scroll:ClearAllPoints()
+		scroll:SetPoint("TOPLEFT", 3, -3)
+		scroll:SetPoint("BOTTOMRIGHT", -12, 3)
+		scroll.bar:ClearAllPoints()
+		scroll.bar:SetPoint("TOPRIGHT", -3, -3)
+		scroll.bar:SetPoint("BOTTOMRIGHT", -3, 3)
+		PaintParts(scroll.bar, C.offTrack)
+		Paint(scroll.bar:GetThumbTexture(), C.btnEdge)
+		list.scroll, list.rows = scroll, {}
+		b.list = list
+	end
+	local function Row(index)
+		local row = list.rows[index]
+		if row then return row end
+		row = CreateFrame("Button", nil, list.scroll.child)
+		row:SetHeight(LIST_ROW)
+		row:SetPoint("TOPLEFT", 0, -(index - 1) * LIST_ROW)
+		row:SetPoint("RIGHT", list.scroll.child, "RIGHT")
+		local hover = row:CreateTexture(nil, "HIGHLIGHT")
+		hover:SetAllPoints()
+		Paint(hover, C.redHi, 0.35)
+		row.text = Text(row, "", "GameFontHighlightSmall", C.title)
+		row.text:SetPoint("LEFT", 6, 0)
+		row.text:SetPoint("RIGHT", -4, 0)
+		row.text:SetWordWrap(false)
+		row:SetScript("OnClick", function(self)
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+			set(self.key)
+			b.Refresh()
+			Close()
+		end)
+		list.rows[index] = row
+		return row
 	end
 	b:SetScript("OnClick", function()
-		if b.menu then Close() return end
-		local items = Outfitter:New(Outfitter.UIElementsLib._DropDownMenuItems, function()
-			Outfitter.SchedulerLib:ScheduleTask(0.1, Close)
-		end)
-		for _, choice in ipairs(choices()) do
-			items:AddToggle(choice[2], function() return get() == choice[1] end, function()
-				set(choice[1])
-				b.Refresh()
-			end)
+		if list and list:IsShown() then Close() return end
+		if not list then Build() end
+		local items, current = choices(), get()
+		for index, choice in ipairs(items) do
+			local row = Row(index)
+			row.key = choice[1]
+			row.text:SetText(choice[2])
+			Ink(row.text, choice[1] == current and C.gold or C.title)
+			row:Show()
 		end
-		b.menu = Outfitter:New(Outfitter.UIElementsLib._DropDownMenu)
-		b.menu:Show(items, "TOPLEFT", b, "BOTTOMLEFT", 0, -2)
+		for index = #items + 1, #list.rows do list.rows[index]:Hide() end
+		local shown = math.min(#items, LIST_ROWS)
+		list:SetSize(width, shown * LIST_ROW + 6)
+		list:ClearAllPoints()
+		list:SetPoint("TOPLEFT", b, "BOTTOMLEFT", 0, -2)
+		list.scroll.child:SetWidth(width - 18)
+		list.scroll:SetContent(width - 18, #items * LIST_ROW)
+		SizeTextIn(list)
+		list:Show()
 	end)
 	b:HookScript("OnHide", Close)
 	return b
@@ -825,6 +905,7 @@ local function StyleOptions(look)
 			{ "OutfitterShowMinimapButton", Outfitter.cShowMinimapButton, Outfitter.cLookMinimapButtonDescription },
 			{ "OutfitterShowOutfitBar", Outfitter.cShowOutfitBar, Outfitter.cLookOutfitBarDescription },
 			{ "OutfitterUseSidebarTab", Outfitter.cSidebarTab, Outfitter.cLookSidebarTabDescription },
+			{ "OpenWithCharacter" },
 			{ "RightClick" } } },
 	}
 	look.CardsTop = -(24 + TAB_H + 6)
@@ -848,6 +929,22 @@ local function StyleOptions(look)
 				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
 				switch.label:SetJustifyH("LEFT")
 				look.OptionsScripts = switch
+				row = { widget = switch, label = switch.label }
+			elseif checkName == "OpenWithCharacter" then
+				-- Outfitter opens whenever you open the character window (it can't
+				-- open that window itself, see Outfitter:CharacterWindowShown)
+				local switch = SwitchWidget(card)
+				switch:SetFrameLevel(card:GetFrameLevel() + 2)
+				switch:SetScript("OnClick", function(self)
+					PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+					Outfitter.Settings.Options.OpenWithCharacter = not self:IsOn() or nil
+					self:SetOn(Outfitter.Settings.Options.OpenWithCharacter)
+				end)
+				T.Tooltip(switch, Outfitter.cLookOpenWithCharacter, Outfitter.cLookOpenWithCharacterDescription)
+				switch.label = Text(switch, Outfitter.cLookOpenWithCharacter, "GameFontHighlightSmall", C.title)
+				switch.label:SetPoint("LEFT", switch, "RIGHT", 8, 0)
+				switch.label:SetJustifyH("LEFT")
+				look.OpenWithCharacter = switch
 				row = { widget = switch, label = switch.label }
 			elseif checkName == "RightClick" then
 				-- What right-click on the minimap button or broker does
@@ -989,15 +1086,34 @@ local function Choices(parent, keys, labels, get, set)
 	return row
 end
 
+-- A small button that puts one setting back to its default
+local RESET_ICON = "Interface\\Buttons\\UI-RefreshButton"
+local function ResetButton(parent, onClick)
+	local b = CreateFrame("Button", nil, parent)
+	b:SetSize(16, 16)
+	Fill(b, C.red)
+	Border(b, C.btnEdge)
+	local icon = b:CreateTexture(nil, "ARTWORK")
+	icon:SetPoint("TOPLEFT", 2, -2)
+	icon:SetPoint("BOTTOMRIGHT", -2, 2)
+	icon:SetTexture(RESET_ICON)
+	b:SetScript("OnClick", function()
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		onClick()
+	end)
+	T.Tooltip(b, Outfitter.cLookResetOne, Outfitter.cLookResetOneDescription)
+	return b
+end
+
 -- A number you can slide or type. The slider moves in whole steps; the box
 -- takes any number in range (two decimals, like 90.55) when you press Enter.
--- apply() runs when the slider is let go or Enter is pressed.
+-- apply() runs when the slider is let go, Enter is pressed or it's reset.
 local function SizeControl(parent, y, width, label, description, min, max, get, save, apply)
 	local title = Text(parent, label, "GameFontHighlightSmall", C.title)
 	title:SetPoint("TOPLEFT", 12, y)
 	local box = EditBox(parent, 56)
 	box:SetHeight(18)
-	box:SetPoint("TOPRIGHT", parent, "TOPLEFT", 12 + width, y + 3)
+	box:SetPoint("TOPRIGHT", parent, "TOPLEFT", 12 + width - 20, y + 3)
 	box:SetJustifyH("RIGHT")
 	local slider = CreateFrame("Slider", nil, parent)
 	slider:SetOrientation("HORIZONTAL")
@@ -1055,10 +1171,19 @@ local function SizeControl(parent, y, width, label, description, min, max, get, 
 		control.Refresh()
 		self:ClearFocus()
 	end)
+	control.Reset = ResetButton(parent, function()
+		save(100)
+		control.Refresh()
+		apply()
+	end)
+	control.Reset:SetPoint("LEFT", box, "RIGHT", 4, 0)
 	T.Tooltip(slider, label, description)
 	T.Tooltip(box, label, description .. "\n" .. Outfitter.cLookTypeSize)
 	return control
 end
+
+-- The Display tab is taller than the window: it grows to this while it shows
+local DISPLAY_HEIGHT = 366
 
 local function StyleDisplay(look)
 	local frame = OutfitterFrame
@@ -1066,29 +1191,30 @@ local function StyleDisplay(look)
 	panel:SetAllPoints()
 	panel:Hide()
 	look.Display = panel
+	look.DisplayHeight = DISPLAY_HEIGHT
 	local width = (frame:GetWidth() or 256) - 16
 	local inner = width - 24
 	local top = -(24 + TAB_H + 6)
 
-	-- Two pages: Size and text, Colors
-	local pages = { CreateFrame("Frame", nil, panel), CreateFrame("Frame", nil, panel) }
+	-- Three pages: Size, Fonts, Colors
+	local pages = { CreateFrame("Frame", nil, panel), CreateFrame("Frame", nil, panel), CreateFrame("Frame", nil, panel) }
 	for _, page in ipairs(pages) do page:SetAllPoints() end
 	look.DisplayPage = look.DisplayPage or 1
-	local switch = Choices(panel, { 1, 2 }, { Outfitter.cLookPageSize, Outfitter.cLookPageColors },
+	local switch = Choices(panel, { 1, 2, 3 }, { Outfitter.cLookPageSize, Outfitter.cLookPageFonts, Outfitter.cLookPageColors },
 		function() return look.DisplayPage end,
 		function(index)
 			look.DisplayPage = index
 			for i, page in ipairs(pages) do page:SetShown(i == index) end
 		end)
-	local half = (width - 4) / 2
+	local third = (width - 8) / 3
 	for index, b in ipairs(switch) do
-		b:SetSize(half, 20)
-		b:SetPoint("TOPLEFT", panel, "TOPLEFT", 8 + (index - 1) * (half + 4), top)
+		b:SetSize(third, 20)
+		b:SetPoint("TOPLEFT", panel, "TOPLEFT", 8 + (index - 1) * (third + 4), top)
 	end
 	look.DisplaySwitch, look.DisplayPages = switch, pages
 	top = top - 26
 
-	-- Page 1: the window's size (with its dialogs and menus), the text's size and font
+	-- Page 1: the window's size (with its dialogs and menus) and the text's
 	local size = Card(pages[1], Outfitter.cLookSize, 8, top, width, 106)
 	look.WindowSize = SizeControl(size, -26, inner, Outfitter.cLookWindowSize, Outfitter.cLookWindowSizeDescription,
 		SCALE_MIN, SCALE_MAX,
@@ -1100,24 +1226,61 @@ local function StyleDisplay(look)
 		function(value) DisplaySettings().TextSize = value ~= 100 and value or nil end,
 		function() ApplyDisplay(look) end)
 
-	local fontCard = Card(pages[1], Outfitter.cLookFont, 8, top - 106 - 4, width, 54)
-	local font = MenuField(fontCard, inner,
-		function()
-			local list = { { false, Outfitter.cLookFontDefault } }
-			for _, choice in ipairs(FontChoices()) do list[#list + 1] = { choice[2], choice[1] } end
-			return list
-		end,
-		function() return DisplaySettings().Font or false end,
-		function(file)
-			DisplaySettings().Font = file or nil
+	-- Page 2: fonts. Each row: a label over a field, and its reset button.
+	local fonts = Card(pages[2], Outfitter.cLookPageFonts, 8, top, width, 26 + 3 * 40 + 26)
+	local fieldW = inner - 20
+	local fontRows = {}
+	local function FontRow(index, label, description, choices, key)
+		local y = -26 - (index - 1) * 40
+		local title = Text(fonts, label, "GameFontHighlightSmall", C.title)
+		title:SetPoint("TOPLEFT", 12, y)
+		local field = MenuField(fonts, fieldW, choices,
+			function() return DisplaySettings()[key] or false end,
+			function(value)
+				DisplaySettings()[key] = value or nil
+				ApplyDisplay(look)
+			end)
+		field:SetPoint("TOPLEFT", fonts, "TOPLEFT", 12, y - 14)
+		T.Tooltip(field, label, description)
+		field.Reset = ResetButton(fonts, function()
+			DisplaySettings()[key] = nil
+			field.Refresh()
 			ApplyDisplay(look)
 		end)
-	font:SetPoint("TOPLEFT", fontCard, "TOPLEFT", 12, -26)
-	T.Tooltip(font, Outfitter.cLookFont, Outfitter.cLookFontDescription)
-	look.Font = font
+		field.Reset:SetPoint("LEFT", field, "RIGHT", 4, 0)
+		fontRows[#fontRows + 1] = field
+		return field
+	end
+	local function FontChoiceList()
+		local list = { { false, Outfitter.cLookFontDefault } }
+		for _, choice in ipairs(FontChoices()) do list[#list + 1] = { choice[2], choice[1] } end
+		return list
+	end
+	look.Font = FontRow(1, Outfitter.cLookFont, Outfitter.cLookFontDescription, FontChoiceList, "Font")
+	look.HeadingFont = FontRow(2, Outfitter.cLookHeadingFont, Outfitter.cLookHeadingFontDescription, FontChoiceList, "HeadingFont")
+	look.Outline = FontRow(3, Outfitter.cLookOutline, Outfitter.cLookOutlineDescription, function()
+		return { { false, Outfitter.cLookOutlineNone }, { "OUTLINE", Outfitter.cLookOutlineThin },
+			{ "THICKOUTLINE", Outfitter.cLookOutlineThick }, { "MONOCHROME", Outfitter.cLookOutlineMono },
+			{ "OUTLINE,MONOCHROME", Outfitter.cLookOutlineMonoOutline } }
+	end, "Outline")
+	-- The shadow: a switch
+	local shadow = SwitchWidget(fonts)
+	shadow:SetPoint("TOPLEFT", fonts, "TOPLEFT", 12, -26 - 3 * 40)
+	shadow:SetFrameLevel(fonts:GetFrameLevel() + 2)
+	shadow.label = Text(shadow, Outfitter.cLookShadow, "GameFontHighlightSmall", C.title)
+	shadow.label:SetPoint("LEFT", shadow, "RIGHT", 8, 0)
+	shadow:SetHitRectInsets(0, -(8 + math.ceil(shadow.label:GetStringWidth() or 0)), -4, -4)
+	shadow:SetScript("OnClick", function(self)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		DisplaySettings().Shadow = not self:IsOn() or nil
+		self:SetOn(DisplaySettings().Shadow)
+		ApplyDisplay(look)
+	end)
+	T.Tooltip(shadow, Outfitter.cLookShadow, Outfitter.cLookShadowDescription)
+	look.Shadow = shadow
 
-	-- Page 2: the color styles, and your own colors on top; both show at once
-	local colors = Card(pages[2], Outfitter.cLookColors, 8, top, width, 88)
+	-- Page 3: the color styles, and your own colors on top; both show at once
+	local colors = Card(pages[3], Outfitter.cLookColors, 8, top, width, 88)
 	local names = { Outfitter.cLookColorDefault, Outfitter.cLookColorContrast, Outfitter.cLookColorBlue, Outfitter.cLookColorLight }
 	local swatches
 	local function PaintColors()
@@ -1152,14 +1315,16 @@ local function StyleDisplay(look)
 	look.Swatches = swatches
 
 	-- Your own colors: a swatch (click for the game's color wheel, right-click
-	-- for the style's color again) and a hex code (Enter to use it)
-	local own = Card(pages[2], Outfitter.cLookOwnColors, 8, top - 88 - 4, width, 26 + #CUSTOM_KEYS * 18 + 4)
+	-- for the style's color again), a hex code (Enter to use it), a reset button
+	local own = Card(pages[3], Outfitter.cLookOwnColors, 8, top - 88 - 4, width, 26 + #CUSTOM_KEYS * 18 + 4)
 	local ownNames = {
-		background = Outfitter.cLookColorBackground, panels = Outfitter.cLookColorPanels, text = Outfitter.cLookColorText,
-		headings = Outfitter.cLookColorHeadings, buttons = Outfitter.cLookColorButtons, highlight = Outfitter.cLookColorHighlight,
+		background = Outfitter.cLookColorBackground, panels = Outfitter.cLookColorPanels, header = Outfitter.cLookColorHeader,
+		text = Outfitter.cLookColorText, headings = Outfitter.cLookColorHeadings, buttons = Outfitter.cLookColorButtons,
+		highlight = Outfitter.cLookColorHighlight,
 	}
 	-- What each one shows: the colour in use for it
-	local shows = { background = C.win, panels = C.card, text = C.title, headings = C.orange, buttons = C.red, highlight = C.gold }
+	local shows = { background = C.win, panels = C.card, header = C.header, text = C.title, headings = C.orange,
+		buttons = C.red, highlight = C.gold }
 	local rows = {}
 	local function Custom()
 		local settings = DisplaySettings()
@@ -1181,9 +1346,9 @@ local function StyleDisplay(look)
 		Border(chip, C.btnEdge)
 		local label = Text(own, ownNames[slot], "GameFontHighlightSmall", C.title)
 		label:SetPoint("LEFT", chip, "RIGHT", 8, 0)
-		local hex = EditBox(own, 70)
+		local hex = EditBox(own, 66)
 		hex:SetHeight(16)
-		hex:SetPoint("TOPRIGHT", own, "TOPLEFT", 12 + inner, y + 1)
+		hex:SetPoint("TOPRIGHT", own, "TOPLEFT", 12 + inner - 20, y + 1)
 		hex:SetMaxLetters(7)
 		local row = { Chip = chip, Hex = hex, Label = label }
 		function row.Refresh() hex:SetText(ToHex(shows[slot])) end
@@ -1221,6 +1386,8 @@ local function StyleDisplay(look)
 				hex:HighlightText()
 			end
 		end)
+		row.Reset = ResetButton(own, function() SetCustom(slot, nil) end)
+		row.Reset:SetPoint("LEFT", hex, "RIGHT", 4, 0)
 		T.Tooltip(chip, ownNames[slot], Outfitter.cLookOwnColorDescription)
 		T.Tooltip(hex, ownNames[slot], Outfitter.cLookHexDescription)
 		rows[slot] = row
@@ -1228,15 +1395,18 @@ local function StyleDisplay(look)
 	look.OwnColors = rows
 	OnRepaint(function() for _, row in pairs(rows) do row.Refresh() end end)
 
-	-- Back to how it was (both pages)
+	-- Everything back to how it was (every page)
 	local reset = FlatButton(panel, Outfitter.cLookReset, 78, 22)
 	reset:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 8)
 	reset:SetScript("OnClick", function()
 		local settings = DisplaySettings()
-		settings.Scale, settings.TextSize, settings.Font, settings.Colors, settings.Custom = nil, nil, nil, nil, nil
+		for _, key in ipairs({ "Scale", "TextSize", "Font", "HeadingFont", "Outline", "Shadow", "Colors", "Custom" }) do
+			settings[key] = nil
+		end
 		look.WindowSize.Refresh()
 		look.TextSize.Refresh()
-		font.Refresh()
+		for _, field in ipairs(fontRows) do field.Refresh() end
+		shadow:SetOn(false)
 		ApplyDisplay(look)
 		ApplyTheme(look)
 	end)
@@ -1246,7 +1416,8 @@ local function StyleDisplay(look)
 	panel:SetScript("OnShow", function()
 		look.WindowSize.Refresh()
 		look.TextSize.Refresh()
-		font.Refresh()
+		for _, field in ipairs(fontRows) do field.Refresh() end
+		shadow:SetOn(DisplaySettings().Shadow)
 		PaintColors()
 		for _, row in pairs(rows) do row.Refresh() end
 		switch.Paint()
@@ -1295,7 +1466,7 @@ function Outfitter:ApplyLook()
 	-- (HidePanel) while it shows, and showing one of Outfitter's puts it away
 	local function ShowDisplay()
 		if self.CurrentPanel > 0 then self:HidePanel(self.CurrentPanel) end
-		frame:SetHeight(look.BaseHeight)
+		frame:SetHeight(math.max(look.BaseHeight, look.DisplayHeight or 0))
 		look.Display:Show()
 		look.Tabs.Paint(3)
 	end
@@ -1385,6 +1556,7 @@ function Outfitter:ApplyLook()
 		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
 		if look.OptionsScripts then look.OptionsScripts:SetOn(scripts:IsOn()) end
 		if look.RightClick then look.RightClick.Refresh() end
+		if look.OpenWithCharacter then look.OpenWithCharacter:SetOn(self.Settings.Options.OpenWithCharacter) end
 		bar:SetShown(highlight:IsShown())
 		-- The Equipment Manager tab's row is hidden when there's no tab
 		LayoutOptions(look)
@@ -1404,6 +1576,7 @@ local function StyleSection(section)
 	if section.Title then
 		section.Title:SetFontObject(GameFontNormalSmall)
 		Ink(section.Title, C.orange)
+		section.Title.OFHeading = true
 		section.Title:SetText((section.Title:GetText() or ""):upper())
 	end
 end
@@ -1439,7 +1612,7 @@ function Outfitter:StyleDialog(dialog)
 	if dialog.TitleBackground then dialog.TitleBackground:Hide() end
 
 	if dialog.DoneButton then Flatten(dialog.DoneButton, C.red, C.redHi) end
-	if dialog.CancelButton then Flatten(dialog.CancelButton, C.card, C.line, C.edge) end
+	if dialog.CancelButton then Flatten(dialog.CancelButton, C.red, C.redHi) end
 	for _, key in ipairs({ "InfoSection", "BuildSection", "StatsSection" }) do
 		StyleSection(dialog[key])
 	end
@@ -1478,7 +1651,7 @@ local function StyleInput(frame)
 	if label then Ink(label, C.muted) end
 	FlatScrollBar(_G[name .. "ScrollBar"] or frame.ScrollBar)
 	local zoneButton = _G[name .. "ZoneButton"]
-	if zoneButton then Flatten(zoneButton, C.card, C.line, C.edge) end
+	if zoneButton then Flatten(zoneButton, C.red, C.redHi) end
 end
 
 -- The controls a script's settings ask for, made as the Settings tab is shown
@@ -1568,7 +1741,7 @@ function Outfitter:StyleScriptDialog(dialog)
 	footerLine:SetHeight(1)
 	Paint(footerLine, C.line)
 	Flatten(_G[name .. "DoneButton"], C.red, C.redHi)
-	Flatten(_G[name .. "CancelButton"], C.card, C.line, C.edge)
+	Flatten(_G[name .. "CancelButton"], C.red, C.redHi)
 
 	StyleSettingsFields(dialog)
 end
@@ -1826,7 +1999,7 @@ local function StyleIconDialog(dialog)
 	end
 	FlatScrollBar(_G[name .. "ScrollFrameScrollBar"])
 	Flatten(_G[name .. "OKButton"], C.red, C.redHi)
-	Flatten(_G[name .. "CancelButton"], C.card, C.line, C.edge)
+	Flatten(_G[name .. "CancelButton"], C.red, C.redHi)
 	for _, button in ipairs(dialog.IconButtons or {}) do StyleIconButton(button) end
 end
 

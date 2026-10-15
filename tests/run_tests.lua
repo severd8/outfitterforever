@@ -253,7 +253,8 @@ W.Tick(1)
 local function CombatNotes()
 	local count = 0
 	for _, line in ipairs(W.printed) do
-		if tostring(line):find((O.cCombatWait:gsub("^%%s", "")), 1, true) then count = count + 1 end
+		if tostring(line):find((O.cCombatWait:gsub("^%%s", "")), 1, true)
+		or tostring(line):find((O.cCombatWaitWeapons:gsub("^%%s", "")), 1, true) then count = count + 1 end
 	end
 	return count
 end
@@ -261,7 +262,10 @@ local notesBefore = CombatNotes()
 O:WearOutfit(fishing)
 W.Tick(1)
 Check(W.equipped[1] == 1001, "armor isn't changed in combat")
+Check(W.equipped[16] == 1011, "but weapons are: the fishing pole is in hand at once (main hand has " .. tostring(W.equipped[16]) .. ")")
 Check(CombatNotes() == notesBefore + 1, "a chat line says the outfit you picked goes on when combat ends")
+Check(tostring(W.printed[#W.printed]):find((O.cCombatWaitWeapons:gsub("^%%s", "")), 1, true) ~= nil,
+	"and that its weapons changed already")
 Check(tostring(W.printed[#W.printed]):find(fishing:GetName(), 1, true) ~= nil, "naming the outfit")
 O:RemoveOutfit(fishing)
 O:WearOutfit(fishing)
@@ -271,6 +275,24 @@ W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Tick(3)
 Check(W.equipped[1] == 1002, "the outfit goes on after combat (head has " .. tostring(W.equipped[1]) .. ")")
+-- An outfit of only weapons doesn't wait, so nothing is said
+do
+	local blade = MakeOutfit("Blade", { MainHandSlot = 1008 })
+	W.combat = true
+	W.Fire("PLAYER_REGEN_DISABLED")
+	local notes = CombatNotes()
+	O:WearOutfit(blade)
+	W.Tick(1)
+	Check(W.equipped[16] == 1008, "a weapons-only outfit goes on in combat (main hand has " .. tostring(W.equipped[16]) .. ")")
+	Check(CombatNotes() == notes, "with no chat line")
+	O:RemoveOutfit(blade)
+	W.Tick(1)
+	W.combat = false
+	W.Fire("PLAYER_REGEN_ENABLED")
+	W.Tick(3)
+	O:DeleteOutfit(blade)
+	W.Tick(1)
+end
 -- Scripts (stances, forms) change outfits in every fight: they say nothing
 W.combat = true
 W.Fire("PLAYER_REGEN_DISABLED")
@@ -1032,18 +1054,23 @@ do
 			box:Click()
 			Check(O.Settings.Options.DisableSidebarTab == true, "unticking it is saved")
 			Check(env.gOutfitter_Settings.Options.DisableSidebarTab == true, "in this character's settings")
-			Check(not tab:IsShown(), "the tab is gone, uncovering the game's Equipment Manager tab")
-			Check(env.OutfitterButton:IsShown(), "and the small button is back")
+			-- Off: the Equipment Manager tab is the game's again, and Outfitter's
+			-- tab sits beside the game's tabs, with the small button too
+			local function Beside() return tab:IsVisible() and AnchoredTo(tab, env.PaperDollSidebarTab1) and not AnchoredTo(tab, env.PaperDollSidebarTab2) end
+			Check(Beside(), "the tab moves beside the game's tabs, uncovering the Equipment Manager tab")
+			Check(env.OutfitterButton:IsShown(), "and the small button is there too")
 			W.PlayerTogglesCharacter()
 			W.PlayerTogglesCharacter()
-			Check(not tab:IsShown() and env.OutfitterButton:IsShown(), "it stays that way")
-			O:ToggleOutfitterFrame()
+			Check(Beside() and env.OutfitterButton:IsShown(), "it stays that way")
+			tab:Click()
+			Check(O:IsOpen(), "the tab beside the others opens Outfitter")
 			O:ShowPanel(2)
 			W.Tick(0.2)
 			Check(not box:GetChecked(), "the checkbox shows it's off")
 			box:Click()
 			Check(O.Settings.Options.DisableSidebarTab == false, "ticking it again is saved")
-			Check(tab:IsVisible() and not env.OutfitterButton:IsShown(), "and the tab is back")
+			Check(tab:IsVisible() and AnchoredTo(tab, env.PaperDollSidebarTab2) and not env.OutfitterButton:IsShown(),
+				"and the tab is back over the Equipment Manager's")
 			Check(tab:GetChecked(), "lit, since Outfitter is open")
 		end
 		O:ShowPanel(1)
@@ -1611,9 +1638,9 @@ do
 
 	-- The menu field opens a menu, and closes it again
 	field:Click()
-	Check(field.menu ~= nil, "the choice opens a menu")
+	Check(field.list and field.list:IsShown(), "the choice opens a list")
 	field:Click()
-	Check(field.menu == nil, "and closes it")
+	Check(not field.list:IsShown(), "and closes it")
 
 	-- Menu
 	O:SetRightClickAction("menu")
@@ -1725,7 +1752,7 @@ do
 	local font = look.Font
 	Check(font.text:GetText() == O.cLookFontDefault, "the font is the game's to start with")
 	font:Click()
-	Check(font.menu ~= nil, "the font field opens a menu")
+	Check(font.list and font.list:IsShown(), "the font field opens a list")
 	font:Click()
 	env.gOutfitter_GlobalSettings.Display.Font = "Fonts\\MORPHEUS.ttf"
 	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
@@ -1822,6 +1849,136 @@ do
 	look.Tabs[1]:Click()
 	W.Tick(0.2)
 	Check(not look.Display:IsShown() and env.OutfitterMainFrame:IsShown(), "the Outfits tab puts the Display tab away")
+end
+NoErrors()
+
+----------------------------------------
+Step("player feedback on 1.6: tooltip, reopening, fonts, colors, resets")
+do
+	local look = env.OutfitterFrame.Look
+	local C = O.Theme.C
+	local function Near(color, r, g, b) return math.abs(color[1] - r) < 0.002 and math.abs(color[2] - g) < 0.002 and math.abs(color[3] - b) < 0.002 end
+
+	-- The broker's tooltip goes where the game puts tooltips (tooltip addons move it)
+	env.GameTooltip.__defaultAnchor = nil
+	O:ShowBrokerTooltip(env.UIParent)
+	Check(env.GameTooltip.__defaultAnchor == env.UIParent, "the broker's tooltip uses the game's tooltip spot")
+
+	-- Another tab of the character window, then back: Outfitter opens again
+	if not env.CharacterFrame:IsShown() then W.PlayerTogglesCharacter() end
+	if not env.OutfitterFrame:IsShown() then O:ToggleOutfitterFrame() end
+	W.Tick(0.2)
+	Check(O:IsOpen(), "Outfitter is open")
+	env.PaperDollFrame:Hide() -- Reputation, say
+	W.Tick(0.2)
+	Check(not O:IsOpen(), "it closes with the character sheet")
+	env.PaperDollFrame:Show()
+	W.Tick(0.2)
+	Check(O:IsOpen(), "and opens again when you're back on the sheet")
+	-- Closed by you, it stays closed
+	env.OutfitterFrame:Hide()
+	env.PaperDollFrame:Hide()
+	env.PaperDollFrame:Show()
+	W.Tick(0.2)
+	Check(not O:IsOpen(), "closed by you, it stays closed after another tab")
+	-- Closing the whole window doesn't bring it back either
+	O:ToggleOutfitterFrame()
+	W.PlayerTogglesCharacter()
+	W.PlayerTogglesCharacter()
+	W.Tick(0.2)
+	Check(not O:IsOpen(), "closing the character window doesn't open it next time")
+
+	-- Open with the character window (an option)
+	local openWith = look.OpenWithCharacter
+	Check(openWith and AnchoredTo(openWith, look.Cards[3]) and not openWith:IsOn(), "Options has Open with the character window, off")
+	openWith:Click()
+	Check(O.Settings.Options.OpenWithCharacter == true and openWith:IsOn(), "switching it on is saved")
+	W.PlayerTogglesCharacter()
+	W.PlayerTogglesCharacter()
+	W.Tick(0.2)
+	Check(O:IsOpen(), "now Outfitter opens with the character window")
+	openWith:Click()
+	Check(O.Settings.Options.OpenWithCharacter == nil, "and off again")
+
+	-- A long font list scrolls instead of running off the screen
+	local media = env.LibStub:NewLibrary("LibSharedMedia-3.0", 1)
+	local names = {}
+	for i = 1, 25 do names[i] = string.format("Font %02d", i) end
+	function media:List() return names end
+	function media:Fetch(_, name) return "Fonts\\" .. name:gsub(" ", "") .. ".ttf" end
+	look.Tabs[3]:Click()
+	look.DisplaySwitch[2]:Click()
+	W.Tick(0.2)
+	local font = look.Font
+	font:Click()
+	local list = font.list
+	Check(list and list:IsShown() and #list.rows == 26, "the font list has every font (" .. tostring(list and #list.rows) .. ")")
+	Check(list and list:GetHeight() <= 10 * 18 + 6 and list.scroll.bar:IsShown(), "it shows ten at a time and scrolls")
+	list.rows[20]:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Font == "Fonts\\Font19.ttf" and not list:IsShown(), "picking one uses it and closes the list")
+	local name = env.OutfitterItem0OutfitName
+	Check(name:GetFont() == "Fonts\\Font19.ttf", "the window's text is in it")
+	-- A heading font of its own
+	look.HeadingFont:Click()
+	look.HeadingFont.list.rows[3]:Click()
+	local category
+	for index = 0, O.cMaxDisplayedItems - 1 do
+		local item = env["OutfitterItem" .. index]
+		if item:IsShown() and item.isCategory then category = env[item:GetName() .. "CategoryName"] break end
+	end
+	Check(category and category:GetFont() == "Fonts\\Font02.ttf" and name:GetFont() == "Fonts\\Font19.ttf",
+		"headings take the heading font, the rest the font")
+	Check(look.Header.text:GetFont() == "Fonts\\Font02.ttf", "the header bar is a heading")
+	-- Outline
+	look.Outline:Click()
+	look.Outline.list.rows[3]:Click()
+	Check(select(3, name:GetFont()) == "THICKOUTLINE", "a thick outline")
+	-- Shadow
+	look.Shadow:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Shadow == true and look.Shadow:IsOn(), "the text shadow switch is saved")
+	look.Shadow:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Shadow == nil, "and off again")
+	-- Each has its own reset
+	look.Font.Reset:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Font == nil and name:GetFont() ~= "Fonts\\Font19.ttf", "the font's reset button")
+	Check(env.gOutfitter_GlobalSettings.Display.HeadingFont == "Fonts\\Font02.ttf", "leaves the heading font alone")
+	look.HeadingFont.Reset:Click()
+	look.Outline.Reset:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Outline == nil and select(3, name:GetFont()) ~= "THICKOUTLINE", "the outline's reset button")
+	look.DisplaySwitch[1]:Click()
+	look.WindowSize.Box:SetText("120")
+	look.WindowSize.Box:GetScript("OnEnterPressed")(look.WindowSize.Box)
+	look.TextSize.Box:SetText("120")
+	look.TextSize.Box:GetScript("OnEnterPressed")(look.TextSize.Box)
+	look.WindowSize.Reset:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Scale == nil and env.OutfitterFrame:GetScale() == 1
+		and env.gOutfitter_GlobalSettings.Display.TextSize == 120, "the window size's reset button leaves the text size alone")
+	look.TextSize.Reset:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.TextSize == nil, "the text size's reset button")
+
+	-- Colors: the header has its own color; buttons and switches are edged in the highlight
+	look.DisplaySwitch[3]:Click()
+	local own = look.OwnColors
+	own.buttons.Hex:SetText("#000000")
+	own.buttons.Hex:GetScript("OnEnterPressed")(own.buttons.Hex)
+	Check(Near(look.Close.bg.__color, 0, 0, 0) and not Near(look.Header.bg.__color, 0, 0, 0),
+		"the buttons color doesn't change the header bar")
+	own.header.Hex:SetText("#203040")
+	own.header.Hex:GetScript("OnEnterPressed")(own.header.Hex)
+	Check(Near(look.Header.bg.__color, 0x20 / 255, 0x30 / 255, 0x40 / 255), "the header has a color of its own")
+	own.highlight.Hex:SetText("#FF8000")
+	own.highlight.Hex:GetScript("OnEnterPressed")(own.highlight.Hex)
+	local edged = 0
+	for _, region in ipairs({ env.OutfitterShowOutfitBar:GetRegions() }) do
+		if region:GetDrawLayer() == "BORDER" and region.__color and Near(region.__color, 1, 0x80 / 255, 0) then edged = edged + 1 end
+	end
+	Check(edged == 4, "switches are edged in the highlight color (" .. edged .. " edges)")
+	own.header.Reset:Click()
+	Check(env.gOutfitter_GlobalSettings.Display.Custom.header == nil, "each color has a reset button")
+	look.DisplayReset:Click()
+	Check(next(env.gOutfitter_GlobalSettings.Display) == nil, "Reset puts everything back")
+	look.Tabs[1]:Click()
+	W.Tick(0.2)
 end
 NoErrors()
 

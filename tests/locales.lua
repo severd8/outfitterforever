@@ -24,7 +24,10 @@ local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDe
 	"cLookRightClickMenu", "cLookRightClickSwap", "cLookSwapFirst", "cLookSwapSecond", "cLookSwapNotSet", "cLookTipOpen",
 	"cLookTipMenu", "cLookTipSwap", "cLookTipSwapNotSet", "cLookOwnColors", "cLookOwnColorDescription",
 	"cLookHexDescription", "cLookColorBackground", "cLookColorPanels", "cLookColorText", "cLookColorHeadings", "cLookColorButtons",
-	"cLookColorHighlight" }
+	"cLookColorHighlight", "cLookPageFonts", "cLookHeadingFont", "cLookHeadingFontDescription", "cLookOutline",
+	"cLookOutlineDescription", "cLookOutlineNone", "cLookOutlineThin", "cLookOutlineThick", "cLookOutlineMono",
+	"cLookOutlineMonoOutline", "cLookShadow", "cLookShadowDescription", "cLookResetOne", "cLookResetOneDescription",
+	"cLookColorHeader", "cLookOpenWithCharacter", "cLookOpenWithCharacterDescription", "cCombatWaitWeapons" }
 
 -- The option cards: the bottom of the last one, measured from the window's top
 local function CardsBottom(W, O)
@@ -64,12 +67,13 @@ local function Session(locale)
 end
 
 -- Words that are the same as in English
-local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true, cLookColorText = true } }
+local SAME = { deDE = { cOutfitterTabTitle = true, cLookTooltips = true, cLookColorText = true, cLookOutlineMono = true },
+	frFR = { cLookOutlineMono = true } }
 
 local englishW, english = Session("enUS")
-local englishBottom, englishCard3 = CardsBottom(englishW, english)
--- 344: the window's height in Outfitter.xml, less a 4 px margin (the gap between cards)
-Check(englishBottom <= 344 - 4, "enUS: the option cards fit in the window as it is (" .. englishBottom .. ")")
+local englishBottom, englishCard3, englishHeight = CardsBottom(englishW, english)
+-- (the window grows on the Options tab to fit them)
+Check(englishBottom <= englishHeight, "enUS: the option cards fit in the window (" .. englishBottom .. ")")
 for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	local W, O = Session(locale)
 	for _, key in ipairs(KEYS) do
@@ -80,6 +84,7 @@ for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	local _, placeholders = tostring(O.cOpenCharacterWindow):gsub("%%s", "")
 	Check(placeholders == 1, locale .. ": cOpenCharacterWindow keeps its one %s for the key")
 	Check(tostring(O.cCombatWait):sub(1, 2) == "%s", locale .. ": cCombatWait starts with the outfit's name (%s)")
+	Check(tostring(O.cCombatWaitWeapons):sub(1, 2) == "%s", locale .. ": cCombatWaitWeapons starts with the outfit's name (%s)")
 	Check(O.cOutfitterTabTitle ~= "Outfitter", locale .. ": the first tab is named for outfits, not \"Outfitter\"")
 	-- Long option names wrap onto a second line (the French Equipment Manager tab
 	-- does) instead of being cut off, and the cards still fit in the window

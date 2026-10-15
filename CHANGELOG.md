@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.7.0
+
+From a player's feedback on 1.6, thank you again!
+
+- **Weapons change in combat.** Armor still has to wait for the end of combat (the game's rule), but an outfit's weapons now go on at once: swap weapons for poisons, avoidance or threat mid-fight, by key binding, the outfit bar or the broker's right-click swap.
+- **Open with the character window** (Options > Quick access): Outfitter Forever opens every time you open your character window.
+- **Outfitter Forever tab beside the others:** with "Use the Equipment Manager tab" off, the game's Equipment Manager tab comes back and the Outfitter Forever tab sits beside the other tabs, with the small button too.
+- **Display tab, Fonts page:** a separate font for headings, an outline (thin, thick, monochrome) and a text shadow.
+- **Reset buttons** for every setting on the Display tab, besides Reset for everything.
+- **Colors:** the header bar has its own color (Buttons no longer change it); every button and switch has an edge in the Highlight color, so it stays visible even in the color of what's behind it; all buttons now use the Buttons color.
+- **Fixed:** Outfitter Forever closed when you switched to another tab of the character window (Reputation, say) and didn't come back. It does now.
+- **Fixed:** the font list ran off the screen. It now shows ten at a time and scrolls.
+- **Fixed:** the minimap button's and broker's tooltip ignored tooltip addons that move tooltips.
+
 ## 1.6.1
 
 - **Your own colors** (Display > Colors): pick the background, panels, text, headings, buttons (Enable all and Enable none included) and highlight. Click a color for the game's color wheel, or type a code like #FFD100 and press Enter. Right-click a color to go back to the style's. They go on top of the style you picked.

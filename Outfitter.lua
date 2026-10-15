@@ -1120,8 +1120,21 @@ function Outfitter:UpdateSidebarTab()
 
 	local vUseTab = not (self.Settings and self.Settings.Options and self.Settings.Options.DisableSidebarTab)
 
-	if vTab:IsShown() ~= vUseTab then
-		vTab:SetShown(vUseTab) -- comes back here through OnShow / OnHide
+	-- Over the Equipment Manager tab, or (option off, since 1.7.0) beside the
+	-- game's tabs, left of the first, with the Equipment Manager left alone
+	local vEMTab, vFirstTab = _G["PaperDollSidebarTab2"], _G["PaperDollSidebarTab1"]
+	if vTab.Beside ~= not vUseTab then
+		vTab.Beside = not vUseTab
+		vTab:ClearAllPoints()
+		if vUseTab or not vFirstTab then
+			vTab:SetAllPoints(vEMTab)
+		else
+			vTab:SetSize(vEMTab:GetWidth() or 33, vEMTab:GetHeight() or 35)
+			vTab:SetPoint("RIGHT", vFirstTab, "LEFT", -4, 0)
+		end
+	end
+	if not vTab:IsShown() then
+		vTab:Show() -- comes back here through OnShow
 		return
 	end
 
@@ -1130,7 +1143,8 @@ function Outfitter:UpdateSidebarTab()
 	vTab:SetChecked(vOpen)
 	vTab.Selected:SetShown(vOpen)
 
-	-- The small button stands in whenever the tab can't be seen
+	-- The small button stands in whenever the tab can't be seen, and stays
+	-- when the tab sits beside the others (both ways to open Outfitter)
 	OutfitterButton:SetShown(not (vUseTab and vTab:IsVisible()))
 end
 
@@ -3268,8 +3282,38 @@ function Outfitter:NoteCombatWait(pOutfit, pCallerIsScript)
 	if not (self.InCombat or InCombatLockdown()) then return end
 	local vName = pOutfit and pOutfit:GetName()
 	if not vName or vName == "" then return end
+	-- Weapons go on at once (see EquipWeaponsNow): an outfit of only weapons
+	-- doesn't wait, one with armor too says the rest waits
+	local vWeapons, vArmor
+	for vSlotName, vItem in pairs(pOutfit:GetItems() or {}) do
+		if self.cCombatWeaponSlots[vSlotName] then vWeapons = true else vArmor = true end
+	end
+	if not vArmor then return end
 	self.CombatWaitNoted = true
-	self:NoteMessage(self.cCombatWait, vName)
+	self:NoteMessage(vWeapons and self.cCombatWaitWeapons or self.cCombatWait, vName)
+end
+
+-- Forever: the slots whose items can change in combat
+Outfitter.cCombatWeaponSlots = { MainHandSlot = true, SecondaryHandSlot = true, RangedSlot = true }
+
+-- In combat only weapons can change: the outfit's weapons go on now, and the
+-- rest when combat ends (UpdateEquippedItems tries again then)
+function Outfitter:EquipWeaponsNow(pCompiledOutfit, pInventoryCache)
+	local vWeapons = self:NewEmptyOutfit()
+	local vAny
+	for vSlotName in pairs(self.cCombatWeaponSlots) do
+		local vItem = pCompiledOutfit:GetItem(vSlotName)
+		if vItem then
+			vWeapons:SetItem(vSlotName, vItem)
+			vAny = true
+		end
+	end
+	if not vAny then return end
+	local vChanges = self:New(self._EquipmentChanges)
+	vChanges:addChangesToEquipOutfit(vWeapons, pInventoryCache)
+	if vChanges then
+		vChanges:execute(self:GetEmptyBagSlotList(), self:New(self._InventoryCache))
+	end
 end
 
 function Outfitter:WearOutfit(pOutfit, pLayerID, pCallerIsScript)
@@ -5436,6 +5480,7 @@ function Outfitter:Initialize()
 	-- so it opens along with it
 	if IsForever and OutfitterButtonFrame then
 		OutfitterButtonFrame:HookScript("OnShow", function () Outfitter:CharacterWindowShown() end)
+		OutfitterFrame:HookScript("OnHide", function () Outfitter:OutfitterHidden() end) -- Forever: see OutfitterHidden
 	end
 
 	-- Install the "Used by outfits" tooltip feature
@@ -6851,7 +6896,8 @@ end
 -- a right-click do. Always shown (AddNewbieTip showed nothing with the game's
 -- Enhanced Tooltips off).
 function Outfitter:ShowBrokerTooltip(pOwner)
-	GameTooltip:SetOwner(pOwner, "ANCHOR_BOTTOMLEFT")
+	-- the game's default spot, so tooltip addons that move tooltips move this one too
+	GameTooltip_SetDefaultAnchor(GameTooltip, pOwner)
 	GameTooltip:AddLine(self.cTitle)
 	GameTooltip:AddLine(self.cMinimapButtonDescription, 1, 1, 1, true)
 	local vAction, vLine = self:RightClickAction()
@@ -6872,8 +6918,21 @@ end
 function Outfitter:CharacterWindowShown()
 	local vAsked = self.OpenWithCharacterWindow
 	self.OpenWithCharacterWindow = nil
-	if vAsked and GetTime() - vAsked < 60 then
+	local vReopen = self.ReopenWithCharacterSheet
+	self.ReopenWithCharacterSheet = nil
+	if (vAsked and GetTime() - vAsked < 60) or vReopen
+	or (self.Settings and self.Settings.Options.OpenWithCharacter) then
 		OutfitterFrame:Show()
+	end
+end
+
+-- Forever: Outfitter closes with the character sheet. When that's because
+-- another tab of the character window was picked (Reputation, say), it opens
+-- again when you come back to the sheet; closing the window, or Outfitter
+-- itself, doesn't.
+function Outfitter:OutfitterHidden()
+	if not OutfitterButtonFrame:IsVisible() and CharacterFrame:IsShown() then
+		self.ReopenWithCharacterSheet = true
 	end
 end
 

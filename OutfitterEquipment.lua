@@ -886,6 +886,10 @@ function Outfitter:UpdateEquippedItems()
 	-- When in combat delay the outfit change until combat ends
 	-- TODO: A weapons only outfit should be able to be swapped - at least in Vanilla/Wrath
 	if self.InCombat or self.MaybeInCombat then
+		-- Forever: weapons can change in combat; they go on now, the rest when it ends
+		if self.IsForever and self.InCombat then
+			self:EquipWeaponsNow(vCompiledOutfit, vInventoryCache)
+		end
 		self.EquippedNeedsUpdate = true
 		self.MaybeInCombat = false
 		self:ScheduleEquipmentUpdate()

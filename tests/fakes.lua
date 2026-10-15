@@ -131,6 +131,11 @@ F.C_AddOns = {
 function F.GetCVar(name) return W.cvars[name] end
 function F.SetCVar(name, value) W.cvars[name] = tostring(value) end
 function F.GetCVarBool(name) return W.cvars[name] == "1" end
+-- The game's default tooltip spot (tooltip addons move it); the tests note that it was used
+function F.GameTooltip_SetDefaultAnchor(tooltip, owner)
+	tooltip:SetOwner(owner, "ANCHOR_NONE")
+	tooltip.__defaultAnchor = owner
+end
 F.C_CVar = { GetCVar = F.GetCVar, SetCVar = F.SetCVar, GetCVarBool = F.GetCVarBool, RegisterCVar = function() end,
 	GetCVarDefault = function() return nil end }
 
@@ -862,6 +867,10 @@ F.PaperDollSidebarTabs = New("Frame", "PaperDollSidebarTabs", F.CharacterFrame)
 -- It's hidden while the stats pane is collapsed.
 F.PaperDollSidebarTab2 = New("CheckButton", "PaperDollSidebarTab2", F.PaperDollSidebarTabs, nil, 2)
 F.PaperDollSidebarTab2:SetSize(42, 42)
+-- the stats tab, left of the Equipment Manager's (Forever: 33 x 35, 4 apart)
+F.PaperDollSidebarTab1 = New("CheckButton", "PaperDollSidebarTab1", F.PaperDollSidebarTabs, nil, 1)
+F.PaperDollSidebarTab1:SetSize(33, 35)
+F.PaperDollSidebarTab1:SetPoint("RIGHT", F.PaperDollSidebarTab2, "LEFT", -4, 0)
 F.PaperDollSidebarTab2:SetScript("OnClick", function() W.equipmentManagerClicks = (W.equipmentManagerClicks or 0) + 1 end)
 function W.PlayerCollapsesStatsPane(collapsed)
 	F.PaperDollSidebarTabs:SetShown(not collapsed)
