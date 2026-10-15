@@ -308,7 +308,7 @@ state = Session(state, function(S)
 	Check(size == 12, "with normal text")
 end)
 
--- Copy from another character (since 1.9.0): each character's outfits are saved
+-- Copy from another character (since 1.8.0): each character's outfits are saved
 -- account-wide, and another character copies the ones picked
 state = Session(state, function(S)
 	local saved = S.env.gOutfitter_GlobalSettings.Characters

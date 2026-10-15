@@ -1025,7 +1025,7 @@ do
 	W.Tick(0.2)
 	Check(not picker:IsShown(), "Cancel closes the icon picker")
 
-	-- The buttons show what each outfit will do (since 1.9.0)
+	-- The buttons show what each outfit will do (since 1.8.0)
 	local function ButtonFor(outfit)
 		for _, eachBar in ipairs(O.OutfitBar.Bars or {}) do
 			for _, each in ipairs(eachBar.Buttons or {}) do

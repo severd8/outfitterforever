@@ -1945,7 +1945,7 @@ local function StyleIconButton(button)
 	end
 end
 
--- An outfit bar button's states, over the icon button's look (since 1.9.0):
+-- An outfit bar button's states, over the icon button's look (since 1.8.0):
 -- waiting for combat to end (a pulsing gold edge and the game's pocket watch, top
 -- left), missing gear (a red wash and edge), and its key binding (top right)
 local MISSING = { 0.88, 0.25, 0.16, 1 }
@@ -2287,7 +2287,7 @@ function Dropdown.StyleButton(button)
 end
 
 ---------------------------------------------------------------------------
--- Copy from another character (since 1.9.0): a button beside New Outfit opens a
+-- Copy from another character (since 1.8.0): a button beside New Outfit opens a
 -- dialog with a menu of your other characters (saved account-wide, see
 -- Outfitter:SaveCharacterOutfits) and their outfits, each with a switch
 ---------------------------------------------------------------------------

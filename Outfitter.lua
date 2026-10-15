@@ -3321,7 +3321,7 @@ function Outfitter:OutfitWaitsForCombat(pOutfit)
 	return self.CombatWaitOutfits[pOutfit] and (self.InCombat or InCombatLockdown()) and self:WearingOutfit(pOutfit) and true or false
 end
 
--- Forever (since 1.9.0): each character's outfits are kept account-wide, in
+-- Forever (since 1.8.0): each character's outfits are kept account-wide, in
 -- gOutfitter_GlobalSettings.Characters["Name-Realm"], so another character can
 -- copy them (Copy from... beside New Outfit). Saved at login and at logout or
 -- reload; Equipment Manager outfits stay with the character.

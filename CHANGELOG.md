@@ -1,17 +1,14 @@
 # Changelog
 
-## 1.9.0
+## 1.8.0
 
+- **Options tab in pages**, like the Display tab: buttons for Automation, Tooltips and Quick access at the top, and that page's settings in their own block below.
 - **Copy outfits from another character.** A **Copy from...** button beside New Outfit lists your other characters on this account and their outfits; pick the ones you want. Each character's outfits are saved when you log in and when you log out or reload, so a character shows up once it has logged in with this version. A copy whose name you already use gets a number after it ("Fishing 2"), so nothing is overwritten; key bindings stay with their character.
 - **Ammo in outfits.** The ammo slot has a slot checkbox like the others: an outfit can put on its arrows or bullets with its bow or gun. Outfits remember which ammo, not how much, and an outfit without ammo leaves yours alone.
 - **Outfit bar:**
   - **Waiting for combat to end:** an outfit whose armor waits for combat has a pulsing gold edge and a pocket watch in its corner until it goes on.
   - **Missing gear:** an outfit missing an item you no longer carry (sold, or never had) has a red edge and a red icon, as it's red in the outfit menu.
   - **Key bindings:** each button shows its key in the corner, like action bars (S = Shift, C = Ctrl, A = Alt). **Show key bindings** in the bar's Settings turns it off.
-
-## 1.8.0
-
-- **Options tab in pages**, like the Display tab: buttons for Automation, Tooltips and Quick access at the top, and that page's settings in their own block below.
 
 ## 1.7.3
 
