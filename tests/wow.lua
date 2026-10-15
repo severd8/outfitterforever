@@ -341,12 +341,18 @@ function Frame:GetTextWidth() return self:GetStringWidth() end
 function Frame:GetNumLetters() return #(tostring(self.__text or "")) end
 function Frame:GetFont()
 	local font = self.__font
-	if font then return font[1], font[2], font[3] end
+	if font then
+		if font[1] == false then return nil end
+		return font[1], font[2], font[3]
+	end
 	return "Fonts\\FRIZQT__.TTF", 12, ""
 end
 -- A font file the game can't use (here: one with "Missing" in its name) is refused
 function Frame:SetFont(file, size, flags)
-	if tostring(file):find("Missing", 1, true) then return false end
+	if tostring(file):find("Missing", 1, true) then
+		self.__font = { false, size, flags or "" } -- as in game: the text is left with no font
+		return false
+	end
 	self.__font = { file, size, flags or "" }
 	return true
 end
