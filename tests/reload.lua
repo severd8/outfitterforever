@@ -33,10 +33,17 @@ local function Session(state, play)
 	dofile("tests/fakes.lua")
 	local env = W.env
 	W.player.level = 5
+	if state.name then -- another character on the same account
+		local name = state.name
+		local unitName = W.Fakes.UnitName
+		W.Fakes.UnitName = function(unit) if unit == "player" then return name, nil end return unitName(unit) end
+	end
 	W.equipped, W.bags = state.equipped, state.bags
 	W.LoadToc("OutfitterForever.toc")
 	if state.settings then
 		rawset(env, "gOutfitter_Settings", state.settings)
+	end
+	if state.global then
 		rawset(env, "gOutfitter_GlobalSettings", state.global)
 	end
 	W.Fire("ADDON_LOADED", W.addonName)
@@ -89,6 +96,7 @@ local function Session(state, play)
 		W.Tick(10)
 	end
 	play(S)
+	W.Fire("PLAYER_LOGOUT")
 	for _, message in ipairs(W.errors) do Check(false, "Lua error: " .. message:sub(1, 300)) end
 	for _, message in ipairs(W.printed or {}) do
 		Check(not tostring(message):find("Can't find item", 1, true), "Outfitter looked for an item it shouldn't want: " .. tostring(message))
@@ -299,5 +307,57 @@ state = Session(state, function(S)
 	local size = row and select(2, S.env[row:GetName() .. "OutfitName"]:GetFont())
 	Check(size == 12, "with normal text")
 end)
+
+-- Copy from another character (since 1.9.0): each character's outfits are saved
+-- account-wide, and another character copies the ones picked
+state = Session(state, function(S)
+	local saved = S.env.gOutfitter_GlobalSettings.Characters
+	local mine = saved and saved["Tester-Forever"]
+	Check(mine and mine.Name == "Tester" and mine.ClassFile == "WARRIOR", "this character's outfits are saved account-wide")
+	local fishing = S.O:NewEmptyOutfit("Fishing")
+	fishing:AddItem("HeadSlot", S.O:GetItemInfoFromLink(S.W.ItemLink(1001)))
+	fishing:SetIcon(134000)
+	S.O:AddOutfit(fishing)
+	S.O:SetOutfitBindingIndex(fishing, 2)
+end)
+Check(state.global.Characters["Tester-Forever"] ~= nil, "they're saved at logout")
+local alt = NewCharacter()
+alt.settings, alt.global, alt.name = nil, state.global, "Alter"
+alt = Session(alt, function(S)
+	OpenWindow(S)
+	local button = S.O.CopyFromButton
+	Check(button and button:IsVisible(), "a Copy from... button beside New Outfit")
+	local others = S.O:GetOtherCharacters()
+	Check(#others == 1 and others[1].Key == "Tester-Forever", "the other character is listed, not this one (" .. #others .. ")")
+	if not button then return end
+	button:Click()
+	S.W.Tick(0.5)
+	local dialog = S.env.OutfitterForeverCopyDialog
+	Check(dialog and dialog:IsShown() and dialog.Key == "Tester-Forever", "it opens on the other character")
+	if not (dialog and dialog.Key) then return end
+	local fishingRow, normalRow
+	for _, row in ipairs(dialog.Rows) do
+		if row:IsShown() and row.outfit and row.outfit.Name == "Fishing" then fishingRow = row end
+		if row:IsShown() and row.outfit and row.outfit.Name ~= "Fishing" and not normalRow then normalRow = row end
+	end
+	Check(fishingRow and fishingRow.switch:IsOn(), "with its outfits, all picked")
+	Check(normalRow ~= nil, "including its other outfits")
+	-- Untick all but Fishing
+	for _, row in ipairs(dialog.Rows) do
+		if row:IsShown() and row.outfit and row ~= fishingRow then row:Click() end
+	end
+	Check(dialog.Count == 1 and dialog.CopyButton:GetText() == string.format(S.O.cCopyFromCopy, 1), "the Copy button counts the picks")
+	-- This character has a Fishing outfit too: the copy is "Fishing 2"
+	S.O:AddOutfit(S.O:NewEmptyOutfit("Fishing"))
+	dialog.CopyButton:Click()
+	S.W.Tick(0.5)
+	Check(not dialog:IsShown(), "Copy closes the dialog")
+	local copy = S.O:FindOutfitByName("Fishing 2")
+	Check(copy and copy:GetItem("HeadSlot") and copy:GetItem("HeadSlot").Code == 1001, "the copy keeps its gear, under a new name")
+	Check(copy and copy:GetIcon() == 134000, "and its icon")
+	Check(copy and copy.BindingIndex == nil, "but not the other character's key binding")
+	Check(S.O:FindOutfitByName("Fishing") ~= copy, "this character's own Fishing outfit is left as it was")
+end)
+Check(alt.global.Characters["Alter-Forever"] and alt.global.Characters["Tester-Forever"], "both characters are saved")
 
 return failures

@@ -478,4 +478,10 @@ if GetLocale() == "ruRU" then
 	Outfitter.cSidebarTabOffDescription = "Включите, чтобы открывать Outfitter Forever вкладкой менеджера экипировки вверху окна персонажа вместо маленькой кнопки Outfitter"
 	Outfitter.cSidebarTabTip = "Нажмите, чтобы открыть или закрыть комплекты."
 	Outfitter.cCombatWait = "%s: экипировка сменится, когда закончится бой."
+	Outfitter.cOutfitBarShowKeysLabel = "Показывать клавиши"
+	Outfitter.cCopyFrom = "Копировать из..."
+	Outfitter.cCopyFromTitle = "Копировать с другого персонажа"
+	Outfitter.cCopyFromCopy = "Копировать (%d)"
+	Outfitter.cCopyFromNone = "Другие персонажи появятся здесь, когда войдут в игру с этой версией."
+	Outfitter.cCopyFromSaved = "Сохранено, когда %s последний раз был в игре (%s)."
 end

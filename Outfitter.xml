@@ -1253,6 +1253,19 @@
 							<OnLoad>self.SlotName = "RangedSlot"</OnLoad>
 						</Scripts>
 					</CheckButton>
+					<!-- Forever: the ammo slot -->
+					<CheckButton name="OutfitterEnableAmmoSlot" inherits="OutfitterEnableTemplate">
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="CharacterAmmoSlot">
+								<Offset>
+									<AbsDimension x="-4" y="4"/>
+								</Offset>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<OnLoad>self.SlotName = "AmmoSlot"</OnLoad>
+						</Scripts>
+					</CheckButton>
 				</Frames>
 				<Scripts>
 					<OnShow>

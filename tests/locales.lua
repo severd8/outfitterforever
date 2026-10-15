@@ -11,7 +11,7 @@ local function Check(condition, message)
 end
 
 -- The strings the port added (or, for the tab, changed from upstream's "Outfitter")
-local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDescription", "cLookTooltips",
+local KEYS = { "cOutfitBarShowKeysLabel", "cCopyFrom", "cCopyFromTitle", "cCopyFromCopy", "cCopyFromNone", "cCopyFromSaved", "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDescription", "cLookTooltips",
 	"cLookQuickAccess", "cOpenCharacterWindow", "cMoveUp", "cMoveDown", "cSortByName", "cSidebarTab",
 	"cSidebarTabOnDescription", "cSidebarTabOffDescription", "cSidebarTabTip", "cCombatWait", "cLookAutomation",
 	"cLookHotkeyMessagesDescription", "cLookTooltipInfoDescription", "cLookItemComparisons", "cLookItemComparisonsDescription",

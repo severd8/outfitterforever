@@ -231,6 +231,42 @@ O:RemoveOutfit(wand)
 W.Tick(3)
 Check(W.equipped[18] == 1010, "bow back in the ranged slot (has " .. tostring(W.equipped[18]) .. ")")
 
+Step("an outfit can change the ammo, which stays in the bags")
+Check(O.cSlotIDs.AmmoSlot == 0 and O.cInvTypeToSlotName.INVTYPE_AMMO.SlotName == "AmmoSlot", "the ammo slot is managed")
+Check(env.OutfitterEnableAmmoSlot and env.OutfitterEnableAmmoSlot.SlotName == "AmmoSlot", "the ammo slot has an outfit checkbox")
+do
+	local arrows, shot = W.FreeBagSlot()
+	W.bags[arrows.bag] = W.bags[arrows.bag] or {}
+	W.bags[arrows.bag][arrows.bagSlot] = { id = 1017, count = 200 }
+	shot = W.FreeBagSlot()
+	W.bags[shot.bag] = W.bags[shot.bag] or {}
+	W.bags[shot.bag][shot.bagSlot] = { id = 1018, count = 200 }
+	W.equipped[0] = 1017
+	W.Fire("BAG_UPDATE", 0)
+	W.Fire("UNIT_INVENTORY_CHANGED", "player")
+	W.Tick(3)
+	local gun = MakeOutfit("Bullets", { AmmoSlot = 1018 })
+	O:WearOutfit(gun)
+	W.Tick(3)
+	Check(W.equipped[0] == 1018, "bullets in the ammo slot (has " .. tostring(W.equipped[0]) .. ")")
+	Check(W.bags[shot.bag][shot.bagSlot] and W.bags[shot.bag][shot.bagSlot].id == 1018, "the bullets stay in the bags")
+	Check(W.bags[arrows.bag][arrows.bagSlot] and W.bags[arrows.bag][arrows.bagSlot].id == 1017, "the arrows stay in the bags")
+	O:RemoveOutfit(gun)
+	W.Tick(3)
+	Check(W.equipped[0] == 1017, "arrows back in the ammo slot (has " .. tostring(W.equipped[0]) .. ")")
+	local naked = MakeOutfit("No ammo", { AmmoSlot = false })
+	naked:AddItem("AmmoSlot", nil)
+	O:WearOutfit(naked)
+	W.Tick(3)
+	Check(W.equipped[0] == 1017, "an outfit with an empty ammo slot leaves the ammo alone")
+	O:RemoveOutfit(naked)
+	W.Tick(3)
+	Check(#W.uiErrors == 0 or not tostring(W.uiErrors[#W.uiErrors]):find("Ammo"), "no ammo errors (" .. tostring(W.uiErrors[#W.uiErrors]) .. ")")
+	O:DeleteOutfit(gun)
+	O:DeleteOutfit(naked)
+	W.Tick(1)
+end
+
 Step("wear the saved outfit")
 O:WearOutfit(fishing)
 W.Tick(3)
@@ -988,6 +1024,69 @@ do
 	env.OutfitterChooseIconDialogCancelButton:Click()
 	W.Tick(0.2)
 	Check(not picker:IsShown(), "Cancel closes the icon picker")
+
+	-- The buttons show what each outfit will do (since 1.9.0)
+	local function ButtonFor(outfit)
+		for _, eachBar in ipairs(O.OutfitBar.Bars or {}) do
+			for _, each in ipairs(eachBar.Buttons or {}) do
+				if each.Outfit == outfit and each:IsShown() then return each end
+			end
+		end
+	end
+	O:SetOutfitBindingIndex(fishing, 1)
+	W.bindings.OUTFITTER_OUTFIT1 = "SHIFT-3"
+	W.Fire("UPDATE_BINDINGS")
+	W.Tick(0.5)
+	local fishingButton = ButtonFor(fishing)
+	Check(fishingButton and fishingButton.States, "an outfit bar button for the fishing outfit, with its states")
+	if fishingButton and fishingButton.States then
+		local states = fishingButton.States
+		Check(states.Key:IsShown() and states.Key:GetText() == "S-3", "its key binding shows, short (" .. tostring(states.Key:GetText()) .. ")")
+		Check(not states.Wait:IsShown(), "it isn't waiting for combat")
+		Check(not states.MissingEdges[1]:IsShown(), "nor missing gear")
+		O.OutfitBar:DragBar_OnClick("RightButton")
+		W.Tick(0.2)
+		Check(settings.ShowKeysCheckbutton and settings.ShowKeysCheckbutton:GetChecked(), "the bar's settings have Show key bindings, on")
+		local _, under = settings.ShowKeysCheckbutton:GetPoint(1)
+		Check(under == settings.HideBackgroundCheckbutton, "on a row of its own, under Hide background")
+		settings.ShowKeysCheckbutton:Click()
+		W.Tick(0.5)
+		Check(O.Settings.OutfitBar.HideKeys and not states.Key:IsShown(), "turning it off hides the key")
+		settings.ShowKeysCheckbutton:Click()
+		W.Tick(0.5)
+		Check(not O.Settings.OutfitBar.HideKeys and states.Key:IsShown(), "and on shows it again")
+		O.OutfitBar:DragBar_OnClick("RightButton")
+		W.Tick(0.2)
+
+		-- Waiting for combat: a pulsing edge and the pocket watch, until combat ends
+		W.combat = true
+		W.Fire("PLAYER_REGEN_DISABLED")
+		O:WearOutfit(fishing)
+		W.Tick(1)
+		Check(states.Wait:IsShown() and states.Pulse:IsPlaying(), "an outfit whose armor waits for combat pulses")
+		Check(states.Watch:GetTexture() == "Interface\\Icons\\INV_Misc_PocketWatch_01", "with the pocket watch")
+		W.combat = false
+		W.Fire("PLAYER_REGEN_ENABLED")
+		W.Tick(3)
+		Check(not states.Wait:IsShown() and not states.Pulse:IsPlaying(), "and stops once combat ends")
+		O:WearOutfit(battle)
+		W.Tick(3)
+	end
+	O:SetOutfitBindingIndex(fishing, nil)
+	W.bindings.OUTFITTER_OUTFIT1 = nil
+
+	-- Missing gear: a red edge and a red wash on the icon
+	local lost = MakeOutfit("Lost", { HeadSlot = 1019 })
+	O.OutfitBar:ChangedOutfits()
+	W.Tick(0.5)
+	local lostButton = ButtonFor(lost)
+	Check(lostButton and lostButton.States and lostButton.States.MissingEdges[1]:IsShown(), "an outfit with missing gear has a red edge")
+	if lostButton then
+		local r, g = unpack(lostButton.Widgets.Icon.__vertexColor or {})
+		Check(r == 1 and g and g < 0.5, "and a red icon")
+	end
+	O:DeleteOutfit(lost)
+	W.Tick(0.5)
 	O.OutfitBar:Hide()
 	W.Tick(0.2)
 

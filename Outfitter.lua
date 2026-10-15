@@ -972,6 +972,11 @@ if IsForever then
 	-- Forever has a ranged slot (bows, guns, wands, thrown, relics)
 	table.insert(Outfitter.cSlotNames, 11, "RangedSlot")
 	Outfitter.cSlotDisplayNames.RangedSlot = RANGEDSLOT
+	-- and an ammo slot (arrows, bullets), last: it has no durability and needs the
+	-- ranged weapon on first. It points at a stack in the bags rather than holding it
+	table.insert(Outfitter.cSlotNames, "AmmoSlot")
+	Outfitter.cSlotDisplayNames.AmmoSlot = AMMOSLOT
+	Outfitter.cInvTypeToSlotName.INVTYPE_AMMO = {SlotName = "AmmoSlot"}
 elseif not IsMainline then
 	if not IsClassicPandaria then
 		table.insert(Outfitter.cSlotNames, 11, "RangedSlot")
@@ -1464,10 +1469,13 @@ function Outfitter:RegenEnabled(pEvent)
 	self:BeginEquipmentUpdate()
 	self.InCombat = false
 	self.CombatWaitNoted = nil -- Forever
+	local vWaited = next(self.CombatWaitOutfits) -- Forever: the outfits that waited are on now
+	self.CombatWaitOutfits = {}
 	self:EndEquipmentUpdate()
 
 	if self.OutfitBar then
 		self.OutfitBar:AdjustAlpha()
+		if vWaited then self.OutfitBar:UpdateBars() end -- Forever
 	end
 
 	self.OutfitStack:UpdateOutfitDisplay()
@@ -3296,6 +3304,129 @@ end
 -- Forever: the slots whose items can change in combat
 Outfitter.cCombatWeaponSlots = { MainHandSlot = true, SecondaryHandSlot = true, RangedSlot = true }
 
+-- Forever: outfits put on in combat whose armor waits for it to end. The outfit
+-- bar shows them (a pulsing edge and a pocket watch) until it does
+Outfitter.CombatWaitOutfits = {}
+function Outfitter:NoteCombatWaitOutfit(pOutfit)
+	if not pOutfit or not (self.InCombat or InCombatLockdown()) then return end
+	for vSlotName, vItem in pairs(pOutfit:GetItems() or {}) do
+		if not self.cCombatWeaponSlots[vSlotName] and vItem and vItem.Code and vItem.Code ~= 0 then
+			self.CombatWaitOutfits[pOutfit] = true
+			return
+		end
+	end
+end
+
+function Outfitter:OutfitWaitsForCombat(pOutfit)
+	return self.CombatWaitOutfits[pOutfit] and (self.InCombat or InCombatLockdown()) and self:WearingOutfit(pOutfit) and true or false
+end
+
+-- Forever (since 1.9.0): each character's outfits are kept account-wide, in
+-- gOutfitter_GlobalSettings.Characters["Name-Realm"], so another character can
+-- copy them (Copy from... beside New Outfit). Saved at login and at logout or
+-- reload; Equipment Manager outfits stay with the character.
+Outfitter.cCopySkipFields = { didEquip = true, didUnequip = true, LastScriptTime = true, ScriptLockupCount = true,
+	BindingIndex = true, Order = true, CategoryID = true, equipmentSetID = true, StoredInEM = true, UnusedEM = true }
+
+function Outfitter:CopyOutfitData(pValue, pDepth)
+	if type(pValue) ~= "table" then
+		return pValue
+	end
+	if (pDepth or 0) > 10 then return nil end
+	local vCopy = {}
+	for vKey, vValue in pairs(pValue) do
+		if type(vValue) ~= "function" and type(vValue) ~= "userdata"
+		and not ((pDepth or 0) == 0 and self.cCopySkipFields[vKey]) then
+			vCopy[vKey] = self:CopyOutfitData(vValue, (pDepth or 0) + 1)
+		end
+	end
+	return vCopy
+end
+
+function Outfitter:GetCharacterKey()
+	local vName = UnitName("player")
+	local vRealm = GetRealmName and GetRealmName() or ""
+	if not vName or self.IsSecret(vName) or vName == "" or vName == UNKNOWNOBJECT
+	or self.IsSecret(vRealm) then
+		return nil
+	end
+	return vName .. "-" .. tostring(vRealm), vName, vRealm
+end
+
+function Outfitter:SaveCharacterOutfits()
+	if type(gOutfitter_GlobalSettings) ~= "table" or not self.Settings or not self.Settings.Outfits then return end
+	local vKey, vName, vRealm = self:GetCharacterKey()
+	if not vKey then return end
+	local vOutfits, vCount = {}, 0
+	for vCategoryID, vCategoryOutfits in pairs(self.Settings.Outfits) do
+		local vList = {}
+		for _, vOutfit in ipairs(vCategoryOutfits) do
+			if not vOutfit.StoredInEM then
+				vList[#vList + 1] = self:CopyOutfitData(vOutfit)
+			end
+		end
+		if #vList > 0 then
+			vOutfits[vCategoryID] = vList
+			vCount = vCount + #vList
+		end
+	end
+	local vClassName, vClassFile = UnitClass("player")
+	gOutfitter_GlobalSettings.Characters = gOutfitter_GlobalSettings.Characters or {}
+	gOutfitter_GlobalSettings.Characters[vKey] = {
+		Name = vName, Realm = vRealm, Class = vClassName, ClassFile = vClassFile,
+		Saved = time(), Outfits = vOutfits, Count = vCount,
+	}
+end
+
+-- The other characters with saved outfits, A to Z: { Key =, Name =, Realm =, Class =, ... }
+function Outfitter:GetOtherCharacters()
+	local vCharacters = type(gOutfitter_GlobalSettings) == "table" and gOutfitter_GlobalSettings.Characters
+	local vMine = self:GetCharacterKey()
+	local vList = {}
+	for vKey, vInfo in pairs(vCharacters or {}) do
+		if vKey ~= vMine and type(vInfo) == "table" and type(vInfo.Outfits) == "table" then
+			vInfo.Key = vKey
+			vList[#vList + 1] = vInfo
+		end
+	end
+	table.sort(vList, function (a, b) return tostring(a.Key) < tostring(b.Key) end)
+	return vList
+end
+
+-- A name no outfit of this character has: "Fishing", else "Fishing 2", "Fishing 3", ...
+function Outfitter:UniqueOutfitName(pName)
+	pName = tostring(pName or "")
+	if not self:FindOutfitByName(pName) then return pName end
+	local vNumber = 2
+	while self:FindOutfitByName(pName .. " " .. vNumber) do vNumber = vNumber + 1 end
+	return pName .. " " .. vNumber
+end
+
+-- Copies the given outfits of another character (a list of their saved outfit tables)
+function Outfitter:CopyOutfits(pOutfits)
+	local vCopied = 0
+	for _, vSaved in ipairs(pOutfits or {}) do
+		local vOutfit = self:CopyOutfitData(vSaved)
+		vOutfit.Name = self:UniqueOutfitName(vOutfit.Name)
+		vOutfit.Items = vOutfit.Items or {}
+		setmetatable(vOutfit, self._OutfitMetaTable)
+		self:AddOutfit(vOutfit)
+		self:ActivateScript(vOutfit)
+		vCopied = vCopied + 1
+	end
+	if vCopied > 0 then
+		self:SaveCharacterOutfits()
+		self.DisplayIsDirty = true
+	end
+	return vCopied
+end
+
+do
+	local vSaver = CreateFrame("Frame")
+	vSaver:RegisterEvent("PLAYER_LOGOUT")
+	vSaver:SetScript("OnEvent", function () Outfitter:SaveCharacterOutfits() end)
+end
+
 -- In combat only weapons can change: the outfit's weapons go on now, and the
 -- rest when combat ends (UpdateEquippedItems tries again then)
 function Outfitter:EquipWeaponsNow(pCompiledOutfit, pInventoryCache)
@@ -3318,6 +3449,7 @@ end
 
 function Outfitter:WearOutfit(pOutfit, pLayerID, pCallerIsScript)
 	self:NoteCombatWait(pOutfit, pCallerIsScript) -- Forever
+	self:NoteCombatWaitOutfit(pOutfit) -- Forever
 	self:BeginEquipmentUpdate()
 
 	-- Update the equipment
@@ -5270,6 +5402,9 @@ function Outfitter:Initialize()
 			OutfitterEnableRangedSlot:Hide()
 		end
 	end
+	if not IsForever and _G["OutfitterEnableAmmoSlot"] then -- Forever: only Forever's ammo slot is managed
+		OutfitterEnableAmmoSlot:Hide()
+	end
 
 	-- Initialize the scripts
 	Outfitter:InitializeScripts()
@@ -5468,6 +5603,7 @@ function Outfitter:Initialize()
 	Outfitter:OutfitterButtonAdjust()
 	
 	self:DispatchOutfitEvent("OUTFITTER_INIT")
+	self:SaveCharacterOutfits() -- Forever: this character can be copied from now on
 
 	self.SchedulerLib:ScheduleUniqueRepeatingTask(0.5, self.UpdateSwimming, self, nil, "Outfitter:UpdateSwimming")
 

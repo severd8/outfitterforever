@@ -365,4 +365,10 @@ if GetLocale() == "koKR" then
 	Outfitter.cSidebarTabOffDescription = "캐릭터 창 위쪽의 장비 관리자 탭에서 Outfitter Forever를 열려면 켜세요. 작은 Outfitter 버튼 대신 쓰입니다"
 	Outfitter.cSidebarTabTip = "클릭하면 장비 세트 창을 열거나 닫습니다."
 	Outfitter.cCombatWait = "%s: 전투가 끝나면 장비가 바뀝니다."
+	Outfitter.cOutfitBarShowKeysLabel = "단축키 표시"
+	Outfitter.cCopyFrom = "다른 캐릭터에서 복사..."
+	Outfitter.cCopyFromTitle = "다른 캐릭터에서 복사"
+	Outfitter.cCopyFromCopy = "복사 (%d)"
+	Outfitter.cCopyFromNone = "다른 캐릭터는 이 버전으로 접속한 후 여기에 표시됩니다."
+	Outfitter.cCopyFromSaved = "%s의 마지막 플레이 때 저장됨 (%s)."
 end

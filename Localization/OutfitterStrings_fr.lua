@@ -461,4 +461,10 @@ if GetLocale() == "frFR" then
 	Outfitter.cSidebarTabOffDescription = "Activez cette option pour ouvrir Outfitter Forever depuis l'onglet du gestionnaire d'équipement en haut de votre fenêtre de personnage, à la place du petit bouton Outfitter"
 	Outfitter.cSidebarTabTip = "Cliquez pour ouvrir ou fermer vos tenues."
 	Outfitter.cCombatWait = "%s : votre équipement changera à la fin du combat."
+	Outfitter.cOutfitBarShowKeysLabel = "Afficher les raccourcis"
+	Outfitter.cCopyFrom = "Copier depuis..."
+	Outfitter.cCopyFromTitle = "Copier depuis un autre personnage"
+	Outfitter.cCopyFromCopy = "Copier (%d)"
+	Outfitter.cCopyFromNone = "Vos autres personnages apparaissent ici une fois connectés avec cette version."
+	Outfitter.cCopyFromSaved = "Enregistré lors de la dernière session de %s (%s)."
 end

@@ -1500,6 +1500,10 @@ function Outfitter.OutfitBar._SettingsDialog:Construct()
 	self.HideBackgroundCheckbutton = self:NewCheckbutton(Outfitter.cOutfitBarHideBackgroundLabel, self.HideBackgroundCheckbutton_OnClick)
 	self.HideBackgroundCheckbutton:SetPoint("TOPLEFT", self.LockPositionCheckbutton, "BOTTOMLEFT", 0, 7)
 
+	-- Forever: key bindings on the buttons (on unless turned off)
+	self.ShowKeysCheckbutton = self:NewCheckbutton(Outfitter.cOutfitBarShowKeysLabel, self.ShowKeysCheckbutton_OnClick)
+	self.ShowKeysCheckbutton:SetPoint("TOPLEFT", self.HideBackgroundCheckbutton, "BOTTOMLEFT", 0, 7)
+
 	self:Hide() -- Hidden by default
 end
 
@@ -1511,6 +1515,7 @@ function Outfitter.OutfitBar._SettingsDialog:ShowDialog()
 	self.VerticalCheckbutton:SetChecked(Outfitter.Settings.OutfitBar.Vertical)
 	self.LockPositionCheckbutton:SetChecked(Outfitter.Settings.OutfitBar.LockPosition)
 	self.HideBackgroundCheckbutton:SetChecked(Outfitter.Settings.OutfitBar.HideBackground)
+	self.ShowKeysCheckbutton:SetChecked(not Outfitter.Settings.OutfitBar.HideKeys) -- Forever
 	self.DisableUpdates = false
 
 	-- Put the dialog under the cursor
@@ -1591,6 +1596,15 @@ function Outfitter.OutfitBar._SettingsDialog:HideBackgroundCheckbutton_OnClick()
 	self.HideBackgroundCheckbutton:SetChecked(Outfitter.Settings.OutfitBar.HideBackground)
 
 	Outfitter.OutfitBar:ShowBackground(not Outfitter.Settings.OutfitBar.HideBackground)
+end
+
+-- Forever
+function Outfitter.OutfitBar._SettingsDialog:ShowKeysCheckbutton_OnClick()
+	if self.DisableUpdates then return end
+	Outfitter.Settings.OutfitBar.HideKeys = not Outfitter.Settings.OutfitBar.HideKeys or nil
+	self.ShowKeysCheckbutton:SetChecked(not Outfitter.Settings.OutfitBar.HideKeys)
+
+	Outfitter.OutfitBar:ChangedOutfits() -- Update the display
 end
 
 ----------------------------------------

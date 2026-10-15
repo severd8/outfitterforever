@@ -367,6 +367,9 @@ W.itemDB = {
 	[1014] = { "Lucky Charm", "INVTYPE_TRINKET", "Armor", "Miscellaneous", 4, 0, 3, 55 },
 	[1015] = { "Wand of Sparks", "INVTYPE_RANGEDRIGHT", "Weapon", "Wands", 2, 19, 2, 40 },
 	[1016] = { "Heavy Linen Bandage", "", "Consumable", "Bandage", 0, 7, 1, 1 },
+	[1017] = { "Jagged Arrow", "INVTYPE_AMMO", "Projectile", "Arrow", 6, 2, 1, 40 },
+	[1018] = { "Heavy Shot", "INVTYPE_AMMO", "Projectile", "Bullet", 6, 3, 1, 40 },
+	[1019] = { "Lost Hat", "INVTYPE_HEAD", "Armor", "Cloth", 4, 1, 2, 30 }, -- never in the bags
 }
 function W.ItemLink(id)
 	local item = W.itemDB[id]
@@ -443,7 +446,7 @@ local FITS = {
 	INVTYPE_HAND = { 10 }, INVTYPE_FINGER = { 11, 12 }, INVTYPE_TRINKET = { 13, 14 }, INVTYPE_CLOAK = { 15 },
 	INVTYPE_WEAPON = { 16, 17 }, INVTYPE_2HWEAPON = { 16 }, INVTYPE_WEAPONMAINHAND = { 16 }, INVTYPE_WEAPONOFFHAND = { 17 },
 	INVTYPE_SHIELD = { 17 }, INVTYPE_HOLDABLE = { 17 }, INVTYPE_RANGED = { 18 }, INVTYPE_RANGEDRIGHT = { 18 },
-	INVTYPE_THROWN = { 18 }, INVTYPE_RELIC = { 18 }, INVTYPE_TABARD = { 19 },
+	INVTYPE_THROWN = { 18 }, INVTYPE_RELIC = { 18 }, INVTYPE_TABARD = { 19 }, INVTYPE_AMMO = { 0 },
 }
 local function Fits(id, slot)
 	local info = W.itemDB[id]
@@ -508,6 +511,20 @@ local function Drop(target)
 	local from = W.cursor.from
 	local moving = Get(from)
 	local displaced = Get(target)
+	-- The ammo slot points at ammo in the bags, as on the classic game: the stack stays
+	-- where it is. Taking ammo off the slot is never needed by the addon, so it's an error here
+	if target.slot == 0 or from.slot == 0 then
+		if from.slot or not Fits(moving, 0) or target.slot ~= 0 then
+			UIError("Ammo can only be put in the ammo slot from the bags")
+			W.cursor = nil
+			return false
+		end
+		W.equipped[0] = moving
+		QueueEvent("PLAYER_EQUIPMENT_CHANGED", 0, false)
+		QueueEvent("UNIT_INVENTORY_CHANGED", "player")
+		W.cursor = nil
+		return true
+	end
 	if target.slot then
 		if not Fits(moving, target.slot) then UIError("That item doesn't go in that slot") return false end
 		if not CanEquipNow(target.slot) then return false end
@@ -800,7 +817,8 @@ function F.HideUIPanel(frame)
 	if frame == env.CharacterFrame then CharacterWindowTouched("closed") end
 	frame:Hide()
 end
-function F.GetBindingKey(command) return command == "TOGGLECHARACTER0" and "C" or nil end
+W.bindings = { TOGGLECHARACTER0 = "C" }
+function F.GetBindingKey(command) return W.bindings[command] end
 
 ----------------------------------------
 -- Blizzard frames Outfitter uses (Forever's character window)

@@ -1945,6 +1945,123 @@ local function StyleIconButton(button)
 	end
 end
 
+-- An outfit bar button's states, over the icon button's look (since 1.9.0):
+-- waiting for combat to end (a pulsing gold edge and the game's pocket watch, top
+-- left), missing gear (a red wash and edge), and its key binding (top right)
+local MISSING = { 0.88, 0.25, 0.16, 1 }
+local function TwoPixelEdges(parent, color, sub)
+	local edges = {}
+	for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+		local edge = parent:CreateTexture(nil, "OVERLAY", nil, sub)
+		Paint(edge, color)
+		if side == "TOP" or side == "BOTTOM" then
+			edge:SetPoint(side .. "LEFT")
+			edge:SetPoint(side .. "RIGHT")
+			edge:SetHeight(2)
+		else
+			edge:SetPoint("TOP" .. side)
+			edge:SetPoint("BOTTOM" .. side)
+			edge:SetWidth(2)
+		end
+		edges[#edges + 1] = edge
+	end
+	return edges
+end
+
+-- SHIFT-CTRL-F3 reads S-C-F3, as on action bars
+local KEY_WORDS = {
+	{ "SHIFT%-", "S-" }, { "CTRL%-", "C-" }, { "ALT%-", "A-" }, { "META%-", "M-" },
+	{ "MOUSEWHEELUP", "MwU" }, { "MOUSEWHEELDOWN", "MwD" }, { "BUTTON(%d+)", "M%1" },
+	{ "NUMPAD", "N" }, { "PAGEUP", "PU" }, { "PAGEDOWN", "PD" }, { "SPACE", "Sp" },
+	{ "INSERT", "Ins" }, { "DELETE", "Del" }, { "HOME", "Hm" }, { "END", "End" },
+}
+function Outfitter:ShortKeyText(key)
+	if type(key) ~= "string" or key == "" then return nil end
+	for _, words in ipairs(KEY_WORDS) do key = key:gsub(words[1], words[2]) end
+	return key
+end
+
+function Outfitter:OutfitBindingText(outfit)
+	local index = outfit and outfit.BindingIndex
+	if not index or not GetBindingKey then return nil end
+	return self:ShortKeyText(GetBindingKey("OUTFITTER_OUTFIT" .. index))
+end
+
+local function StyleOutfitButton(button)
+	if button.States then return end
+	local states = {}
+	button.States = states
+	-- the waiting edge and watch pulse on a frame of their own
+	local wait = CreateFrame("Frame", nil, button)
+	wait:SetAllPoints(button)
+	wait:SetFrameLevel(button:GetFrameLevel() + 2)
+	TwoPixelEdges(wait, C.gold, 7)
+	local watch = wait:CreateTexture(nil, "OVERLAY", nil, 7)
+	watch:SetTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
+	watch:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	watch:SetSize(14, 14)
+	watch:SetPoint("TOPLEFT", 2, -2)
+	local pulse = wait:CreateAnimationGroup()
+	pulse:SetLooping("BOUNCE")
+	local fade = pulse:CreateAnimation("Alpha")
+	fade:SetFromAlpha(1)
+	fade:SetToAlpha(0.25)
+	fade:SetDuration(0.6)
+	wait:Hide()
+	states.Wait, states.Watch, states.Pulse = wait, watch, pulse
+	-- missing gear: a red edge, under the worn one (which is drawn at sub-layer 7)
+	states.MissingEdges = TwoPixelEdges(button, MISSING, 5)
+	-- the key binding, on a frame above the edges
+	local keys = CreateFrame("Frame", nil, button)
+	keys:SetAllPoints(button)
+	keys:SetFrameLevel(button:GetFrameLevel() + 3)
+	local key = keys:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+	key:SetPoint("TOPRIGHT", -2, -2)
+	key:SetJustifyH("RIGHT")
+	key:SetTextColor(1, 1, 1)
+	key:SetShadowColor(0, 0, 0, 1)
+	key:SetShadowOffset(1, -1)
+	states.Key = key
+end
+
+local function PaintOutfitButton(button)
+	local states = button.States
+	if not states then return end
+	local outfit = button.Outfit
+	-- waiting for combat to end
+	local waiting = outfit and Outfitter:OutfitWaitsForCombat(outfit)
+	states.Wait:SetShown(waiting and true or false)
+	if waiting then
+		if not states.Pulse:IsPlaying() then states.Pulse:Play() end
+	elseif states.Pulse:IsPlaying() then
+		states.Pulse:Stop()
+	end
+	-- missing gear
+	local missing
+	if outfit and Outfitter.GetInventoryCache then
+		local cache = Outfitter:GetInventoryCache()
+		missing = cache and cache.GetMissingItems and cache:GetMissingItems(outfit)
+	end
+	for _, edge in ipairs(states.MissingEdges) do edge:SetShown(missing and true or false) end
+	local icon = button.Widgets and button.Widgets.Icon
+	if icon and missing then icon:SetVertexColor(1, 0.4, 0.35) end
+	-- key binding
+	local settings = Outfitter.Settings and Outfitter.Settings.OutfitBar
+	local text = not (settings and settings.HideKeys) and Outfitter:OutfitBindingText(outfit)
+	states.Key:SetText(text or "")
+	states.Key:SetShown(text and true or false)
+end
+
+hooksecurefunc(Outfitter.OutfitBar._Button, "Update", PaintOutfitButton)
+
+-- Bags (missing gear) and key bindings change without an outfit changing
+local barWatcher = CreateFrame("Frame")
+barWatcher:RegisterEvent("BAG_UPDATE_DELAYED")
+barWatcher:RegisterEvent("UPDATE_BINDINGS")
+barWatcher:SetScript("OnEvent", function()
+	if Outfitter.OutfitBar and Outfitter.Initialized then Outfitter.OutfitBar:UpdateBars() end
+end)
+
 -- The bar: upstream's stone background is always hidden; "Hide background"
 -- hides the flat panel instead
 local function StyleBar(bar)
@@ -1955,7 +2072,10 @@ local function StyleBar(bar)
 	local show = not bar.HideBackground
 	bar.Look.Fill:SetShown(show)
 	for _, edge in ipairs(bar.Look.Edges) do edge:SetShown(show) end
-	for _, button in ipairs(bar.Buttons or {}) do StyleIconButton(button) end
+	for _, button in ipairs(bar.Buttons or {}) do
+		StyleIconButton(button)
+		StyleOutfitButton(button)
+	end
 
 	-- Upstream's buttons are wider (47) than their spacing (42); the stone art hid
 	-- the overlap. Keep the bar's size and grid, and centre a smaller button in
@@ -2026,7 +2146,7 @@ local function StyleBarSettings(self)
 	-- Upstream stacked its checkboxes overlapping (they were 24 high, 7 apart);
 	-- the switches get a row each, under the sliders
 	local previous
-	for _, key in ipairs({ "VerticalCheckbutton", "LockPositionCheckbutton", "HideBackgroundCheckbutton" }) do
+	for _, key in ipairs({ "VerticalCheckbutton", "LockPositionCheckbutton", "HideBackgroundCheckbutton", "ShowKeysCheckbutton" }) do
 		local check = self[key]
 		if check then
 			MakeSwitch(check)
@@ -2043,7 +2163,7 @@ local function StyleBarSettings(self)
 			previous = check
 		end
 	end
-	self:SetHeight(166 + 3 * 16 + 2 * 8 + 14)
+	self:SetHeight(166 + 4 * 16 + 3 * 8 + 14)
 end
 
 hooksecurefunc(Outfitter.OutfitBar._SettingsDialog, "ShowDialog", function(self)
@@ -2165,3 +2285,216 @@ function Dropdown.StyleButton(button)
 	if button.check then Tint(button.check, C.gold) end
 	if button.expand then Tint(button.expand, C.orange) end
 end
+
+---------------------------------------------------------------------------
+-- Copy from another character (since 1.9.0): a button beside New Outfit opens a
+-- dialog with a menu of your other characters (saved account-wide, see
+-- Outfitter:SaveCharacterOutfits) and their outfits, each with a switch
+---------------------------------------------------------------------------
+local COPY_ROW, COPY_ROWS = 20, 9
+local copyDialog
+
+local function CharacterLabel(info)
+	local label = tostring(info.Name or info.Key)
+	if info.Class then label = label .. " · " .. tostring(info.Class) end
+	if info.Realm and info.Realm ~= "" then label = label .. " · " .. tostring(info.Realm) end
+	return label
+end
+
+local function BuildCopyDialog()
+	local d = CreateFrame("Frame", "OutfitterForeverCopyDialog", UIParent)
+	d:SetSize(320, 112 + COPY_ROWS * COPY_ROW)
+	d:SetPoint("CENTER")
+	d:SetFrameStrata("DIALOG")
+	d:SetToplevel(true)
+	d:EnableMouse(true)
+	d:SetMovable(true)
+	d:SetClampedToScreen(true)
+	d:Hide()
+	Fill(d, C.win)
+	Border(d, C.edge)
+	table.insert(UISpecialFrames, "OutfitterForeverCopyDialog")
+
+	local header = CreateFrame("Frame", nil, d)
+	header:SetPoint("TOPLEFT")
+	header:SetPoint("TOPRIGHT")
+	header:SetHeight(22)
+	HeaderStrip(header, Outfitter.cCopyFromTitle)
+	header:FitLogo(22)
+	header:EnableMouse(true)
+	header:RegisterForDrag("LeftButton")
+	header:SetScript("OnDragStart", function() d:StartMoving() end)
+	header:SetScript("OnDragStop", function() d:StopMovingOrSizing() end)
+
+	d.Picks = {}
+	local function Characters() return Outfitter:GetOtherCharacters() end
+	local function Current()
+		for _, info in ipairs(Characters()) do
+			if info.Key == d.Key then return info end
+		end
+	end
+
+	d.Character = MenuField(d, 288, function()
+		local choices = {}
+		for _, info in ipairs(Characters()) do choices[#choices + 1] = { info.Key, CharacterLabel(info) } end
+		return choices
+	end, function() return d.Key end, function(key) d:ShowCharacter(key) end)
+	d.Character:SetPoint("TOPLEFT", 16, -34)
+
+	local list = CreateFrame("Frame", nil, d)
+	list:SetPoint("TOPLEFT", 16, -62)
+	list:SetSize(288, COPY_ROWS * COPY_ROW)
+	Fill(list, C.field)
+	Border(list, C.fieldEdge)
+	local scroll = T.ScrollArea(list, COPY_ROWS * COPY_ROW - 6)
+	scroll:ClearAllPoints()
+	scroll:SetPoint("TOPLEFT", 3, -3)
+	scroll:SetPoint("BOTTOMRIGHT", -12, 3)
+	scroll.bar:ClearAllPoints()
+	scroll.bar:SetPoint("TOPRIGHT", -3, -3)
+	scroll.bar:SetPoint("BOTTOMRIGHT", -3, 3)
+	PaintParts(scroll.bar, C.offTrack)
+	Paint(scroll.bar:GetThumbTexture(), C.btnEdge)
+	d.Scroll, d.Rows = scroll, {}
+
+	d.Note = Text(d, "", "GameFontHighlightSmall", C.muted)
+	d.Note:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 0, -6)
+	d.Note:SetPoint("RIGHT", list, "RIGHT")
+	d.Note:SetJustifyH("LEFT")
+
+	d.CopyButton = FlatButton(d, format(Outfitter.cCopyFromCopy, 0), 110, 22)
+	d.CopyButton:SetPoint("BOTTOMRIGHT", -16, 10)
+	d.CancelButton = FlatButton(d, CANCEL, 90, 22)
+	d.CancelButton:SetPoint("RIGHT", d.CopyButton, "LEFT", -8, 0)
+	d.CancelButton:SetScript("OnClick", function() d:Hide() end)
+
+	local function Row(index)
+		local row = d.Rows[index]
+		if row then return row end
+		row = CreateFrame("Button", nil, scroll.child)
+		row:SetHeight(COPY_ROW)
+		row:SetPoint("TOPLEFT", 0, -(index - 1) * COPY_ROW)
+		row:SetPoint("RIGHT", scroll.child, "RIGHT")
+		row.switch = SwitchWidget(row)
+		row.switch:SetPoint("LEFT", 6, 0)
+		row.switch:EnableMouse(false)
+		row.text = Text(row, "", "GameFontHighlightSmall", C.title)
+		row.text:SetPoint("LEFT", 6, 0)
+		row.text:SetPoint("RIGHT", -4, 0)
+		row.text:SetJustifyH("LEFT")
+		row.text:SetWordWrap(false)
+		row:SetScript("OnClick", function(self)
+			if not self.outfit then return end
+			d.Picks[self.outfit] = not d.Picks[self.outfit] or nil
+			PlaySound(d.Picks[self.outfit] and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+			d:Refresh()
+		end)
+		d.Rows[index] = row
+		return row
+	end
+
+	-- The rows: a heading for each category, then its outfits with a switch each
+	function d:Refresh()
+		local info = Current()
+		local lines = {}
+		if info then
+			for _, categoryID in ipairs(Outfitter.cCategoryOrder) do
+				local outfits = info.Outfits[categoryID]
+				if type(outfits) == "table" and #outfits > 0 then
+					lines[#lines + 1] = { heading = categoryID == "Complete" and Outfitter.cCompleteOutfits or Outfitter.cAccessoryOutfits }
+					for _, outfit in ipairs(outfits) do lines[#lines + 1] = { outfit = outfit } end
+				end
+			end
+		end
+		local count = 0
+		for index, line in ipairs(lines) do
+			local row = Row(index)
+			row.outfit = line.outfit
+			row.switch:SetShown(line.outfit ~= nil)
+			row.text:ClearAllPoints()
+			row.text:SetPoint("RIGHT", -4, 0)
+			if line.outfit then
+				local on = self.Picks[line.outfit] and true or false
+				if on then count = count + 1 end
+				row.switch:SetOn(on)
+				row.text:SetPoint("LEFT", row.switch, "RIGHT", 8, 0)
+				row.text:SetText(tostring(line.outfit.Name or ""))
+				Ink(row.text, C.title)
+			else
+				row.text:SetPoint("LEFT", 6, 0)
+				row.text:SetText(line.heading)
+				Ink(row.text, C.gold)
+			end
+			row:Show()
+		end
+		for index = #lines + 1, #self.Rows do self.Rows[index]:Hide() end
+		scroll.child:SetWidth(270)
+		scroll:SetContent(270, #lines * COPY_ROW, true)
+		self.Character.Refresh()
+		if not info then
+			self.Note:SetText(Outfitter.cCopyFromNone)
+		else
+			self.Note:SetText(format(Outfitter.cCopyFromSaved, tostring(info.Name or info.Key),
+				info.Saved and date("%Y-%m-%d %H:%M", info.Saved) or "?"))
+		end
+		self.CopyButton:SetText(format(Outfitter.cCopyFromCopy, count))
+		self.CopyButton:SetEnabled(count > 0)
+		self.CopyButton:SetAlpha(count > 0 and 1 or 0.5)
+		self.Count = count
+		SizeTextIn(self)
+		DarkTextIn(self)
+	end
+
+	function d:ShowCharacter(key)
+		self.Key = key
+		self.Picks = {}
+		local info = Current()
+		for _, outfits in pairs(info and info.Outfits or {}) do
+			for _, outfit in ipairs(type(outfits) == "table" and outfits or {}) do self.Picks[outfit] = true end
+		end
+		self:Refresh()
+	end
+
+	d.CopyButton:SetScript("OnClick", function()
+		local info = Current()
+		if not info then return end
+		local picked = {}
+		for _, categoryID in ipairs(Outfitter.cCategoryOrder) do
+			for _, outfit in ipairs(type(info.Outfits[categoryID]) == "table" and info.Outfits[categoryID] or {}) do
+				if d.Picks[outfit] then picked[#picked + 1] = outfit end
+			end
+		end
+		Outfitter:CopyOutfits(picked)
+		d:Hide()
+		Outfitter:Update(true)
+	end)
+	return d
+end
+
+function Outfitter:OpenCopyFromDialog()
+	copyDialog = copyDialog or BuildCopyDialog()
+	local characters = self:GetOtherCharacters()
+	if not (copyDialog.Key and copyDialog.Character) or not characters[1] then
+		copyDialog:ShowCharacter(characters[1] and characters[1].Key)
+	else
+		local found
+		for _, info in ipairs(characters) do if info.Key == copyDialog.Key then found = true end end
+		copyDialog:ShowCharacter(found and copyDialog.Key or characters[1].Key)
+	end
+	DisplayDialog(copyDialog)
+	copyDialog:Show()
+	copyDialog:Raise()
+	FitEdges()
+	return copyDialog
+end
+
+hooksecurefunc(Outfitter, "ApplyLook", function()
+	if Outfitter.CopyFromButton or not OutfitterNewButton then return end
+	local button = FlatButton(OutfitterNewButton:GetParent(), Outfitter.cCopyFrom, 115, 21)
+	button:SetPoint("RIGHT", OutfitterNewButton, "LEFT", -6, 0)
+	button:SetScript("OnClick", function()
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+		Outfitter:OpenCopyFromDialog()
+	end)
+	Outfitter.CopyFromButton = button
+end)

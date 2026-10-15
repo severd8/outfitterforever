@@ -486,4 +486,10 @@ if GetLocale() == "zhCN" then
 	Outfitter.cSidebarTabOffDescription = "开启此项后，可从角色窗口顶部的装备管理标签打开 Outfitter Forever，代替 Outfitter 小按钮"
 	Outfitter.cSidebarTabTip = "点击打开或关闭你的套装。"
 	Outfitter.cCombatWait = "%s：你的装备会在战斗结束后更换。"
+	Outfitter.cOutfitBarShowKeysLabel = "显示按键绑定"
+	Outfitter.cCopyFrom = "从其他角色复制..."
+	Outfitter.cCopyFromTitle = "从其他角色复制"
+	Outfitter.cCopyFromCopy = "复制 (%d)"
+	Outfitter.cCopyFromNone = "你的其他角色使用此版本登录后会显示在这里。"
+	Outfitter.cCopyFromSaved = "保存于 %s 上次游戏时 (%s)。"
 end

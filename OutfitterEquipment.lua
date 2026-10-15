@@ -93,7 +93,7 @@ function Outfitter._EquipmentChanges:addUnequipChangesForOutfit(outfit, inventor
 	for inventorySlot, item in pairs(items) do
 		local inventoryItem, ignoredItem = inventoryCache:FindItemOrAlt(item, true)
 
-		if inventoryItem then
+		if inventoryItem and inventorySlot ~= "AmmoSlot" then -- Forever: ammo stays (see addSlot)
 			local change = Outfitter:New(Outfitter._EquipmentChange)
 			change.FromLocation = inventoryItem.Location
 			change.Item = inventoryItem
@@ -131,6 +131,11 @@ function Outfitter._EquipmentChanges:addSlot(outfit, inventoryCache, inventorySl
 
 	-- Empty the slot if it's supposed to be blank
 	if outfitItem.Code == 0 or outfitItem.Code == nil then
+		-- Forever: the ammo slot points at a stack in the bags; an outfit with no ammo
+		-- leaves whatever is there (there's nothing to take off)
+		if inventorySlot == "AmmoSlot" then
+			return
+		end
 		if not currentItemCode then
 			return -- Nothing to do if the slot is supposed to be empty and already is
 		end
@@ -480,7 +485,9 @@ function Outfitter._EquipmentChanges:execute(emptyBagSlots, expectedInventoryCac
 		local swapItems, emptyThenEquip
 
 		-- Determine if an in-place swap is possible (or even necessary)
-		if equipmentChange.ItemLocation then
+		if equipmentChange.ItemLocation and equipmentChange.SlotName == "AmmoSlot" then
+			swapItems = true -- Forever: ammo is pointed at, never moved, so no bag room is needed
+		elseif equipmentChange.ItemLocation then
 			swapItems = true
 
 			-- If the items are for different bag types, check to see if we need to
