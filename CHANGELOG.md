@@ -2,6 +2,7 @@
 
 ## 1.7.1
 
+- **Fixed:** a Lua error that stopped Outfitter Forever when another addon (like Remove Sell Price NG) blanked a line of an item's tooltip.
 - **Fixed:** the window's edge was missing beside the Outfits and Display tabs.
 - **Fixed:** edges (around buttons, cards and the window) could be thinner on some sides than others at a window size or UI scale other than 100%. Every edge is now exactly one screen pixel.
 

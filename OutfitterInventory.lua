@@ -480,14 +480,16 @@ function Outfitter._ItemInfo:ParseGemLinkForUniqueEquips(link)
 
 	for line in Outfitter.TooltipLib:TooltipLines(tooltip) do
 		--if line.leftText then print(line.leftText) end
+		-- Forever: a line can have no text (see ParseTooltipLine)
+		local text = line.leftText or ""
 		-- Check for Unique-Equipped
-		local type, count = line.leftText:match(Outfitter.cUniqueEquippedSearchPattern)
+		local type, count = text:match(Outfitter.cUniqueEquippedSearchPattern)
 		if type then
 			--print("Unique") --DAC
 			return type, tonumber(count)
 		end
 
-		local matchString = line.leftText:match("^Unique%-Equipped$")
+		local matchString = text:match("^Unique%-Equipped$")
 		if matchString then
 			--print("Found unique equipped gem", gemName) --DAC
 			return gemName, 1
@@ -498,6 +500,12 @@ function Outfitter._ItemInfo:ParseGemLinkForUniqueEquips(link)
 end
 
 function Outfitter._ItemInfo:ParseTooltipLine(text, color)
+	-- Forever: a line can have no text (another addon may blank one, like the
+	-- sell price), which was a Lua error here
+	if type(text) ~= "string" then
+		return
+	end
+
 	-- Check for Binds on Equip
 	if text == ITEM_BIND_ON_EQUIP then
 		self.BoE = true

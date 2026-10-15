@@ -1996,6 +1996,19 @@ do
 end
 NoErrors()
 
+----------------------------------------
+Step("a tooltip line with no text (another addon blanked it)")
+-- Reported with Remove Sell Price NG, which empties the sell price line:
+-- reading the item's tooltip was a Lua error that stopped Outfitter
+do
+	local info = setmetatable({}, { __index = O._ItemInfo })
+	local ok, message = pcall(info.ParseTooltipLine, info, nil, { r = 1, g = 1, b = 1 })
+	Check(ok, "a line with no text is skipped (" .. tostring(message) .. ")")
+	info:ParseTooltipLine(env.ITEM_BIND_ON_EQUIP, { r = 1, g = 1, b = 1 })
+	Check(info.BoE == true, "the other lines are still read")
+end
+NoErrors()
+
 for name in pairs(W.replacedBlizzardScripts) do
 	Fail("the addon set (instead of hooking) the script " .. name .. " on Blizzard's frame")
 end
