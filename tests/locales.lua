@@ -33,11 +33,14 @@ local KEYS = { "cOutfitterTabTitle", "cLookOutfitScripts", "cLookOutfitScriptsDe
 local function CardsBottom(W, O)
 	O:ShowPanel(2)
 	W.Tick(0.2)
+	-- the Quick access page, the longest
+	W.env.OutfitterFrame.Look.OptionsSwitch[3]:Click()
 	local cards = W.env.OutfitterFrame.Look.Cards
 	local last = cards[#cards]
 	local point = last.__points[1]
 	local y = point[#point] -- SetPoint("TOPLEFT", x, y)
 	local height = W.env.OutfitterFrame:GetHeight()
+	W.env.OutfitterFrame.Look.OptionsSwitch[1]:Click()
 	O:ShowPanel(1)
 	W.Tick(0.2)
 	return -y + last:GetHeight(), cards[3]:GetHeight(), height

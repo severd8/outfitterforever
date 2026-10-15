@@ -649,9 +649,17 @@ do
 	look.Tabs[2]:Click()
 	W.Tick(0.2)
 	Check(env.OutfitterOptionsFrame:IsShown() and look.Tabs[2].on and not look.Tabs[1].on, "the Options tab opens the options")
+	-- The cards are pages: one shows at a time, picked with the buttons on top
 	for index, card in ipairs(look.Cards or {}) do
-		Check(card:IsVisible(), "option card " .. index .. " shows")
+		look.OptionsSwitch[index]:Click()
+		local others = true
+		for other, otherCard in ipairs(look.Cards) do
+			if other ~= index and otherCard:IsVisible() then others = false end
+		end
+		Check(card:IsVisible() and others and look.OptionsSwitch[index].bg.__color[1] ~= look.OptionsSwitch[index % 3 + 1].bg.__color[1] or false,
+			"option page " .. index .. " shows on its own, its button lit")
 	end
+	look.OptionsSwitch[1]:Click()
 	Check(AnchoredTo(look.OptionsScripts, look.Cards[1]) and AnchoredTo(env.OutfitterShowHotkeyMessages, look.Cards[1])
 		and AnchoredTo(env.OutfitterTooltipInfo, look.Cards[2])
 		and AnchoredTo(env.OutfitterShowOutfitBar, look.Cards[3]), "each option sits in its card")
@@ -758,6 +766,7 @@ do
 	Check(look.Cards[1].title:GetText() ~= O.cOutfitterTabTitle:upper(), "not Outfits, the tab's name")
 
 	-- The outfit bar's settings, from a button beside its switch
+	look.OptionsSwitch[3]:Click() -- the Quick access page
 	local barSettings = look.BarSettings
 	Check(barSettings and barSettings:IsVisible() and AnchoredTo(barSettings, env.OutfitterShowOutfitBar),
 		"Options has a button for the outfit bar's settings, by its switch")
@@ -1769,6 +1778,7 @@ do
 	-- Options with bigger text: the window grows to fit the cards, and goes back after
 	look.Tabs[2]:Click()
 	W.Tick(0.2)
+	look.OptionsSwitch[3]:Click() -- the longest page
 	local last = look.Cards[#look.Cards]
 	local point = last.__points[1]
 	local bottom = -point[#point] + last:GetHeight()

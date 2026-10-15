@@ -920,12 +920,48 @@ local function MenuField(parent, width, choices, get, set)
 	return b
 end
 
--- Lays the option rows and cards out from the top: a hidden row takes no room
--- and a two-line label makes its row taller. Clicks reach as far as the label's text.
+-- A row of choices, one lit: the two pages, the color styles
+local function Choices(parent, keys, labels, get, set)
+	local row = {}
+	for index, key in ipairs(keys) do
+		local b = CreateFrame("Button", nil, parent)
+		b.bg = Fill(b, C.field)
+		b.edges = Border(b, C.line)
+		b.text = Text(b, labels[index], "GameFontHighlightSmall")
+		b.text:SetPoint("LEFT", 2, 0)
+		b.text:SetPoint("RIGHT", -2, 0)
+		b.text:SetJustifyH("CENTER")
+		b.text:SetWordWrap(false)
+		b.text.OFKeep = true
+		b.key = key
+		b:SetScript("OnClick", function()
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+			set(key)
+			row.Paint()
+		end)
+		row[index] = b
+	end
+	function row.Paint()
+		for _, b in ipairs(row) do
+			local on = get() == b.key
+			Paint(b.bg, on and C.tabOn or C.field)
+			for _, edge in ipairs(b.edges) do Paint(edge, on and C.btnEdge or C.line) end
+			local color = on and C.gold or (C.darkText and C.title or C.muted)
+			Ink(b.text, color)
+		end
+	end
+	return row
+end
+
+-- Lays the option rows out in each card: a hidden row takes no room and a
+-- two-line label makes its row taller. Clicks reach as far as the label's
+-- text. Since 1.8.0 the cards are pages (Automation, Tooltips, Quick access),
+-- one showing at a time under the page buttons, as on the Display tab.
 local function LayoutOptions(look)
 	local y = look.CardsTop
+	local bottom = y
 	local lineH = LINE_H * TextScale()
-	for _, card in ipairs(look.Cards) do
+	for index, card in ipairs(look.Cards) do
 		local rowY = -24
 		for _, row in ipairs(card.rows) do
 			if row.field then
@@ -953,12 +989,14 @@ local function LayoutOptions(look)
 		card:ClearAllPoints()
 		card:SetPoint("TOPLEFT", 8, y)
 		card:SetHeight(-rowY + 2)
-		y = y + rowY - 2 - 4
+		local shown = index == (look.OptionsPage or 1)
+		card:SetShown(shown)
+		if shown then bottom = y + rowY - 2 - 4 end
 	end
 	-- Bigger text can need more room than the window has: on the Options tab
 	-- the window grows to fit (and goes back to its size on the other tabs)
 	if OutfitterOptionsFrame:IsShown() and look.BaseHeight then
-		OutfitterFrame:SetHeight(math.max(look.BaseHeight, -y))
+		OutfitterFrame:SetHeight(math.max(look.BaseHeight, -bottom))
 	end
 end
 
@@ -979,7 +1017,9 @@ local function StyleOptions(look)
 			{ "OpenWithCharacter" },
 			{ "RightClick" } } },
 	}
-	look.CardsTop = -(24 + TAB_H + 6)
+	-- The page buttons, then the cards under them
+	local top = -(24 + TAB_H + 6)
+	look.CardsTop = top - 26
 	local width = (panel:GetWidth() or 256) - 16
 	look.Cards = {}
 	for index, info in ipairs(cards) do
@@ -1068,6 +1108,22 @@ local function StyleOptions(look)
 		look.BarSettings = settings
 	end
 
+	-- One page at a time: Automation, Tooltips, Quick access
+	look.OptionsPage = 1
+	local pages = Choices(panel, { 1, 2, 3 }, { Outfitter.cLookAutomation, Outfitter.cLookTooltips, Outfitter.cLookQuickAccess },
+		function() return look.OptionsPage end,
+		function(index)
+			look.OptionsPage = index
+			LayoutOptions(look)
+		end)
+	local third = (width - 8) / 3
+	for index, b in ipairs(pages) do
+		b:SetSize(third, 20)
+		b:SetPoint("TOPLEFT", panel, "TOPLEFT", 8 + (index - 1) * (third + 4), top)
+	end
+	pages.Paint()
+	look.OptionsSwitch = pages
+
 	panel:HookScript("OnShow", function() LayoutOptions(look) end)
 	LayoutOptions(look)
 end
@@ -1135,38 +1191,6 @@ local function ApplyTheme(look)
 	if Outfitter.Settings then Outfitter:Update(true) end
 end
 
--- A row of choices, one lit: the two pages, the color styles
-local function Choices(parent, keys, labels, get, set)
-	local row = {}
-	for index, key in ipairs(keys) do
-		local b = CreateFrame("Button", nil, parent)
-		b.bg = Fill(b, C.field)
-		b.edges = Border(b, C.line)
-		b.text = Text(b, labels[index], "GameFontHighlightSmall")
-		b.text:SetPoint("LEFT", 2, 0)
-		b.text:SetPoint("RIGHT", -2, 0)
-		b.text:SetJustifyH("CENTER")
-		b.text:SetWordWrap(false)
-		b.text.OFKeep = true
-		b.key = key
-		b:SetScript("OnClick", function()
-			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-			set(key)
-			row.Paint()
-		end)
-		row[index] = b
-	end
-	function row.Paint()
-		for _, b in ipairs(row) do
-			local on = get() == b.key
-			Paint(b.bg, on and C.tabOn or C.field)
-			for _, edge in ipairs(b.edges) do Paint(edge, on and C.btnEdge or C.line) end
-			local color = on and C.gold or (C.darkText and C.title or C.muted)
-			Ink(b.text, color)
-		end
-	end
-	return row
-end
 
 -- A small button that puts one setting back to its default
 local RESET_ICON = "Interface\\Buttons\\UI-RefreshButton"

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0
+
+- **Options tab in pages**, like the Display tab: buttons for Automation, Tooltips and Quick access at the top, and that page's settings in their own block below.
+
 ## 1.7.3
 
 - **Fixed:** after picking a font, some text (like the font field itself) could go blank. Text is drawn again once the font has loaded, and a font the game can't use leaves the text in its own font.
