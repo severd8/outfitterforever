@@ -327,6 +327,20 @@ alt = Session(alt, function(S)
 	OpenWindow(S)
 	local button = S.O.CopyFromButton
 	Check(button and button:IsVisible(), "a Copy from... button beside New Outfit")
+	if button then
+		-- An icon button with its name in the tooltip, clear of the scripts switch's label
+		-- (1.8.0's named button covered it)
+		Check(button:GetWidth() <= 24 and button.icon and button.icon:GetTexture() ~= nil, "Copy from... is an icon button")
+		button:GetScript("OnEnter")(button)
+		local lines = S.env.GameTooltip.__lines or {}
+		Check(lines[1] == S.O.cCopyFrom, "its tooltip names it (got " .. tostring(lines[1]) .. ")")
+		button:GetScript("OnLeave")(button)
+		local scripts = S.env.OutfitterFrame.Look.Scripts
+		local anchored = false
+		for _, point in ipairs(scripts.label.__points) do if point[2] == button then anchored = true end end
+		Check(anchored and 256 - 7 - S.env.OutfitterNewButton:GetWidth() - 6 - button:GetWidth() - 4 - 44 >= 70,
+			"the footer's buttons leave the scripts switch's label room (70 wide), and it ends at the icon")
+	end
 	local others = S.O:GetOtherCharacters()
 	Check(#others == 1 and others[1].Key == "Tester-Forever", "the other character is listed, not this one (" .. #others .. ")")
 	if not button then return end

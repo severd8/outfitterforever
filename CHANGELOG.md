@@ -3,6 +3,7 @@
 ## 1.8.1
 
 - **Fixed:** the Options tab in 1.8.0 had no page buttons, and the settings from all three pages were drawn on top of each other. Each page now shows only its own settings, under its button.
+- **Fixed:** the **Copy from...** button covered the Outfit scripts switch at the bottom of the Outfits tab. It's now a small button with a group icon, left of New Outfit (hover over it for its name).
 
 ## 1.8.0
 

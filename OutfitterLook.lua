@@ -2298,6 +2298,7 @@ end
 -- Outfitter:SaveCharacterOutfits) and their outfits, each with a switch
 ---------------------------------------------------------------------------
 local COPY_ROW, COPY_ROWS = 20, 9
+local COPY_ICON = "Interface\\Icons\\INV_Misc_GroupNeedMore"
 local copyDialog
 
 local function CharacterLabel(info)
@@ -2496,8 +2497,26 @@ end
 
 hooksecurefunc(Outfitter, "ApplyLook", function()
 	if Outfitter.CopyFromButton or not OutfitterNewButton then return end
-	local button = FlatButton(OutfitterNewButton:GetParent(), Outfitter.cCopyFrom, 115, 21)
+	-- An icon button (its name in the tooltip): the footer has no room for the
+	-- scripts switch and two named buttons, and in 1.8.0 "Copy from..." covered
+	-- the switch. New Outfit is a little narrower to make room.
+	OutfitterNewButton:SetWidth(100)
+	local button = FlatButton(OutfitterNewButton:GetParent(), "", 21, 21)
 	button:SetPoint("RIGHT", OutfitterNewButton, "LEFT", -6, 0)
+	local icon = button:CreateTexture(nil, "ARTWORK")
+	icon:SetPoint("TOPLEFT", 2, -2)
+	icon:SetPoint("BOTTOMRIGHT", -2, 2)
+	icon:SetTexture(COPY_ICON)
+	icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	button.icon = icon
+	T.Tooltip(button, Outfitter.cCopyFrom, Outfitter.cCopyFromTitle)
+	-- The switch's label stops short of the button (bigger text is cut, not drawn over it)
+	local scripts = OutfitterFrame.Look and OutfitterFrame.Look.Scripts
+	if scripts then
+		scripts.label:SetPoint("RIGHT", button, "LEFT", -4, 0)
+		scripts.label:SetJustifyH("LEFT")
+		scripts.label:SetWordWrap(false)
+	end
 	button:SetScript("OnClick", function()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		Outfitter:OpenCopyFromDialog()
