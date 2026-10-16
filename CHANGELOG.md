@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.1
+
+- **Fixed:** the Options tab in 1.8.0 had no page buttons, and the settings from all three pages were drawn on top of each other. Each page now shows only its own settings, under its button.
+
 ## 1.8.0
 
 - **Options tab in pages**, like the Display tab: buttons for Automation, Tooltips and Quick access at the top, and that page's settings in their own block below.

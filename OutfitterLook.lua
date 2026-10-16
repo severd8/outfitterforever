@@ -1020,7 +1020,10 @@ local function StyleOptions(look)
 	-- The page buttons, then the cards under them
 	local top = -(24 + TAB_H + 6)
 	look.CardsTop = top - 26
-	local width = (panel:GetWidth() or 256) - 16
+	-- The window's width, as on the Display tab: the panel is hidden here and
+	-- the game has no width for it yet (0), which left the page buttons and the
+	-- cards with no width
+	local width = (OutfitterFrame:GetWidth() or 256) - 16
 	look.Cards = {}
 	for index, info in ipairs(cards) do
 		local card = Card(panel, info[1], 8, 0, width, ROW_H)
@@ -1077,6 +1080,9 @@ local function StyleOptions(look)
 				row = { widget = box, label = label, field = field }
 			elseif check then
 				MakeSwitch(check)
+				-- Into its card, so it hides with its page (Outfitter puts the
+				-- boxes on the Options panel, where every page's would show)
+				check:SetParent(card)
 				check:SetFrameLevel(card:GetFrameLevel() + 2)
 				row = { widget = check, label = _G[checkName .. "Text"] }
 				row.label:SetText(text)

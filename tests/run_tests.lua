@@ -695,6 +695,26 @@ do
 		Check(card:IsVisible() and others and look.OptionsSwitch[index].bg.__color[1] ~= look.OptionsSwitch[index % 3 + 1].bg.__color[1] or false,
 			"option page " .. index .. " shows on its own, its button lit")
 	end
+	-- Each page shows only its own options: Outfitter's boxes sit on the Options
+	-- panel, so a hidden page's switches would draw over the page that shows
+	local pageSwitches = { { env.OutfitterShowHotkeyMessages }, { env.OutfitterTooltipInfo, env.OutfitterItemComparisons },
+		{ env.OutfitterShowMinimapButton, env.OutfitterShowOutfitBar, env.OutfitterUseSidebarTab } }
+	for index in ipairs(pageSwitches) do
+		look.OptionsSwitch[index]:Click()
+		local only = true
+		for page, switches in ipairs(pageSwitches) do
+			for _, switch in ipairs(switches) do
+				if switch:IsVisible() ~= (page == index) then only = false end
+			end
+		end
+		Check(only, "option page " .. index .. " shows its own switches and no other page's")
+	end
+	-- The page buttons and cards are as wide as the window (the hidden Options
+	-- panel has no width of its own in game)
+	local optionsWidth = env.OutfitterFrame:GetWidth() - 16
+	Check(math.abs(look.Cards[1]:GetWidth() - optionsWidth) < 1
+		and math.abs(look.OptionsSwitch[1]:GetWidth() - (optionsWidth - 8) / 3) < 1,
+		"the option pages and their buttons are the window's width (got " .. tostring(look.Cards[1]:GetWidth()) .. ")")
 	look.OptionsSwitch[1]:Click()
 	Check(AnchoredTo(look.OptionsScripts, look.Cards[1]) and AnchoredTo(env.OutfitterShowHotkeyMessages, look.Cards[1])
 		and AnchoredTo(env.OutfitterTooltipInfo, look.Cards[2])

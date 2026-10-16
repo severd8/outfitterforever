@@ -630,6 +630,10 @@ local function ApplyFrameNode(frame, node, fileName, onLoads, isTemplate)
 
 	local attr = node.attr
 	if attr.hidden == "true" then frame.__shown = false elseif attr.hidden == "false" then frame.__shown = true end
+	-- A hidden frame that only fills its parent hasn't been laid out yet: in game
+	-- it's 0 wide and high until it shows (the 1.8.0 option pages took their width
+	-- from the hidden Options panel and came out 0 wide)
+	if attr.setAllPoints == "true" and attr.hidden == "true" then frame.__width, frame.__height = 0, 0 end
 	if attr.id then frame.__id = tonumber(attr.id) end
 	if attr.text then
 		local text = env[attr.text]
