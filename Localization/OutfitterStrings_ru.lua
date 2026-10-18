@@ -468,7 +468,6 @@ if GetLocale() == "ruRU" then
 	Outfitter.cLookColorHeader = "Заголовок"
 	Outfitter.cLookOpenWithCharacter = "Открывать с окном персонажа"
 	Outfitter.cLookOpenWithCharacterDescription = "Outfitter Forever открывается каждый раз, когда вы открываете окно персонажа."
-	Outfitter.cCombatWaitWeapons = "%s: оружие сменено сейчас; остальная экипировка сменится, когда закончится бой."
 	Outfitter.cOpenCharacterWindow = "Откройте окно персонажа (%s), и Outfitter Forever откроется вместе с ним. В WoW: Forever аддон не может открыть это окно за вас."
 	Outfitter.cMoveUp = "Переместить вверх"
 	Outfitter.cMoveDown = "Переместить вниз"

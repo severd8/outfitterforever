@@ -451,7 +451,6 @@ if GetLocale() == "frFR" then
 	Outfitter.cLookColorHeader = "Barre de titre"
 	Outfitter.cLookOpenWithCharacter = "Ouvrir avec la fenêtre de personnage"
 	Outfitter.cLookOpenWithCharacterDescription = "Outfitter Forever s'ouvre chaque fois que vous ouvrez votre fenêtre de personnage."
-	Outfitter.cCombatWaitWeapons = "%s : armes changées maintenant ; le reste de votre équipement changera à la fin du combat."
 	Outfitter.cOpenCharacterWindow = "Ouvrez votre fenêtre de personnage (%s) et Outfitter Forever s'ouvrira avec elle. Sur WoW: Forever, un addon ne peut pas ouvrir cette fenêtre à votre place."
 	Outfitter.cMoveUp = "Monter"
 	Outfitter.cMoveDown = "Descendre"

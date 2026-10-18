@@ -1468,7 +1468,6 @@ end
 function Outfitter:RegenEnabled(pEvent)
 	self:BeginEquipmentUpdate()
 	self.InCombat = false
-	self.CombatWaitNoted = nil -- Forever
 	local vWaited = next(self.CombatWaitOutfits) -- Forever: the outfits that waited are on now
 	self.CombatWaitOutfits = {}
 	self:EndEquipmentUpdate()
@@ -1476,6 +1475,10 @@ function Outfitter:RegenEnabled(pEvent)
 	if self.OutfitBar then
 		self.OutfitBar:AdjustAlpha()
 		if vWaited then self.OutfitBar:UpdateBars() end -- Forever
+	end
+	if vWaited then -- Forever: the outfit list's pocket watches go
+		self.DisplayIsDirty = true
+		self:Update(false)
 	end
 
 	self.OutfitStack:UpdateOutfitDisplay()
@@ -3282,36 +3285,19 @@ function Outfitter:WearOutfitNow(pOutfit, pLayerID, pCallerIsScript)
 	self:EndEquipmentUpdate(nil, true)
 end
 
--- Forever: armor can't change in combat, so a change waits until it ends. If you
--- picked the outfit yourself, say so once per fight (scripts change outfits in
--- every fight, so they say nothing; nor does your own gear, which has no name)
-function Outfitter:NoteCombatWait(pOutfit, pCallerIsScript)
-	if pCallerIsScript or self.SkipCombatNote or self.CombatWaitNoted then return end
-	if not (self.InCombat or InCombatLockdown()) then return end
-	local vName = pOutfit and pOutfit:GetName()
-	if not vName or vName == "" then return end
-	-- Weapons go on at once (see EquipWeaponsNow): an outfit of only weapons
-	-- doesn't wait, one with armor too says the rest waits
-	local vWeapons, vArmor
-	for vSlotName, vItem in pairs(pOutfit:GetItems() or {}) do
-		if self.cCombatWeaponSlots[vSlotName] then vWeapons = true else vArmor = true end
-	end
-	if not vArmor then return end
-	self.CombatWaitNoted = true
-	self:NoteMessage(vWeapons and self.cCombatWaitWeapons or self.cCombatWait, vName)
-end
-
 -- Forever: the slots whose items can change in combat
 Outfitter.cCombatWeaponSlots = { MainHandSlot = true, SecondaryHandSlot = true, RangedSlot = true }
 
 -- Forever: outfits put on in combat whose armor waits for it to end. The outfit
--- bar shows them (a pulsing edge and a pocket watch) until it does
+-- bar, the outfit list and the broker's tooltip show them (a pocket watch) until
+-- it does; nothing is said in chat
 Outfitter.CombatWaitOutfits = {}
 function Outfitter:NoteCombatWaitOutfit(pOutfit)
 	if not pOutfit or not (self.InCombat or InCombatLockdown()) then return end
 	for vSlotName, vItem in pairs(pOutfit:GetItems() or {}) do
 		if not self.cCombatWeaponSlots[vSlotName] and vItem and vItem.Code and vItem.Code ~= 0 then
 			self.CombatWaitOutfits[pOutfit] = true
+			self.DisplayIsDirty = true
 			return
 		end
 	end
@@ -3428,7 +3414,15 @@ do
 end
 
 -- In combat only weapons can change: the outfit's weapons go on now, and the
--- rest when combat ends (UpdateEquippedItems tries again then)
+-- rest when combat ends (UpdateEquippedItems tries again then).
+-- PickupInventoryItem is protected in combat (1.8.1 called it to empty a slot
+-- first, which was blocked, so nothing changed), so only weapons in the bags
+-- are put on: pick one up from its bag slot and equip it, and the one it
+-- replaces drops into that bag slot. Emptying a slot or moving a weapon from
+-- one hand to the other waits for combat to end like armor. A two-hander puts
+-- the off-hand away itself (the game does that).
+Outfitter.cCombatWeaponOrder = { "MainHandSlot", "SecondaryHandSlot", "RangedSlot" }
+
 function Outfitter:EquipWeaponsNow(pCompiledOutfit, pInventoryCache)
 	local vWeapons = self:NewEmptyOutfit()
 	local vAny
@@ -3442,13 +3436,25 @@ function Outfitter:EquipWeaponsNow(pCompiledOutfit, pInventoryCache)
 	if not vAny then return end
 	local vChanges = self:New(self._EquipmentChanges)
 	vChanges:addChangesToEquipOutfit(vWeapons, pInventoryCache)
-	if vChanges then
-		vChanges:execute(self:GetEmptyBagSlotList(), self:New(self._InventoryCache))
+	local vBySlot = {}
+	for _, vChange in ipairs(vChanges) do
+		local vLocation = vChange.ItemLocation
+		if vChange.SlotName and vChange.SlotID and vLocation and vLocation.BagIndex and vLocation.BagSlotIndex then
+			vBySlot[vChange.SlotName] = vChange
+		end
+	end
+	for _, vSlotName in ipairs(self.cCombatWeaponOrder) do
+		local vChange = vBySlot[vSlotName]
+		if vChange then
+			ClearCursor()
+			C_Container.PickupContainerItem(vChange.ItemLocation.BagIndex, vChange.ItemLocation.BagSlotIndex)
+			EquipCursorItem(vChange.SlotID)
+			ClearCursor()
+		end
 	end
 end
 
 function Outfitter:WearOutfit(pOutfit, pLayerID, pCallerIsScript)
-	self:NoteCombatWait(pOutfit, pCallerIsScript) -- Forever
 	self:NoteCombatWaitOutfit(pOutfit) -- Forever
 	self:BeginEquipmentUpdate()
 
@@ -3521,7 +3527,6 @@ function Outfitter:RemoveOutfit(pOutfit, pCallerIsScript)
 	if not self.OutfitStack:RemoveOutfit(pOutfit) then
 		return
 	end
-	self:NoteCombatWait(pOutfit, pCallerIsScript) -- Forever
 
 	-- If it's a Complete outfit, move it to the bottom of the list of recent complete outfits
 
@@ -3570,9 +3575,7 @@ function Outfitter:RemoveOutfit(pOutfit, pCallerIsScript)
 			vOutfit = self:FindOutfitByName(vOutfitName)
 
 			if vOutfit and vOutfit.CategoryID == "Complete" then
-				self.SkipCombatNote = pCallerIsScript -- Forever: a script's change stays quiet
 				self:WearOutfit(vOutfit)
-				self.SkipCombatNote = nil
 				break
 			end
 
@@ -7046,6 +7049,12 @@ function Outfitter:ShowBrokerTooltip(pOwner)
 		vLine = self.cLookTipOpen
 	end
 	GameTooltip:AddLine(vLine, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+	-- Forever: an outfit whose armor waits for combat to end says so here (not in chat)
+	for vOutfit in pairs(self.CombatWaitOutfits) do
+		if self:OutfitWaitsForCombat(vOutfit) then
+			GameTooltip:AddLine(format(self.cCombatWait, vOutfit:GetName()), 1, 1, 1, true)
+		end
+	end
 	GameTooltip:Show()
 end
 

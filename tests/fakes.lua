@@ -564,7 +564,15 @@ local function Pickup(loc)
 	end
 end
 
-function F.PickupInventoryItem(slot) Pickup({ slot = slot }) end
+-- Protected in combat on Forever: an addon calling it gets ADDON_ACTION_BLOCKED
+-- and nothing happens (a player saw this in 1.8.1)
+function F.PickupInventoryItem(slot)
+	if W.combat then
+		table.insert(W.errors, "ADDON_ACTION_BLOCKED: tried to call the protected function 'PickupInventoryItem()'")
+		return
+	end
+	Pickup({ slot = slot })
+end
 function F.EquipCursorItem(slot) if W.cursor then Drop({ slot = slot }) end end
 function F.ClearCursor() W.cursor = nil end
 function F.ResetCursor() end

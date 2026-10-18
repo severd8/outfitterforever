@@ -276,8 +276,11 @@ local function Edge(texture, horizontal)
 	return texture
 end
 
+-- Layouts that sit inside a 1-pixel edge, laid out again with the edges
+local insetList = {}
 local function FitEdges()
 	for texture, horizontal in pairs(edgeList) do FitEdge(texture, horizontal) end
+	for _, layout in ipairs(insetList) do layout() end
 end
 
 -- An edge laid along its frame's top or bottom (both its points on one side)
@@ -587,6 +590,11 @@ hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
 	if not look then return end
 	DarkText(_G[self:GetName() .. "OutfitName"])
 	_G[self:GetName() .. "OutfitScriptIcon"]:Hide()
+	-- A pocket watch where the gear icon was while the outfit's armor waits for
+	-- combat to end, as on the outfit bar (nothing is said in chat)
+	local waiting = Outfitter:OutfitWaitsForCombat(outfit)
+	look.Wait.Outfit = outfit
+	look.Wait:SetShown(waiting)
 	local name = ScriptName(outfit)
 	if not name then
 		look.Script:Hide()
@@ -596,7 +604,7 @@ hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
 	local width = math.min(nameField:GetStringWidth() or 0, nameField:GetWidth() or 133)
 	look.Script:ClearAllPoints()
 	look.Script:SetPoint("LEFT", nameField, "LEFT", width + 6, 0)
-	look.Script:SetPoint("RIGHT", nameField, "RIGHT", 14, 0)
+	look.Script:SetPoint("RIGHT", nameField, "RIGHT", waiting and -4 or 14, 0)
 	look.Script:SetText(name)
 	local off = Outfitter.Settings.Options.DisableAutoSwitch or outfit.Disabled
 	local color = off and C.offTrack or C.grey
@@ -661,6 +669,24 @@ local function StyleRow(item)
 	script:Hide()
 	item.Look.Script = script
 
+	-- Waiting for combat to end: a pocket watch where the gear icon was, with a tooltip
+	local wait = CreateFrame("Frame", nil, _G[name .. "Outfit"])
+	wait:SetSize(16, 16)
+	wait:SetPoint("CENTER", _G[name .. "OutfitScriptIcon"], "CENTER")
+	local watch = wait:CreateTexture(nil, "OVERLAY")
+	watch:SetAllPoints(wait)
+	watch:SetTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
+	watch:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	wait:EnableMouse(true)
+	wait:SetScript("OnEnter", function(frame)
+		GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+		GameTooltip:AddLine(format(Outfitter.cCombatWait, frame.Outfit and frame.Outfit:GetName() or ""), 1, 1, 1, true)
+		GameTooltip:Show()
+	end)
+	wait:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	wait:Hide()
+	item.Look.Wait = wait
+
 	-- The menu button: a flat field with the gold arrow
 	local menu = _G[name .. "OutfitMenu"]
 	Box(menu, 16, C.field, C.fieldEdge)
@@ -688,12 +714,9 @@ local TAB_H = 24
 -- without a width the tabs share the frame's width.
 local function MakeTabs(frame, header, labels, choose, width)
 	local tabs = {}
-	-- inside the window's 1-pixel edge, which the tabs used to cover at both ends
-	width = width or ((frame:GetWidth() or 256) - 2) / #labels
+	local fixedWidth = width
 	for index, label in ipairs(labels) do
 		local tab = CreateFrame("Button", nil, frame)
-		tab:SetSize(width, TAB_H)
-		tab:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 1 + (index - 1) * width, 0)
 		tab.bg = Fill(tab, C.side)
 		tab.bar = tab:CreateTexture(nil, "ARTWORK")
 		tab.bar:SetPoint("BOTTOMLEFT")
@@ -721,11 +744,28 @@ local function MakeTabs(frame, header, labels, choose, width)
 	end
 	-- A line under the tabs
 	local line = frame:CreateTexture(nil, "BORDER")
-	line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -TAB_H)
-	line:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -TAB_H)
 	line:SetHeight(1)
 	Edge(line, true)
 	Paint(line, C.line)
+	-- The tabs and the line sit inside the window's edge, which is one screen
+	-- pixel (see Edge): an inset of 1 unit is more than a pixel at some window
+	-- and UI sizes, which left a dark gap between the edge and the tabs (1.7.1),
+	-- and none covered the edge (1.7.0). Laid out again when the size changes.
+	local function Layout()
+		local px = PixelSize(frame) or 1
+		local tabWidth = fixedWidth or ((frame:GetWidth() or 256) - 2 * px) / #labels
+		for index, tab in ipairs(tabs) do
+			tab:SetSize(tabWidth, TAB_H)
+			tab:ClearAllPoints()
+			tab:SetPoint("TOPLEFT", header, "BOTTOMLEFT", px + (index - 1) * tabWidth, 0)
+		end
+		line:ClearAllPoints()
+		line:SetPoint("TOPLEFT", header, "BOTTOMLEFT", px, -TAB_H)
+		line:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", -px, -TAB_H)
+		tabs.Inset = px
+	end
+	Layout()
+	insetList[#insetList + 1] = Layout
 
 	-- A new colour style: the lit tab painted again
 	OnRepaint(function()
@@ -797,8 +837,8 @@ local function MakeSwitch(check)
 	end
 end
 
--- The two "Outfit scripts" switches (footer and Options) do the same thing:
--- on means outfits with a script change by themselves
+-- The "Outfit scripts" switch in Options: on means outfits with a script change
+-- by themselves (since 1.8.2 it's only there; the Outfits tab's footer had one too)
 local function ScriptsSwitchClick(switch)
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	Outfitter:SetAutoSwitch(not switch:IsOn())
@@ -1630,7 +1670,8 @@ function Outfitter:ApplyLook()
 	Paint(rail, C.offTrack)
 	FlatScrollBar(OutfitterMainFrameScrollFrameScrollBar)
 
-	-- Footer: the outfit scripts switch, and New Outfit as a flat red button
+	-- Footer: New Outfit as a flat red button (and Copy from..., below). The
+	-- Outfit scripts switch is in Options > Automation only
 	OutfitterMainFrameButtonBarBackground:Hide()
 	local footer = OutfitterMainFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
 	footer:SetPoint("BOTTOMLEFT", 1, 1)
@@ -1644,13 +1685,6 @@ function Outfitter:ApplyLook()
 	Edge(footerLine, true)
 	Paint(footerLine, C.line)
 	Flatten(OutfitterNewButton, C.red, C.redHi)
-
-	local scripts = ScriptsSwitch(OutfitterMainFrame)
-	scripts:SetPoint("BOTTOMLEFT", 8, 10)
-	scripts.label = Text(scripts, self.cLookOutfitScripts, "GameFontHighlightSmall", C.muted)
-	scripts.label:SetPoint("LEFT", scripts, "RIGHT", 6, 0)
-	scripts:SetHitRectInsets(0, -80, -4, -4)
-	look.Scripts = scripts
 
 	-- Options panel
 	StyleOptions(look)
@@ -1666,8 +1700,7 @@ function Outfitter:ApplyLook()
 	-- Keep the switches and the selected row's bar in step with Outfitter's own updates
 	local function Refresh()
 		if not self.Settings then return end
-		scripts:SetOn(not self.Settings.Options.DisableAutoSwitch)
-		if look.OptionsScripts then look.OptionsScripts:SetOn(scripts:IsOn()) end
+		if look.OptionsScripts then look.OptionsScripts:SetOn(not self.Settings.Options.DisableAutoSwitch) end
 		if look.RightClick then look.RightClick.Refresh() end
 		if look.OpenWithCharacter then look.OpenWithCharacter:SetOn(self.Settings.Options.OpenWithCharacter) end
 		bar:SetShown(highlight:IsShown())
@@ -2510,13 +2543,6 @@ hooksecurefunc(Outfitter, "ApplyLook", function()
 	icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	button.icon = icon
 	T.Tooltip(button, Outfitter.cCopyFrom, Outfitter.cCopyFromTitle)
-	-- The switch's label stops short of the button (bigger text is cut, not drawn over it)
-	local scripts = OutfitterFrame.Look and OutfitterFrame.Look.Scripts
-	if scripts then
-		scripts.label:SetPoint("RIGHT", button, "LEFT", -4, 0)
-		scripts.label:SetJustifyH("LEFT")
-		scripts.label:SetWordWrap(false)
-	end
 	button:SetScript("OnClick", function()
 		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		Outfitter:OpenCopyFromDialog()

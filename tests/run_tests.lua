@@ -289,28 +289,62 @@ W.Tick(1)
 local function CombatNotes()
 	local count = 0
 	for _, line in ipairs(W.printed) do
-		if tostring(line):find((O.cCombatWait:gsub("^%%s", "")), 1, true)
-		or tostring(line):find((O.cCombatWaitWeapons:gsub("^%%s", "")), 1, true) then count = count + 1 end
+		if tostring(line):find((O.cCombatWait:gsub("^%%s", "")), 1, true) then count = count + 1 end
 	end
 	return count
 end
+local function BrokerTooltipHas(text)
+	O:ShowBrokerTooltip(env.UIParent)
+	for _, line in ipairs(env.GameTooltip.__lines or {}) do
+		if line == text then return true end
+	end
+	return false
+end
+local function ListWatch(outfit)
+	O.DisplayIsDirty = true
+	O:Update(false)
+	for index = 0, O.cMaxDisplayedItems - 1 do
+		local row = env["OutfitterItem" .. index]
+		if row and row:IsShown() and row.Look and row.Look.Wait.Outfit == outfit then
+			return row.Look.Wait:IsShown()
+		end
+	end
+end
 local notesBefore = CombatNotes()
+local printedBefore = #W.printed
 O:WearOutfit(fishing)
 W.Tick(1)
 Check(W.equipped[1] == 1001, "armor isn't changed in combat")
 Check(W.equipped[16] == 1011, "but weapons are: the fishing pole is in hand at once (main hand has " .. tostring(W.equipped[16]) .. ")")
-Check(CombatNotes() == notesBefore + 1, "a chat line says the outfit you picked goes on when combat ends")
-Check(tostring(W.printed[#W.printed]):find((O.cCombatWaitWeapons:gsub("^%%s", "")), 1, true) ~= nil,
-	"and that its weapons changed already")
-Check(tostring(W.printed[#W.printed]):find(fishing:GetName(), 1, true) ~= nil, "naming the outfit")
-O:RemoveOutfit(fishing)
-O:WearOutfit(fishing)
-W.Tick(1)
-Check(CombatNotes() == notesBefore + 1, "only once per fight")
+Check(W.equipped[17] == nil, "and the game put the shield away for the two-hander")
+Check(#W.printed == printedBefore, "nothing is said in chat (" .. tostring(W.printed[#W.printed]) .. ")")
+Check(O:OutfitWaitsForCombat(fishing), "the outfit waits for combat to end")
+Check(BrokerTooltipHas(string.format(O.cCombatWait, fishing:GetName())), "the broker's tooltip says the outfit's gear changes when combat ends")
+env.OutfitterFrame:Show()
+W.Tick(0.2)
+Check(ListWatch(fishing) == true, "the outfit list shows a pocket watch on the waiting outfit")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Tick(3)
 Check(W.equipped[1] == 1002, "the outfit goes on after combat (head has " .. tostring(W.equipped[1]) .. ")")
+Check(ListWatch(fishing) == false, "and the pocket watch goes")
+Check(not BrokerTooltipHas(string.format(O.cCombatWait, fishing:GetName())), "and so does the tooltip line")
+Check(CombatNotes() == notesBefore, "never a chat line")
+-- Back from a two-hander to sword and shield in combat: both come out of the bags
+-- (the game won't let an addon pick up what you're wearing in combat)
+do
+	W.combat = true
+	W.Fire("PLAYER_REGEN_DISABLED")
+	O:WearOutfit(battle)
+	W.Tick(1)
+	Check(W.equipped[16] == 1008 and W.equipped[17] == 1009,
+		"sword and shield go on in combat (hands have " .. tostring(W.equipped[16]) .. ", " .. tostring(W.equipped[17]) .. ")")
+	Check(W.equipped[1] == 1002, "the hat stays on until combat ends")
+	W.combat = false
+	W.Fire("PLAYER_REGEN_ENABLED")
+	W.Tick(3)
+	Check(W.equipped[1] == 1001, "then the helm goes on")
+end
 -- An outfit of only weapons doesn't wait, so nothing is said
 do
 	local blade = MakeOutfit("Blade", { MainHandSlot = 1008 })
@@ -335,7 +369,7 @@ W.Fire("PLAYER_REGEN_DISABLED")
 O:RemoveOutfit(fishing, true)
 O:WearOutfit(fishing, nil, true)
 W.Tick(1)
-Check(CombatNotes() == notesBefore + 1, "an outfit a script changes in combat gets no chat line")
+Check(CombatNotes() == notesBefore, "an outfit a script changes in combat gets no chat line")
 W.combat = false
 W.Fire("PLAYER_REGEN_ENABLED")
 W.Tick(3)
@@ -745,30 +779,25 @@ do
 	local categoryName = categoryRow and env[categoryRow:GetName() .. "CategoryName"]:GetText()
 	Check(categoryName and categoryName == categoryName:upper(), "category names are in capitals (" .. tostring(categoryName) .. ")")
 
-	-- The scripts switch in the footer turns all outfit scripts off and on
-	Check(look.Scripts:IsOn() == not O.Settings.Options.DisableAutoSwitch, "the scripts switch shows the setting")
-	look.Scripts:Click()
-	Check(O.Settings.Options.DisableAutoSwitch and not look.Scripts:IsOn(), "switching it off stops outfit scripts")
-	look.Scripts:Click()
-	Check(not O.Settings.Options.DisableAutoSwitch and look.Scripts:IsOn(), "switching it on runs them again")
+	-- The Outfit scripts switch is in Options only (1.8.1 had a second one in the footer)
+	Check(look.Scripts == nil, "the Outfits tab's footer has no Outfit scripts switch")
 
-	-- Options has the same switch, reading the same way (on = scripts run), not
-	-- Outfitter's "Disable all outfit scripts" box, which was on when they were off
+	-- Options has the switch, reading on = scripts run, not Outfitter's "Disable
+	-- all outfit scripts" box, which was on when they were off
 	O:ShowPanel(2)
 	W.Tick(0.2)
 	local optionsScripts = look.OptionsScripts
 	Check(optionsScripts and optionsScripts:IsVisible(), "Options has an Outfit scripts switch")
 	Check(not env.OutfitterAutoSwitch:IsVisible(), "instead of the Disable all outfit scripts box")
 	if optionsScripts then
-		Check(optionsScripts.label:GetText() == O.cLookOutfitScripts, "named like the footer's")
+		Check(optionsScripts.label:GetText() == O.cLookOutfitScripts, "named Outfit scripts")
 		Check(optionsScripts:IsOn() and not O.Settings.Options.DisableAutoSwitch, "on while scripts run")
 		optionsScripts:Click()
 		W.Tick(0.1)
 		Check(O.Settings.Options.DisableAutoSwitch and not optionsScripts:IsOn(), "switching it off stops outfit scripts")
-		Check(not look.Scripts:IsOn(), "and the footer's switch follows")
-		look.Scripts:Click()
+		optionsScripts:Click()
 		W.Tick(0.1)
-		Check(not O.Settings.Options.DisableAutoSwitch and optionsScripts:IsOn(), "the footer's switch turns it back on")
+		Check(not O.Settings.Options.DisableAutoSwitch and optionsScripts:IsOn(), "switching it on runs them again")
 	end
 
 	-- Every option has the same tooltip: its name and what it does, shown even with
@@ -2132,6 +2161,20 @@ do
 		if edge.__snap == false then unsnapped = unsnapped + 1 end
 	end
 	Check(unsnapped == 4, "the window's four edges are drawn the same on every side")
+	-- On a real screen the edge is one screen pixel, and the tabs and the line
+	-- under them sit exactly one pixel in: 1 unit is nearly 2 pixels on a 1440p
+	-- screen, which left a dark gap between the edge and the tabs (1.8.1)
+	rawset(env, "GetPhysicalScreenSize", function() return 2560, 1440 end)
+	W.Fire("UI_SCALE_CHANGED")
+	local pixel = 768 / 1440 / env.OutfitterFrame:GetEffectiveScale()
+	local _, _, _, insetX = look.Tabs[1]:GetPoint(1)
+	local _, _, _, endX = look.Tabs[#look.Tabs]:GetPoint(1)
+	Check(math.abs(insetX - pixel) < 0.0001, "the first tab starts one screen pixel in (at " .. tostring(insetX) .. ")")
+	Check(math.abs(endX + look.Tabs[#look.Tabs]:GetWidth() - (frameWidth - pixel)) < 0.0001,
+		"and the last ends one screen pixel in")
+	Check(math.abs(look.Edges[3]:GetWidth() - pixel) < 0.0001, "the edge beside them is that one pixel")
+	rawset(env, "GetPhysicalScreenSize", nil)
+	W.Fire("UI_SCALE_CHANGED")
 end
 NoErrors()
 

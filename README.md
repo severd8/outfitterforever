@@ -32,7 +32,7 @@ Outfitter Forever is fitted to Forever's game and its addon rules:
 - **Open the character window yourself.** An addon can't open it on Forever. "Open Outfitter Forever" works while it's open; otherwise you're asked to open it (`C`) and Outfitter Forever opens with it.
 - **Health and mana are hidden from addons.** The Low Health / Low Mana outfit never changes your gear, Dining stays on until the food or drink buff ends, and Spirit regen counts any spell cast followed by a mana change as mana spent.
 - **Buffs can't be read in combat.** Outfits that follow a buff (aspects, Ghost Wolf, Has Buff, ...) keep their state until combat ends.
-- **Armor can't be changed in combat** (the game's rule), but weapons can. An outfit's weapons go on at once, and the rest as soon as combat ends. If you picked it yourself, a line in chat says so.
+- **Armor can't be changed in combat** (the game's rule), but weapons can. An outfit's weapons go on at once (when they're in your bags), and the rest as soon as combat ends. Until then a pocket watch shows on the outfit in the outfit list and on the outfit bar, and the broker's tooltip says so.
 - **Escape** closes the character window along with an open Outfitter Forever dialog.
 
 ## Installation

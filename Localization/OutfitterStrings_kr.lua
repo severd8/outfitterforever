@@ -355,7 +355,6 @@ if GetLocale() == "koKR" then
 	Outfitter.cLookColorHeader = "제목 막대"
 	Outfitter.cLookOpenWithCharacter = "캐릭터 창과 함께 열기"
 	Outfitter.cLookOpenWithCharacterDescription = "캐릭터 창을 열 때마다 Outfitter Forever가 열립니다."
-	Outfitter.cCombatWaitWeapons = "%s: 무기는 지금 바꿨습니다. 나머지 장비는 전투가 끝나면 바뀝니다."
 	Outfitter.cOpenCharacterWindow = "캐릭터 창(%s)을 열면 Outfitter Forever도 함께 열립니다. WoW: Forever에서는 애드온이 이 창을 대신 열 수 없습니다."
 	Outfitter.cMoveUp = "위로 이동"
 	Outfitter.cMoveDown = "아래로 이동"

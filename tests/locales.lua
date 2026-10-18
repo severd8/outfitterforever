@@ -27,7 +27,7 @@ local KEYS = { "cOutfitBarShowKeysLabel", "cCopyFrom", "cCopyFromTitle", "cCopyF
 	"cLookColorHighlight", "cLookPageFonts", "cLookHeadingFont", "cLookHeadingFontDescription", "cLookOutline",
 	"cLookOutlineDescription", "cLookOutlineNone", "cLookOutlineThin", "cLookOutlineThick", "cLookOutlineMono",
 	"cLookOutlineMonoOutline", "cLookShadow", "cLookShadowDescription", "cLookResetOne", "cLookResetOneDescription",
-	"cLookColorHeader", "cLookOpenWithCharacter", "cLookOpenWithCharacterDescription", "cCombatWaitWeapons" }
+	"cLookColorHeader", "cLookOpenWithCharacter", "cLookOpenWithCharacterDescription" }
 
 -- The option cards: the bottom of the last one, measured from the window's top
 local function CardsBottom(W, O)
@@ -87,7 +87,6 @@ for _, locale in ipairs({ "deDE", "frFR", "zhCN", "zhTW", "koKR", "ruRU" }) do
 	local _, placeholders = tostring(O.cOpenCharacterWindow):gsub("%%s", "")
 	Check(placeholders == 1, locale .. ": cOpenCharacterWindow keeps its one %s for the key")
 	Check(tostring(O.cCombatWait):sub(1, 2) == "%s", locale .. ": cCombatWait starts with the outfit's name (%s)")
-	Check(tostring(O.cCombatWaitWeapons):sub(1, 2) == "%s", locale .. ": cCombatWaitWeapons starts with the outfit's name (%s)")
 	Check(O.cOutfitterTabTitle ~= "Outfitter", locale .. ": the first tab is named for outfits, not \"Outfitter\"")
 	-- Long option names wrap onto a second line (the French Equipment Manager tab
 	-- does) instead of being cut off, and the cards still fit in the window

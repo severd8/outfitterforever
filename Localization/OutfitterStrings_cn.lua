@@ -476,7 +476,6 @@ if GetLocale() == "zhCN" then
 	Outfitter.cLookColorHeader = "标题栏"
 	Outfitter.cLookOpenWithCharacter = "随角色窗口打开"
 	Outfitter.cLookOpenWithCharacterDescription = "每次打开角色窗口时都会打开 Outfitter Forever。"
-	Outfitter.cCombatWaitWeapons = "%s：武器已更换；其余装备会在战斗结束后更换。"
 	Outfitter.cOpenCharacterWindow = "打开你的角色窗口（%s），Outfitter Forever 会随之打开。在 WoW: Forever 中，插件无法替你打开该窗口。"
 	Outfitter.cMoveUp = "上移"
 	Outfitter.cMoveDown = "下移"

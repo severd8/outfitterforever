@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.2
+
+From a player's report on 1.8.1, thank you again!
+
+- **Fixed:** weapons didn't change in combat; the whole outfit waited for combat to end, and the game showed an "AddOn tried to call a protected function" error. Weapons in your bags now go on at once in combat. Moving a weapon from one hand to the other, or emptying a hand, still waits for the end of combat, like armor (the game doesn't let addons do that in combat).
+- **No more chat line in combat.** While an outfit's armor waits for combat to end, a pocket watch shows on it in the outfit list (hover over it for what it means), as on the outfit bar, and the minimap button's and broker's tooltip says so.
+- **Fixed:** a thin dark gap between the window's edge and the tabs at some screen and window sizes.
+- The **Outfit scripts** switch is now only in Options > Automation (it was also at the bottom of the Outfits tab).
+
 ## 1.8.1
 
 - **Fixed:** the Options tab in 1.8.0 had no page buttons, and the settings from all three pages were drawn on top of each other. Each page now shows only its own settings, under its button.
