@@ -1110,6 +1110,12 @@ function Outfitter:CreateSidebarTab()
 
 	OutfitterFrame:HookScript("OnShow", function () Outfitter:UpdateSidebarTab() end)
 	OutfitterFrame:HookScript("OnHide", function () Outfitter:UpdateSidebarTab() end)
+	-- The pet tab comes and goes with your pet; the tab beside the others follows it
+	local vPetTab = _G["PaperDollSidebarTab4"]
+	if vPetTab then
+		vPetTab:HookScript("OnShow", function () Outfitter:UpdateSidebarTab() end)
+		vPetTab:HookScript("OnHide", function () Outfitter:UpdateSidebarTab() end)
+	end
 
 	self.SidebarTab = vTab
 
@@ -1126,16 +1132,23 @@ function Outfitter:UpdateSidebarTab()
 	local vUseTab = not (self.Settings and self.Settings.Options and self.Settings.Options.DisableSidebarTab)
 
 	-- Over the Equipment Manager tab, or (option off, since 1.7.0) beside the
-	-- game's tabs, left of the first, with the Equipment Manager left alone
-	local vEMTab, vFirstTab = _G["PaperDollSidebarTab2"], _G["PaperDollSidebarTab1"]
-	if vTab.Beside ~= not vUseTab then
-		vTab.Beside = not vUseTab
+	-- game's tabs, with the Equipment Manager left alone. Since 1.9.0 it's at
+	-- the right end of the row, after the titles tab (or the pet tab, when you
+	-- have a pet), as Forever lays its tabs out side by side; 1.7.0 put it left
+	-- of the first, right beside the button that folds the stats pane away
+	local vEMTab, vTitlesTab, vPetTab = _G["PaperDollSidebarTab2"], _G["PaperDollSidebarTab3"], _G["PaperDollSidebarTab4"]
+	local vAnchor = vEMTab
+	if not vUseTab and vTitlesTab then
+		vAnchor = (vPetTab and vPetTab:IsShown()) and vPetTab or vTitlesTab
+	end
+	if vTab.AnchoredTo ~= vAnchor then
+		vTab.AnchoredTo = vAnchor
 		vTab:ClearAllPoints()
-		if vUseTab or not vFirstTab then
+		if vAnchor == vEMTab then
 			vTab:SetAllPoints(vEMTab)
 		else
 			vTab:SetSize(vEMTab:GetWidth() or 33, vEMTab:GetHeight() or 35)
-			vTab:SetPoint("RIGHT", vFirstTab, "LEFT", -4, 0)
+			vTab:SetPoint("LEFT", vAnchor, "RIGHT", 0, 0)
 		end
 	end
 	if not vTab:IsShown() then
@@ -2100,6 +2113,13 @@ function Outfitter:AddOutfitMenu(menu, outfit)
 	menu:AddToggle(self.cLookSwapSecond, function () return outfit.SwapSlot == 2 end, function ()
 		self:SetSwapOutfit(outfit, 2)
 	end)
+	-- Forever (since 1.9.0): the Equipment Manager switch was a box on the outfit's
+	-- row, where the outfit's icon is now
+	if IsForever then
+		menu:AddToggle(self.cStoreOnServer, function () return outfit.StoredInEM and true or false end, function ()
+			self:SetOutfitStoredInEM(outfit, not outfit.StoredInEM)
+		end)
+	end
 
 	-- Place in the list
 	local vPlace, vCount, vCategoryID = self:GetOutfitPlace(outfit)
@@ -2809,6 +2829,23 @@ function Outfitter:Item_CheckboxClicked(pItem)
 		Outfitter:RemoveOutfit(vOutfit)
 	end
 
+	self.DisplayIsDirty = true
+	self:Update(true)
+end
+
+-- Forever: the outfit menu's Equipment Manager toggle. As upstream's row box did:
+-- an outfit you aren't wearing is put on first (the game stores what you wear)
+function Outfitter:SetOutfitStoredInEM(pOutfit, pStore)
+	if pStore then
+		if pOutfit ~= self.SelectedOutfit then
+			self:WearOutfit(pOutfit)
+			self:SelectOutfit(pOutfit)
+		else
+			pOutfit:StoreOnServer()
+		end
+	else
+		pOutfit:StoreLocally()
+	end
 	self.DisplayIsDirty = true
 	self:Update(true)
 end

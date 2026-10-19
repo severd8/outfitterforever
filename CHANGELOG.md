@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.0
+
+From the same player's report, thank you!
+
+- **Outfit icons in the outfit list.** Each outfit shows its icon, as on the outfit bar and your broker. Click it to pick another. It takes the place of the faint "W" box, which kept outfits in the game's Equipment Manager: that's now **Store outfit on server** in the outfit's menu.
+- **The Outfitter Forever tab moves to the right end** of the character window's tabs (when "Use the Equipment Manager tab" is off), away from the button that folds the stats pane. With a pet out, it sits after the pet tab.
+
 ## 1.8.2
 
 From a player's report on 1.8.1, thank you again!

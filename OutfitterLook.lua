@@ -590,6 +590,12 @@ hooksecurefunc(Outfitter._ListItem, "SetToOutfit", function(self, outfit)
 	if not look then return end
 	DarkText(_G[self:GetName() .. "OutfitName"])
 	_G[self:GetName() .. "OutfitScriptIcon"]:Hide()
+	-- The outfit's icon where the Equipment Manager box was (that's in the
+	-- outfit's menu now); clicking it opens the icon picker
+	_G[self:GetName() .. "OutfitServerButton"]:Hide()
+	look.Icon.Outfit = outfit
+	look.Icon.icon:SetTexture(Outfitter.OutfitBar:GetOutfitTexture(outfit))
+	look.Icon:Show()
 	-- A pocket watch where the gear icon was while the outfit's armor waits for
 	-- combat to end, as on the outfit bar (nothing is said in chat)
 	local waiting = Outfitter:OutfitWaitsForCombat(outfit)
@@ -668,6 +674,35 @@ local function StyleRow(item)
 	script:SetWordWrap(false)
 	script:Hide()
 	item.Look.Script = script
+
+	-- The outfit's icon, in the Equipment Manager box's place (since 1.9.0: a
+	-- player read the box's placeholder "W" art as broken outfit icons)
+	local iconButton = CreateFrame("Button", nil, _G[name .. "Outfit"])
+	iconButton:SetSize(18, 18)
+	iconButton:SetPoint("CENTER", _G[name .. "OutfitServerButton"], "CENTER")
+	Box(iconButton, 18, C.field, C.btnEdge)
+	local iconTexture = iconButton:CreateTexture(nil, "ARTWORK")
+	iconTexture:SetPoint("TOPLEFT", 1, -1)
+	iconTexture:SetPoint("BOTTOMRIGHT", -1, 1)
+	iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	iconButton.icon = iconTexture
+	local iconHover = iconButton:CreateTexture(nil, "HIGHLIGHT")
+	iconHover:SetAllPoints(iconTexture)
+	iconHover:SetColorTexture(1, 1, 1, 0.2)
+	iconButton:SetScript("OnClick", function(button)
+		if button.Outfit then
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+			OutfitterChooseIconDialog:Open(button.Outfit)
+		end
+	end)
+	iconButton:SetScript("OnEnter", function(button)
+		GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+		GameTooltip:AddLine(Outfitter.cChangeIcon)
+		GameTooltip:Show()
+	end)
+	iconButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	iconButton:Hide()
+	item.Look.Icon = iconButton
 
 	-- Waiting for combat to end: a pocket watch where the gear icon was, with a tooltip
 	local wait = CreateFrame("Frame", nil, _G[name .. "Outfit"])
@@ -2294,6 +2329,11 @@ end
 hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", StyleIconDialog)
 hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", LayoutIconButtons)
 hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Open", DisplayDialog)
+-- A new icon shows in the outfit list at once (the list draws each outfit's icon)
+hooksecurefunc(Outfitter.OutfitBar._ChooseIconDialog, "Save", function()
+	Outfitter.DisplayIsDirty = true
+	Outfitter:Update(false)
+end)
 
 ---------------------------------------------------------------------------
 -- Outfitter's menus (its own copy of LibDropdown): a flat dark panel with a

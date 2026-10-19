@@ -898,6 +898,16 @@ F.PaperDollSidebarTab1 = New("CheckButton", "PaperDollSidebarTab1", F.PaperDollS
 F.PaperDollSidebarTab1:SetSize(33, 35)
 F.PaperDollSidebarTab1:SetPoint("RIGHT", F.PaperDollSidebarTab2, "LEFT", -4, 0)
 F.PaperDollSidebarTab2:SetScript("OnClick", function() W.equipmentManagerClicks = (W.equipmentManagerClicks or 0) + 1 end)
+-- Titles right of the Equipment Manager's, and the pet tab right of that while you
+-- have a pet (Forever's tabs sit side by side, no gap)
+F.PaperDollSidebarTab3 = New("CheckButton", "PaperDollSidebarTab3", F.PaperDollSidebarTabs, nil, 3)
+F.PaperDollSidebarTab3:SetSize(42, 42)
+F.PaperDollSidebarTab3:SetPoint("LEFT", F.PaperDollSidebarTab2, "RIGHT", 0, 0)
+F.PaperDollSidebarTab4 = New("CheckButton", "PaperDollSidebarTab4", F.PaperDollSidebarTabs, nil, 4)
+F.PaperDollSidebarTab4:SetSize(42, 42)
+F.PaperDollSidebarTab4:SetPoint("LEFT", F.PaperDollSidebarTab3, "RIGHT", 0, 0)
+F.PaperDollSidebarTab4:Hide()
+function W.PlayerHasPet(has) F.PaperDollSidebarTab4:SetShown(has) end
 function W.PlayerCollapsesStatsPane(collapsed)
 	F.PaperDollSidebarTabs:SetShown(not collapsed)
 end

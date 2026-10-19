@@ -776,6 +776,35 @@ do
 		"an outfit with a script shows the script's name (shows " .. tostring(scriptRow and scriptRow.Look.Script:GetText()) .. ")")
 	Check(scriptRow and not env[scriptRow:GetName() .. "OutfitScriptIcon"]:IsShown(), "in place of the gear icon")
 	Check(plainRow and not plainRow.Look.Script:IsShown(), "an outfit without a script shows no script name")
+	-- Each outfit's icon, where the Equipment Manager box was (a player read that
+	-- box's placeholder art as broken outfit icons); the box's switch is in the menu
+	if plainRow then
+		local outfit = plainRow:GetOutfit()
+		local icon = plainRow.Look.Icon
+		Check(icon:IsShown() and icon.icon:GetTexture() == O.OutfitBar:GetOutfitTexture(outfit),
+			"each outfit shows its icon in the list (" .. tostring(icon.icon:GetTexture()) .. ")")
+		Check(not env[plainRow:GetName() .. "OutfitServerButton"]:IsShown(), "in place of the Equipment Manager box")
+		icon:Click()
+		W.Tick(0.1)
+		Check(env.OutfitterChooseIconDialog:IsShown() and env.OutfitterChooseIconDialog.Outfit == outfit,
+			"clicking the icon opens the icon picker for that outfit")
+		env.OutfitterChooseIconDialog.SelectedTexture = 132147
+		env.OutfitterChooseIconDialog:Save()
+		env.OutfitterChooseIconDialog:Close()
+		W.Tick(0.1)
+		Check(icon.icon:GetTexture() == 132147, "and a new icon shows in the list at once")
+		outfit:SetIcon(nil)
+		local items = setmetatable({ toggles = {} }, { __index = function(record, key)
+			return function(self, text, a, b)
+				if key == "AddToggle" then record.toggles[text] = { get = a, set = b } end
+				return self
+			end
+		end })
+		O:AddOutfitMenu(items, outfit)
+		local store = items.toggles[O.cStoreOnServer]
+		Check(store and store.get() == (outfit.StoredInEM and true or false),
+			"the outfit's menu has the Equipment Manager switch")
+	end
 	local categoryName = categoryRow and env[categoryRow:GetName() .. "CategoryName"]:GetText()
 	Check(categoryName and categoryName == categoryName:upper(), "category names are in capitals (" .. tostring(categoryName) .. ")")
 
@@ -1213,8 +1242,16 @@ do
 			Check(env.gOutfitter_Settings.Options.DisableSidebarTab == true, "in this character's settings")
 			-- Off: the Equipment Manager tab is the game's again, and Outfitter's
 			-- tab sits beside the game's tabs, with the small button too
-			local function Beside() return tab:IsVisible() and AnchoredTo(tab, env.PaperDollSidebarTab1) and not AnchoredTo(tab, env.PaperDollSidebarTab2) end
-			Check(Beside(), "the tab moves beside the game's tabs, uncovering the Equipment Manager tab")
+			-- at the right end of the row (1.8.x put it left of the first, beside the
+			-- button that folds the stats pane)
+			local function Beside(last) return tab:IsVisible() and AnchoredTo(tab, last or env.PaperDollSidebarTab3) and not AnchoredTo(tab, env.PaperDollSidebarTab2) end
+			Check(Beside(), "the tab moves to the right end of the game's tabs, uncovering the Equipment Manager tab")
+			local _, _, relativePoint = tab:GetPoint(1)
+			Check(relativePoint == "RIGHT", "right of the titles tab")
+			W.PlayerHasPet(true)
+			Check(Beside(env.PaperDollSidebarTab4), "a pet tab comes: it moves right of that")
+			W.PlayerHasPet(false)
+			Check(Beside(), "the pet goes: it's back after the titles tab")
 			Check(env.OutfitterButton:IsShown(), "and the small button is there too")
 			W.PlayerTogglesCharacter()
 			W.PlayerTogglesCharacter()
