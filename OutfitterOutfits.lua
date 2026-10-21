@@ -200,6 +200,9 @@ function Outfitter._OutfitMethods:IsComplete()
 		if not self.Items[vInventorySlot] then
 			if vInventorySlot == "ShirtSlot" or vInventorySlot == "TabardSlot" then
 				-- Ignore shirt and tabard slots
+			elseif vInventorySlot == "AmmoSlot" then
+				-- Forever: ammo too. Outfits from before 1.8.0 have no ammo slot, and the
+				-- first change to one (gear changed while it's selected) moved it to Accessory
 			else
 				return false
 			end
@@ -246,7 +249,7 @@ function Outfitter._OutfitMethods:CheckOutfit(pCategoryID)
 	if not Outfitter.IsForever and LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_CATACLYSM then -- Forever has a ranged slot
 		self.Items.RangedSlot = nil
 	end
-	if LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_WRATH_OF_THE_LICH_KING then
+	if not Outfitter.IsForever and LE_EXPANSION_LEVEL_CURRENT > LE_EXPANSION_WRATH_OF_THE_LICH_KING then -- Forever has an ammo slot
 		self.Items.AmmoSlot = nil
 	end
 	--[[
@@ -960,8 +963,8 @@ function Outfitter._OutfitMethodsEM:IsComplete()
 				or vMainHandItem.InvType ~= "INVTYPE_2HWEAPON" then
 					return false
 				end
-			elseif vSlotName == "ShirtSlot" or vSlotName == "TabardSlot" then
-				-- Ignore shirt and tabard slots
+			elseif vSlotName == "ShirtSlot" or vSlotName == "TabardSlot" or vSlotName == "AmmoSlot" then
+				-- Ignore shirt and tabard slots (Forever: and ammo)
 			else
 				return false
 			end

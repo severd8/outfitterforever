@@ -834,6 +834,7 @@ function F.GetBindingKey(command) return W.bindings[command] end
 F.CreateFrame = W.CreateFrame
 local New = W.NewFrame
 F.UIParent = New("Frame", "UIParent")
+F.UIParent:SetSize(1920, 1080)
 F.WorldFrame = New("Frame", "WorldFrame")
 F.Minimap = New("Minimap", "Minimap", F.UIParent)
 F.MinimapBackdrop = New("Frame", "MinimapBackdrop", F.Minimap)

@@ -2345,6 +2345,7 @@ local Dropdown = LibStub("LibDropdownMC-1.0")
 function Dropdown.StyleFrame(frame)
 	-- The library has just set the menu to the tooltip's size; the window size applies on top
 	frame:SetScale(frame:GetScale() * WindowScale())
+	frame:SetClampedToScreen(true) -- a long menu or submenu never runs off the screen
 	if frame.NineSlice then frame.NineSlice:Hide() end
 	if frame.SetBackdrop and not frame.NineSlice then frame:SetBackdrop(nil) end
 	if frame.Look then

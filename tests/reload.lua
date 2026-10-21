@@ -29,7 +29,7 @@ end
 local function Session(state, play)
 	_G.W = nil
 	local W = dofile("tests/wow.lua")
-	W.expansionLevel, W.projectId = 0, 18
+	W.expansionLevel, W.projectId = state.expansionLevel or 0, 18
 	dofile("tests/fakes.lua")
 	local env = W.env
 	W.player.level = 5
@@ -369,5 +369,53 @@ alt = Session(alt, function(S)
 	Check(S.O:FindOutfitByName("Fishing") ~= copy, "this character's own Fishing outfit is left as it was")
 end)
 Check(alt.global.Characters["Alter-Forever"] and alt.global.Characters["Tester-Forever"], "both characters are saved")
+
+----------------------------------------
+-- 1.8.0 to 1.9.0 moved complete outfits to Accessory: an outfit from before 1.8.0 has
+-- no ammo slot, and counted as incomplete the first time it changed (gear changing in
+-- combat while it was selected). Every login on a client past Wrath also took the ammo
+-- out of every outfit. Both are fixed, and a moved outfit goes back at the next login.
+----------------------------------------
+for _, expansionLevel in ipairs({ 0, 11 }) do
+	local tag = " (expansion level " .. expansionLevel .. ")"
+	local moved = Session(NewCharacter(), function(S)
+		local full = S.O:GetInventoryOutfit("Full")
+		S.O:AddOutfit(full)
+		local ammo = S.O:NewEmptyOutfit("Arrows")
+		ammo:AddItem("AmmoSlot", S.O:GetItemInfoFromLink(S.W.ItemLink(1017)))
+		S.O:AddOutfit(ammo)
+		Check(full.CategoryID == "Complete", "an outfit of all your gear is complete" .. tag)
+		-- Outfitter changes an old outfit with no ammo slot: it stays complete
+		full.Items.AmmoSlot = nil
+		S.O:OutfitSettingsChanged(full)
+		Check(full.CategoryID == "Complete", "an outfit with no ammo slot stays complete when it changes" .. tag)
+	end)
+	moved.expansionLevel = expansionLevel
+	-- As 1.9.0 left it: moved to Accessory
+	local complete, accessory = moved.settings.Outfits.Complete, moved.settings.Outfits.Accessory
+	for index, outfit in ipairs(complete) do
+		if outfit.Name == "Full" then
+			table.remove(complete, index)
+			outfit.CategoryID = "Accessory"
+			table.insert(accessory, outfit)
+			break
+		end
+	end
+	Session(moved, function(S)
+		local full, ammo = S.O:FindOutfitByName("Full"), S.O:FindOutfitByName("Arrows")
+		Check(full and full.CategoryID == "Complete", "the moved outfit is complete again after the login" .. tag)
+		local inComplete
+		for _, outfit in ipairs(S.O.Settings.Outfits.Complete) do
+			if outfit == full then inComplete = true end
+		end
+		Check(inComplete, "and listed with the complete outfits" .. tag)
+		for _, outfit in ipairs(S.O.Settings.Outfits.Accessory or {}) do
+			Check(outfit ~= full, "and no longer with the accessories" .. tag)
+		end
+		Check(ammo and ammo.CategoryID == "Accessory", "an accessory outfit stays an accessory" .. tag)
+		Check(ammo and ammo:GetItem("AmmoSlot") and ammo:GetItem("AmmoSlot").Code == 1017,
+			"and keeps its ammo after the login" .. tag)
+	end)
+end
 
 return failures

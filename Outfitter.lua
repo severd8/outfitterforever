@@ -3460,6 +3460,10 @@ end
 -- the off-hand away itself (the game does that).
 Outfitter.cCombatWeaponOrder = { "MainHandSlot", "SecondaryHandSlot", "RangedSlot" }
 
+function Outfitter:ItemCodeOfLink(pLink)
+	return pLink and tonumber(pLink:match("|Hitem:(%d+)")) or nil
+end
+
 function Outfitter:EquipWeaponsNow(pCompiledOutfit, pInventoryCache)
 	local vWeapons = self:NewEmptyOutfit()
 	local vAny
@@ -3482,11 +3486,25 @@ function Outfitter:EquipWeaponsNow(pCompiledOutfit, pInventoryCache)
 	end
 	for _, vSlotName in ipairs(self.cCombatWeaponOrder) do
 		local vChange = vBySlot[vSlotName]
-		if vChange then
+		local vItem = pCompiledOutfit:GetItem(vSlotName)
+		-- The bags as they are now, not as the cache last saw them: the cache can lag
+		-- behind a swap, and picking up the old bag slot then took out the weapon that
+		-- had just dropped there and put it back on
+		if vChange and vItem
+		and self:ItemCodeOfLink(C_Container.GetContainerItemLink(vChange.ItemLocation.BagIndex, vChange.ItemLocation.BagSlotIndex)) == vItem.Code
+		and self:ItemCodeOfLink(GetInventoryItemLink("player", vChange.SlotID)) ~= vItem.Code then
 			ClearCursor()
 			C_Container.PickupContainerItem(vChange.ItemLocation.BagIndex, vChange.ItemLocation.BagSlotIndex)
 			EquipCursorItem(vChange.SlotID)
 			ClearCursor()
+			-- Expected, so the inventory change isn't taken for gear you put on yourself
+			-- (that wrote the weapons into the selected outfit, or a temporary one on top)
+			if self.ExpectedOutfit then
+				self.ExpectedOutfit:SetItem(vSlotName, vItem)
+				if vSlotName == "MainHandSlot" and self:ItemUsesBothWeaponSlots(vItem) then
+					self.ExpectedOutfit:SetItem("SecondaryHandSlot", self:NewEmptyItemInfo())
+				end
+			end
 		end
 	end
 end
@@ -7237,6 +7255,21 @@ function Outfitter:CheckDatabase()
 	for vCategoryID, vOutfits in pairs(self.Settings.Outfits) do
 		for vIndex, vOutfit in ipairs(vOutfits) do
 			vOutfit:CheckOutfit(vCategoryID)
+		end
+	end
+
+	-- Forever: a complete outfit that 1.8.0 to 1.9.0 moved to Accessory (it had no
+	-- ammo slot) goes back. Only a complete outfit has every slot, so nothing else moves.
+	local vAccessories = self.Settings.Outfits.Accessory
+	if vAccessories and self.Settings.Outfits.Complete then
+		for vIndex = #vAccessories, 1, -1 do
+			local vOutfit = vAccessories[vIndex]
+			if not vOutfit.StoredInEM and vOutfit:CalculateOutfitCategory() == "Complete" then
+				table.remove(vAccessories, vIndex)
+				vOutfit.Order = nil
+				vOutfit.CategoryID = "Complete"
+				table.insert(self.Settings.Outfits.Complete, vOutfit)
+			end
 		end
 	end
 end

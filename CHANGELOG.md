@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.9.1
+
+From the same player's report on 1.9.0, thank you!
+
+- **Fixed:** weapons put on in combat could be swapped straight back a moment later, so the outfit's weapons never stayed on. They now stay on.
+- **Fixed:** changing outfits in combat (from the broker's right-click, a key binding or the outfit bar) with Outfitter's window open could write the new weapons into the outfit and move complete outfits into the Accessories section, after which switching between them changed gear seemingly at random. Outfits are no longer changed by this, and complete outfits that were moved to Accessories go back by themselves the next time you log in (no need to delete and remake them).
+- **Fixed:** ammo saved in an outfit could be lost at login.
+- **Menus open where they fit.** A menu opened low on the screen now opens upward instead of running off the bottom (and to the left near the right edge), and at a bigger window size it opens right at the cursor.
+
 ## 1.9.0
 
 From the same player's report, thank you!

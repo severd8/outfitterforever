@@ -345,6 +345,58 @@ do
 	W.Tick(3)
 	Check(W.equipped[1] == 1001, "then the helm goes on")
 end
+-- Swapping between two complete outfits in combat, with Outfitter open (so the one put
+-- on is selected): the weapons going on are expected, not gear you changed yourself, so
+-- nothing is written into either outfit, no temporary outfit goes on top, and an old
+-- outfit with no ammo slot stays complete
+do
+	local staff = O:GetInventoryOutfit("Staff")
+	staff:SetItem("MainHandSlot", O:GetItemInfoFromLink(W.ItemLink(1011)))
+	staff:SetItem("SecondaryHandSlot", O:NewEmptyItemInfo())
+	staff.Items.AmmoSlot = nil -- saved before 1.8.0
+	O:AddOutfit(staff)
+	local battleAmmo = battle.Items.AmmoSlot
+	battle.Items.AmmoSlot = nil
+	local function Codes(outfit)
+		local codes = {}
+		for _, slotName in ipairs(O.cSlotNames) do
+			local item = outfit:GetItem(slotName)
+			codes[#codes + 1] = slotName .. "=" .. tostring(item and item.Code)
+		end
+		return table.concat(codes, " ")
+	end
+	local staffBefore, battleBefore = Codes(staff), Codes(battle)
+	env.OutfitterFrame:Show()
+	O:WearOutfit(battle)
+	W.Tick(3)
+	local printed = #W.printed
+	W.combat = true
+	W.Fire("PLAYER_REGEN_DISABLED")
+	O:WearOutfit(staff)
+	W.Tick(3)
+	Check(W.equipped[16] == 1011, "the staff goes on in combat (main hand has " .. tostring(W.equipped[16]) .. ")")
+	O:WearOutfit(battle)
+	W.Tick(3)
+	Check(W.equipped[16] == 1008 and W.equipped[17] == 1009, "and sword and shield again (hands have "
+		.. tostring(W.equipped[16]) .. ", " .. tostring(W.equipped[17]) .. ")")
+	O:WearOutfit(staff)
+	W.Tick(3)
+	Check(W.equipped[16] == 1011, "and the staff again")
+	Check(O.OutfitStack:GetTemporaryOutfit() == nil, "no temporary outfit goes on top of it")
+	Check(#W.printed == printed, "nothing is said in chat (" .. tostring(W.printed[#W.printed]) .. ")")
+	Check(Codes(staff) == staffBefore and Codes(battle) == battleBefore, "neither outfit is changed")
+	Check(staff.CategoryID == "Complete" and battle.CategoryID == "Complete",
+		"both stay complete (" .. tostring(staff.CategoryID) .. ", " .. tostring(battle.CategoryID) .. ")")
+	W.combat = false
+	W.Fire("PLAYER_REGEN_ENABLED")
+	W.Tick(3)
+	Check(W.equipped[16] == 1011 and W.equipped[1] == staff:GetItem("HeadSlot").Code, "the rest of the outfit goes on after combat")
+	O:WearOutfit(battle)
+	W.Tick(3)
+	O:DeleteOutfit(staff)
+	battle.Items.AmmoSlot = battleAmmo
+	W.Tick(1)
+end
 -- An outfit of only weapons doesn't wait, so nothing is said
 do
 	local blade = MakeOutfit("Blade", { MainHandSlot = 1008 })
@@ -1181,6 +1233,35 @@ do
 	end
 	O:HideOutfitMenu()
 	W.Tick(0.5)
+
+	-- A menu opened low on the screen opens upward, so its last lines can be seen, and at
+	-- a bigger window size it still starts at the cursor
+	local display = env.gOutfitter_GlobalSettings.Display
+	local oldScale, oldCursor = display.Scale, W.Fakes.GetCursorPosition
+	display.Scale = 150
+	local function MenuAt(x, y)
+		W.Fakes.GetCursorPosition = function() return x, y end
+		O:ShowOutfitMenuAtCursor(fishing)
+		W.Tick(0.2)
+		local frame = O.outfitMenu and O.outfitMenu.menuFrame
+		local point, _, _, offsetX, offsetY = frame:GetPoint(1)
+		local scale = frame:GetEffectiveScale() / env.UIParent:GetEffectiveScale()
+		local height = frame:GetHeight() * scale
+		O:HideOutfitMenu()
+		W.Tick(0.5)
+		return point, offsetX * scale, offsetY * scale, height, scale
+	end
+	local point, x, y, height, scale = MenuAt(400, 60)
+	Check(scale > 1.4, "the menu is drawn at the window's size (" .. tostring(scale) .. ")")
+	Check(height > 60, "a menu taller than the room under the cursor (" .. tostring(height) .. ")")
+	Check(point == "BOTTOMLEFT", "opens upward from the cursor (" .. tostring(point) .. ")")
+	Check(math.abs(x - 400) < 0.01 and math.abs(y - 60) < 0.01, "right at the cursor (" .. tostring(x) .. ", " .. tostring(y) .. ")")
+	point, x, y = MenuAt(1900, 1000)
+	Check(point == "TOPRIGHT", "high on the screen and at its right edge it opens down and to the left (" .. tostring(point) .. ")")
+	Check(math.abs(x - 1900) < 0.01 and math.abs(y - 1000) < 0.01, "also at the cursor (" .. tostring(x) .. ", " .. tostring(y) .. ")")
+	point, x, y = MenuAt(400, 600)
+	Check(point == "TOPLEFT", "with room below, it opens downward as before (" .. tostring(point) .. ")")
+	display.Scale, W.Fakes.GetCursorPosition = oldScale, oldCursor
 end
 
 ----------------------------------------

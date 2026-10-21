@@ -1433,12 +1433,51 @@ function Addon.UIElementsLib._DropDownMenu:Show(items, point, relativeTo, relati
 	-- Show the menu
 	self.menuFrame = LibStub("LibDropdownMC-1.0"):OpenAce3Menu(items)
 	self.menuFrame:ClearAllPoints()
+	-- Forever: open where the menu fits (up instead of down near the bottom of the
+	-- screen, left instead of right near its edge), and put it at the cursor at any size
+	point, xOffset, yOffset = self:FitOnScreen(point, relativeTo, relativePoint, xOffset, yOffset)
 	self.menuFrame:SetPoint(point, relativeTo, relativePoint, xOffset, yOffset)
 	self.menuFrame.cleanup = function ()
 		if self.cleanup then
 			self.cleanup()
 		end
 	end
+end
+
+-- Forever: the menu is scaled (the tooltip's scale times the window size), so its
+-- offsets are in its own units, not its parent's. Only for the cursor menus, which are
+-- anchored to the bottom left of UIParent; anything else is left as it was asked.
+function Addon.UIElementsLib._DropDownMenu:FitOnScreen(point, relativeTo, relativePoint, xOffset, yOffset)
+	local frame = self.menuFrame
+	if relativeTo ~= UIParent or relativePoint ~= "BOTTOMLEFT" or type(point) ~= "string" then
+		return point, xOffset, yOffset
+	end
+	local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
+	local width, height = (frame:GetWidth() or 0) * scale, (frame:GetHeight() or 0) * scale
+	local screenWidth, screenHeight = UIParent:GetWidth() or 0, UIParent:GetHeight() or 0
+	local x, y = xOffset or 0, yOffset or 0
+	local vertical, horizontal = point:match("^(TOP)") or point:match("^(BOTTOM)") or "", point:match("(LEFT)$") or point:match("(RIGHT)$") or ""
+	if screenHeight > 0 and vertical ~= "" then
+		local fitsDown, fitsUp = y - height >= 0, y + height <= screenHeight
+		if vertical == "TOP" and not fitsDown and fitsUp then
+			vertical = "BOTTOM"
+		elseif vertical == "BOTTOM" and not fitsUp and fitsDown then
+			vertical = "TOP"
+		elseif not fitsDown and not fitsUp then
+			-- Too tall either way: as low as it goes with the top still on the screen
+			vertical, y = "TOP", math.min(screenHeight, math.max(y, height))
+		end
+	end
+	if screenWidth > 0 and horizontal ~= "" then
+		local fitsRight, fitsLeft = x + width <= screenWidth, x - width >= 0
+		if horizontal == "LEFT" and not fitsRight and fitsLeft then
+			horizontal = "RIGHT"
+		elseif horizontal == "RIGHT" and not fitsLeft and fitsRight then
+			horizontal = "LEFT"
+		end
+	end
+	if scale <= 0 then scale = 1 end
+	return vertical .. horizontal, x / scale, y / scale
 end
 
 function Addon.UIElementsLib._DropDownMenu:Hide()
