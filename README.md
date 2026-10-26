@@ -76,6 +76,8 @@ Outfitter Forever is free. If it has saved you some gear juggling, you can [leav
 - **ToppedOff Forever**: reminds you when buffs, food, reagents, ammo or gear need topping off. Free on CurseForge.
 - **BattleText Forever**: scrolling combat text for your hits, heals and the damage you take. Free on CurseForge.
 - **AuctionHouse Forever**: a bigger Auction House window, so long item names stop getting cut off and you see more results at once. Free on CurseForge.
+- **GatherPath Forever**: the shortest gathering route through your GatherMate2 herb and ore nodes, on the world map and minimap. Free on CurseForge.
+- **ARS Forever** (Azeroth Revenue Service): see how much gold a player has made and the most they've ever held, for you and anyone you inspect. Free on CurseForge.
 
 ## Credits
 
