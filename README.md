@@ -70,10 +70,11 @@ Found a bug or have an idea? Please [submit it on GitHub](https://github.com/sev
 
 Outfitter Forever is free. If it has saved you some gear juggling, you can [leave a small tip on Ko-fi](https://ko-fi.com/tauntmasterforever). Thank you!
 
-## Also by me
+## All addons by me
 
 - **TauntMaster Forever**: one-click taunts off your healers and DPS, for tanks. Free on CurseForge.
 - **ToppedOff Forever**: reminds you when buffs, food, reagents, ammo or gear need topping off. Free on CurseForge.
+- **Outfitter Forever**: save your gear as outfits and switch between them with one click, or let them change by themselves. Free on CurseForge.
 - **BattleText Forever**: scrolling combat text for your hits, heals and the damage you take. Free on CurseForge.
 - **AuctionHouse Forever**: a bigger Auction House window, so long item names stop getting cut off and you see more results at once. Free on CurseForge.
 - **GatherPath Forever**: the shortest gathering route through your GatherMate2 herb and ore nodes, on the world map and minimap. Free on CurseForge.
