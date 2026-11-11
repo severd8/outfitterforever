@@ -728,6 +728,39 @@ env.GameTooltip:Hide()
 W.Tick(0.5)
 
 ----------------------------------------
+Step("outfits in item comparisons")
+-- Pawn hooks AddShoppingLink and finds the tooltip it filled as "OutfitterCompareTooltip" .. NumTooltipsShown
+local spareHat = MakeOutfit("Spare Hat", { HeadSlot = 1019 })
+do
+	local compare = O.ExtendedCompareTooltip
+	Check(compare ~= nil, "(outfits are in item comparisons)")
+	if compare then
+		local own = rawget(compare, "AddShoppingLink")
+		local addShoppingLink = compare.AddShoppingLink
+		local names = {}
+		compare.AddShoppingLink = function(self, ...)
+			addShoppingLink(self, ...)
+			table.insert(names, "OutfitterCompareTooltip" .. self.NumTooltipsShown)
+		end
+		env.ShoppingTooltip1:ClearLines()
+		env.ShoppingTooltip1:Hide()
+		env.ShoppingTooltip2:ClearLines()
+		env.ShoppingTooltip2:Hide()
+		env.GameTooltip:SetOwner(env.UIParent, "ANCHOR_NONE")
+		env.GameTooltip:SetHyperlink(W.ItemLink(1002))
+		W.SafeCall(env.GameTooltip_ShowCompareItem, env.GameTooltip)
+		compare.AddShoppingLink = own
+		Check(#names == 2, "the hat is compared with the helm and the spare hat (" .. #names .. " comparisons)")
+		for _, name in ipairs(names) do
+			Check(env[name] ~= nil and env[name]:IsShown(), name .. " is the comparison tooltip just filled")
+		end
+	end
+end
+env.GameTooltip:Hide()
+O:DeleteOutfit(spareHat)
+W.Tick(0.5)
+
+----------------------------------------
 Step("riding, swimming and the spirit outfit")
 local riding = MakeOutfit("Mount", { FeetSlot = 1006 })
 O:SetScriptID(riding, "Riding")

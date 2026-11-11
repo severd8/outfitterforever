@@ -492,7 +492,13 @@ function Frame:ClearLines() self.__lines = {} self.__item = nil end
 function Frame:AddLine(text) self.__lines = self.__lines or {} table.insert(self.__lines, text) end
 function Frame:AddDoubleLine(left, right) self.__lines = self.__lines or {} table.insert(self.__lines, tostring(left) .. "\t" .. tostring(right)) end
 function Frame:NumLines() return #(self.__lines or {}) end
-function Frame:SetHyperlink(link) self.__item = link self.__shown = true end
+-- Forever's TooltipDataHandlerMixin runs the tooltip post-calls for any tooltip it fills,
+-- an addon's own comparison tooltips included, before showing it
+function Frame:SetHyperlink(link)
+	self.__item = link
+	for _, fn in ipairs(W.tooltipPostCalls or {}) do SafeCall(fn, self, { type = 0, id = W.ItemIDFromLink(link) }) end
+	self.__shown = true
+end
 function Frame:SetInventoryItem(unit, slot)
 	local id = W.equipped[slot]
 	self.__item = id and W.ItemLink(id) or nil
