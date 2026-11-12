@@ -8332,8 +8332,10 @@ function Outfitter._ExtendedCompareTooltip:Construct()
 	end)
 
 	if Outfitter.IsMainlineClient then
-		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function ()
-			if not IsModifiedClick("COMPAREITEMS") then
+		TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function (pTooltip)
+			-- GameTooltip only, as below (was every tooltip: AddShoppingLink filling one of
+			-- ours hid them all and reset NumTooltipsShown, which Pawn reads)
+			if pTooltip == GameTooltip and not IsModifiedClick("COMPAREITEMS") then
 				self:HideCompareItems()
 			end
 		end)
