@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.2
+
+Fixed by Rambomst, thank you!
+
+- **Fixed:** with Pawn installed, hovering an item showed only the last of Outfitter's "compared with your outfits" tooltips, and Pawn printed "Pawn was trying to update the tooltip named OutfitterCompareTooltip0 but it doesn't exist". All the comparisons now stay up, and Pawn's upgrade info shows on them.
+
 ## 1.9.1
 
 From the same player's report on 1.9.0, thank you!
