@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.3
+
+From a druid player's report, thank you!
+
+- **Fixed:** "Rebuild for" Stamina, Strength, Agility, Intellect or Spirit (and Total stats) couldn't see those stats on any item, so it picked gear more or less at random, often just what you had on. Rebuilding a caster outfit while wearing feral gear could save the feral gear as the caster outfit. It now picks the gear with the most of the stat you chose.
+- **Fixed:** a rebuild no longer fills a slot with an item that has none of the chosen stat (an Agility chest in an Intellect outfit, say). If no item in your bags has the stat for a slot, the outfit keeps what it already had there.
+
 ## 1.9.2
 
 Fixed by Rambomst, thank you!

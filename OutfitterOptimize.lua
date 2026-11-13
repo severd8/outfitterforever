@@ -127,7 +127,9 @@ function Outfitter:AddItemsWithStatToOutfit(pOutfit, pStat, pInventoryCache)
 				
 				-- Score the item
 				local vScore = pStat:GetItemScore(vItem)
-				if vScore then
+				-- Forever: an item with none of the stat scores 0; leave it out
+				-- so the outfit doesn't take gear for another spec in that slot
+				if vScore and vScore > 0 then
 					
 					-- Calculate the slot
 					local vSlotName = vItem.MetaSlotName

@@ -46,12 +46,15 @@ Addon.ItemStatsLib.strings.ArcaneResist = RESISTANCE6_NAME
 
 Addon.ItemStatsLib.statNormalization = {}
 ----[[
-Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Stamina] = ITEM_MOD_STAMINA_SHORT
-Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Strength] = ITEM_MOD_STRENGTH_SHORT
-Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Intellect] = ITEM_MOD_INTELLECT_SHORT
---Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Agility] = "AGI"
-Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Agility] = ITEM_MOD_AGILITY_SHORT
-Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Spirit] = ITEM_MOD_SPIRIT_SHORT
+-- Forever: the base stats are stored under Outfitter's stat IDs (STA, STR, INT,
+-- AGI, SPI), which is what "Rebuild for" and Total stats look up. Stored under
+-- their tooltip names ("Intellect"), they were never found, every item scored 0
+-- and a rebuild kept whatever came first (usually the gear being worn).
+Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Stamina] = "STA"
+Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Strength] = "STR"
+Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Intellect] = "INT"
+Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Agility] = "AGI"
+Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Spirit] = "SPI"
 Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Haste] = STAT_HASTE
 Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Versatility] = STAT_VERSATILITY
 Addon.ItemStatsLib.statNormalization[Addon.ItemStatsLib.strings.Mastery] = STAT_MASTERY

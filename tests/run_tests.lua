@@ -2342,6 +2342,56 @@ do
 end
 NoErrors()
 
+----------------------------------------
+Step("rebuilding an outfit for a stat picks the gear with that stat")
+-- Reported by a druid with Balance (Intellect), Feral (Agility) and Restoration
+-- (Spirit) outfits: every rebuild picked the wrong gear, or just saved what they
+-- had on. Item tooltips say "+10 Intellect", and that has to count for "INT".
+do
+	local tooltipStats = {
+		[1001] = { [env.ITEM_MOD_AGILITY_SHORT] = 10 },                                  -- Lion Helm (worn)
+		[1002] = { [env.ITEM_MOD_INTELLECT_SHORT] = 5, [env.ITEM_MOD_SPIRIT_SHORT] = 2 }, -- Fishing Hat
+		[1003] = { [env.ITEM_MOD_AGILITY_SHORT] = 6, [env.ITEM_MOD_STAMINA_SHORT] = 4 },  -- Plate Chest (worn)
+		[1004] = {},                                                                      -- Tuxedo Shirt
+		[1005] = { [env.ITEM_MOD_AGILITY_SHORT] = 8 },                                   -- Iron Boots (worn)
+		[1006] = { [env.ITEM_MOD_INTELLECT_SHORT] = 3, [env.ITEM_MOD_AGILITY_SHORT] = 4,
+			[env.ITEM_MOD_SPIRIT_SHORT] = 7 },                                            -- Riding Boots
+	}
+	local realStatsForLink = O.TooltipLib.StatsForLink
+	O.TooltipLib.StatsForLink = function(lib, link)
+		return tooltipStats[W.ItemIDFromLink(link)] or {}
+	end
+	local function Rebuild(statID)
+		local cache = O:GetInventoryCache()
+		for _, items in pairs(cache.ItemsBySlot) do
+			for _, item in ipairs(items) do item.ScoreCache = nil end
+		end
+		local outfit = O:GenerateSmartOutfit("Test " .. statID, { { StatID = statID } }, cache, true)
+		local ids = {}
+		for slot, item in pairs(outfit and outfit:GetItems() or {}) do ids[slot] = item.Code end
+		return ids
+	end
+	local stats = O.ItemStatsLib:statsForLink(W.ItemLink(1006))
+	Check(stats.values.INT == 3 and stats.values.AGI == 4 and stats.values.SPI == 7,
+		"a tooltip's Intellect, Agility and Spirit are read as INT, AGI and SPI")
+
+	local int = Rebuild("INT")
+	Check(int.HeadSlot == 1002, "Intellect: the hat with Intellect, not the worn Agility helm (got " .. tostring(int.HeadSlot) .. ")")
+	Check(int.FeetSlot == 1006, "Intellect: the boots with Intellect (got " .. tostring(int.FeetSlot) .. ")")
+	Check(int.ChestSlot == nil, "Intellect: no chest has Intellect, so none is picked (got " .. tostring(int.ChestSlot) .. ")")
+	Check(int.MainHandSlot == nil and int.FingerSlot0 == nil, "Intellect: gear with none of it is left out")
+
+	local agi = Rebuild("AGI")
+	Check(agi.HeadSlot == 1001 and agi.FeetSlot == 1005 and agi.ChestSlot == 1003,
+		"Agility: the Agility helm, boots and chest")
+
+	local spi = Rebuild("SPI")
+	Check(spi.HeadSlot == 1002 and spi.FeetSlot == 1006 and spi.ChestSlot == nil, "Spirit: the Spirit hat and boots only")
+
+	O.TooltipLib.StatsForLink = realStatsForLink
+end
+NoErrors()
+
 for name in pairs(W.replacedBlizzardScripts) do
 	Fail("the addon set (instead of hooking) the script " .. name .. " on Blizzard's frame")
 end
