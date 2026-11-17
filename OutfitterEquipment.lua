@@ -79,6 +79,8 @@ function Outfitter._EquipmentChanges:addChangesToEquipOutfit(outfit, inventoryCa
 		self:addSlot(outfit, inventoryCache, inventorySlot, has2HGlitch)
 	end -- for
 
+	self:deferSlotMoves() -- Forever
+
 	if #self == 0 then
 		return nil
 	end
@@ -165,6 +167,42 @@ function Outfitter._EquipmentChanges:addSlot(outfit, inventoryCache, inventorySl
 
 	-- Insert the change
 	self:addChange(equipmentChange)
+end
+
+-- Forever: when an item moves between the two slots of a pair (rings, trinkets, hands) and the
+-- slot it leaves is changing too, both changes use that slot in the same pass and the second
+-- one went wrong. The move waits for the next pass, by which time the other change has put
+-- the item in the bags. Two slots trading items take one swap, so the second change goes.
+function Outfitter._EquipmentChanges:deferSlotMoves()
+	local changeForSlot = {}
+
+	for _, change in ipairs(self) do
+		if change.SlotName then
+			changeForSlot[change.SlotName] = change
+		end
+	end
+
+	local remove = {}
+
+	for _, change in ipairs(self) do
+		local fromSlotName = change.ItemLocation and change.ItemLocation.SlotName
+		local otherChange = fromSlotName and changeForSlot[fromSlotName]
+
+		if otherChange and otherChange ~= change and not remove[change] then
+			if otherChange.ItemLocation and otherChange.ItemLocation.SlotName == change.SlotName then
+				remove[otherChange] = true
+			else
+				remove[change] = true
+				self.Deferred = true
+			end
+		end
+	end
+
+	for index = #self, 1, -1 do
+		if remove[self[index]] then
+			table.remove(self, index)
+		end
+	end
 end
 
 function Outfitter._EquipmentChanges:adjustUniqueEquipSwaps()
@@ -868,7 +906,18 @@ function Outfitter:UpdateEquippedItems()
 
 	local vCurrentTime = GetTime()
 
-	if vCurrentTime - self.LastEquipmentUpdateTime < self.cMinEquipmentUpdateInterval then
+	-- Forever: a pass for deferred moves (see deferSlotMoves) waits only for the last pass's
+	-- moves to land, as their items stay locked until the server answers
+	if self.EquipmentFollowUp then
+		if self:EquipmentIsLocked()
+		and vCurrentTime - self.LastEquipmentUpdateTime < self.cMaxEquipmentLockWait then
+			self:ScheduleEquipmentUpdate()
+			return
+		end
+
+		-- The cache only catches up with moves that landed a moment after they did
+		self:FlushInventoryCache()
+	elseif vCurrentTime - self.LastEquipmentUpdateTime < self.cMinEquipmentUpdateInterval then
 		if self.Debug.EquipmentChanges then
 			self:DebugMessage("UpdateEquippedItems: deferring for min interval")
 		end
@@ -898,6 +947,7 @@ function Outfitter:UpdateEquippedItems()
 			self:EquipWeaponsNow(vCompiledOutfit, vInventoryCache)
 		end
 		self.EquippedNeedsUpdate = true
+		self.EquipmentFollowUp = nil -- Forever: the rest waits for the end of combat
 		self.MaybeInCombat = false
 		self:ScheduleEquipmentUpdate()
 		return
@@ -922,6 +972,14 @@ function Outfitter:UpdateEquippedItems()
 		if self.Debug.EquipmentChanges then
 			self:DebugMessage("UpdateEquippedItems: No change list generated")
 		end
+	end
+
+	-- Forever: deferred moves get another pass (only a few, in case one can never be made)
+	if vEquipmentChangeList.Deferred and (self.EquipmentFollowUp or 0) < 4 then
+		self.EquippedNeedsUpdate = true
+		self.EquipmentFollowUp = (self.EquipmentFollowUp or 0) + 1
+	else
+		self.EquipmentFollowUp = nil
 	end
 
 	-- Update the outfit we're expecting to see on the player
@@ -967,6 +1025,10 @@ function Outfitter:ScheduleEquipmentUpdate()
 	local vElapsed = GetTime() - self.LastEquipmentUpdateTime
 	local vDelay = self.cMinEquipmentUpdateInterval - vElapsed
 
+	if self.EquipmentFollowUp then
+		vDelay = 0.1 -- Forever: see UpdateEquippedItems
+	end
+
 	 if vDelay < 0.05 then
 		vDelay = 0.05
 	end
@@ -976,6 +1038,38 @@ function Outfitter:ScheduleEquipmentUpdate()
 	end
 
 	self.SchedulerLib:ScheduleUniqueTask(vDelay, self.UpdateEquippedItems, self)
+end
+
+-- Forever: how long a pass for deferred moves waits for items to unlock
+Outfitter.cMaxEquipmentLockWait = 3
+
+function Outfitter:EquipmentIsLocked()
+	for _, vInventorySlot in ipairs(self.cSlotNames) do
+		local vSlotID = self.cSlotIDs[vInventorySlot]
+
+		-- The ammo slot only points at a stack in the bags
+		if vSlotID and vInventorySlot ~= "AmmoSlot" then
+			local vLocation = ItemLocation:CreateFromEquipmentSlot(vSlotID)
+
+			if C_Item.DoesItemExist(vLocation) and C_Item.IsLocked(vLocation) then
+				return true
+			end
+		end
+	end
+
+	local vNumBags, vFirstBagIndex = self:GetNumBags()
+
+	for vBagIndex = vFirstBagIndex, vNumBags do
+		for vBagSlotIndex = 1, C_Container.GetContainerNumSlots(vBagIndex) do
+			local vInfo = C_Container.GetContainerItemInfo(vBagIndex, vBagSlotIndex)
+
+			if vInfo and vInfo.isLocked then
+				return true
+			end
+		end
+	end
+
+	return false
 end
 
 ----------------------------------------

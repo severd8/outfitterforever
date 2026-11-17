@@ -29,6 +29,17 @@ do
 		failures = failures + result
 	end
 end
+-- Items moving between the two ring slots, trinket slots or hands
+do
+	local runner = assert(loadfile("tests/swaps.lua"))
+	local ok, result = pcall(runner)
+	if not ok then
+		print("Swap tests crashed: " .. tostring(result))
+		failures = failures + 1
+	else
+		failures = failures + result
+	end
+end
 -- Every language has the port's strings
 do
 	local runner = assert(loadfile("tests/locales.lua"))

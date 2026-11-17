@@ -428,7 +428,7 @@ F.C_Item = {
 	GetItemID = function(location) return W.LocationItem(location) end,
 	GetItemLocation = function() return nil end,
 	IsBound = function() return true end,
-	IsLocked = function(location) return W.cursor ~= nil and W.cursor.from.slot == location.loc.slot and W.cursor.from.bag == location.loc.bag end,
+	IsLocked = function(location) return W.IsLocationLocked(location.loc) end,
 	GetItemQuality = function(location) local id = W.LocationItem(location) return id and W.itemDB[id][7] end,
 }
 
@@ -461,6 +461,11 @@ W.bags = W.bags or {}
 W.bagSizes = { [0] = 16, [1] = 16, [2] = 0, [3] = 0, [4] = 0 }
 W.pendingEvents = {}
 W.uiErrors = {}
+-- How long the server takes to answer an item move, in seconds. 0 (the default) moves items
+-- at once. In the game nothing moves until the server answers, and until then the item and
+-- the place it's going to are locked: neither can be picked up or have an item put on it.
+W.serverDelay = 0
+W.pendingMoves = {}
 
 local function QueueEvent(event, ...)
 	table.insert(W.pendingEvents, { event, ... })
@@ -498,6 +503,24 @@ end
 local function UIError(message)
 	table.insert(W.uiErrors, message)
 end
+local function SameLocation(a, b) return a.slot == b.slot and a.bag == b.bag and a.bagSlot == b.bagSlot end
+function W.IsLocationLocked(loc)
+	if W.cursor and SameLocation(W.cursor.from, loc) then return true end
+	for _, move in ipairs(W.pendingMoves) do
+		if SameLocation(move.from, loc) or SameLocation(move.to, loc) then return true end
+	end
+	return false
+end
+local function Move(from, target)
+	local moving, displaced = Get(from), Get(target)
+	Set(target, moving)
+	Set(from, displaced)
+	-- A two-hander pushes the off-hand into the bags
+	if target.slot == 16 and W.itemDB[moving][2] == "INVTYPE_2HWEAPON" and W.equipped[17] then
+		local free = W.FreeBagSlot()
+		if not free then UIError("Inventory is full.") else Set(free, W.equipped[17]) Set({ slot = 17 }, nil) end
+	end
+end
 local function CanEquipNow(slot)
 	if W.combat and slot ~= 16 and slot ~= 17 and slot ~= 18 then
 		UIError("You can't change armor in combat")
@@ -533,13 +556,24 @@ local function Drop(target)
 		if not Fits(displaced, from.slot) then UIError("That item doesn't go in that slot") return false end
 	end
 	if from.slot and not CanEquipNow(from.slot) then return false end
-	Set(target, moving)
-	Set(from, displaced)
-	-- A two-hander pushes the off-hand into the bags
-	if target.slot == 16 and W.itemDB[moving][2] == "INVTYPE_2HWEAPON" and W.equipped[17] then
-		local free = W.FreeBagSlot()
-		if not free then UIError("Inventory is full.") else Set(free, W.equipped[17]) Set({ slot = 17 }, nil) end
+	if W.serverDelay > 0 and not SameLocation(from, target) then
+		-- The item stays on the cursor, as when the game refuses a drop
+		if W.IsLocationLocked(target) then UIError("That item is locked") return false end
+		local move = { from = from, to = target }
+		table.insert(W.pendingMoves, move)
+		table.insert(W.timers, { at = W.time + W.serverDelay, fn = function()
+			for index, pending in ipairs(W.pendingMoves) do
+				if pending == move then table.remove(W.pendingMoves, index) break end
+			end
+			Move(from, target)
+			for _, loc in ipairs({ from, target }) do
+				if loc.slot then QueueEvent("ITEM_LOCK_CHANGED", loc.slot) else QueueEvent("ITEM_LOCK_CHANGED", loc.bag, loc.bagSlot) end
+			end
+		end })
+		W.cursor = nil
+		return true
 	end
+	Move(from, target)
 	W.cursor = nil
 	return true
 end
@@ -559,6 +593,8 @@ local function Pickup(loc)
 			return
 		end
 		Drop(loc)
+	elseif W.IsLocationLocked(loc) then
+		UIError("That item is locked")
 	elseif Get(loc) then
 		W.cursor = { from = loc }
 	end
@@ -647,8 +683,8 @@ F.C_Container = {
 	GetContainerItemInfo = function(bag, bagSlot)
 		local stack = W.bags[bag] and W.bags[bag][bagSlot]
 		if not stack then return nil end
-		local locked = W.cursor and W.cursor.from.bag == bag and W.cursor.from.bagSlot == bagSlot
-		return { iconFileID = 133000 + stack.id, stackCount = stack.count, isLocked = locked or false, quality = W.itemDB[stack.id][7],
+		local locked = W.IsLocationLocked({ bag = bag, bagSlot = bagSlot })
+		return { iconFileID = 133000 + stack.id, stackCount = stack.count, isLocked = locked, quality = W.itemDB[stack.id][7],
 			isReadable = false, hasLoot = false, hyperlink = W.ItemLink(stack.id), isFiltered = false, hasNoValue = false,
 			itemID = stack.id, isBound = true }
 	end,
