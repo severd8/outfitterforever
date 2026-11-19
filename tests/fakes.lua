@@ -291,6 +291,7 @@ local FORMS = {
 }
 function F.GetNumShapeshiftForms() return #(FORMS[W.player.class] or {}) end
 function F.GetShapeshiftForm() return W.player.form end
+function F.HasFullControl() return not W.player.noControl end
 function F.GetShapeshiftFormInfo(index)
 	local form = (FORMS[W.player.class] or {})[index]
 	if not form then return nil end

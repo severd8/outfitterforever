@@ -429,6 +429,14 @@ end
 end
 
 function Outfitter:GenerateDruidShapeshiftScript(pEventID, pDescription)
+	-- Forever (issue #13): the form this script is for, so a talent update can
+	-- tell whether the player is still in it
+	local vFormID
+	for vID, vEvents in pairs(self.cSpecialIDEvents) do
+		if vEvents.Equip == pEventID then
+			vFormID = vID
+		end
+	end
 	return
 		self:GenerateScriptHeader({pEventID, 'NOT_'..pEventID, 'PLAYER_TALENT_UPDATE', 'OUTFIT_EQUIPPED'}, pDescription)..
 [[
@@ -463,9 +471,17 @@ if not Outfitter.IsDead and not HasFullControl() then
     return
 end
 
--- If spec changed, unequip any form (default to caster)
+-- If spec changed, unequip any form (default to caster).
+-- Forever: this event also fires on loading screens (Hearthstone, teleports)
+-- and at other times with no spec change. Taking off a Complete form outfit
+-- then put the last Complete outfit (such as a healing set) back on by itself.
+-- So it does nothing while still in the form, and otherwise acts like
+-- leaving the form.
 if event == "PLAYER_TALENT_UPDATE" then
-  equip = false
+  if Outfitter.SpecialState["]]..tostring(vFormID)..[["] then
+    return
+  end
+  event = "NOT_]]..pEventID..[["
 end
 
 -- If the user is manually equipping the outfit, let

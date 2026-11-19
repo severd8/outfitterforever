@@ -29,6 +29,17 @@ do
 		failures = failures + result
 	end
 end
+-- A druid's form outfits (issue #13)
+do
+	local runner = assert(loadfile("tests/druid.lua"))
+	local ok, result = pcall(runner)
+	if not ok then
+		print("Druid tests crashed: " .. tostring(result))
+		failures = failures + 1
+	else
+		failures = failures + result
+	end
+end
 -- Every language has the port's strings
 do
 	local runner = assert(loadfile("tests/locales.lua"))

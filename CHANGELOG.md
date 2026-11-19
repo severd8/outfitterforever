@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.5
+
+From a druid player's report, thank you!
+
+- **Fixed:** an outfit with no script (a healing set, say) could put itself on: after a Hearthstone or teleport, or now and then in a dungeon, even while you were in Bear Form. Your Bear or Cat outfit was being taken off whenever the game refreshed your talents, and Outfitter then went back to the last complete outfit you'd worn. Form outfits now stay on while you're in the form.
+
 ## 1.9.4
 
 From a hunter player's report, thank you!
