@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.6
+
+From a paladin player's report, thank you!
+
+- **Fixed:** outfits using the "Has buff" or "Has debuff" script (one for Devotion Aura and one for Retribution Aura, say) could swap back and forth in combat once you used an ability, trying to put the other outfit on. In combat the game hides your buffs from addons, and Outfitter took that as "the buff is gone". Now nothing changes while it can't see your buffs.
+- **Changed:** those outfits now catch up as soon as combat ends, so an aura you switch in a fight puts the right outfit on when the fight is over.
+
 ## 1.9.5
 
 From a druid player's report, thank you!

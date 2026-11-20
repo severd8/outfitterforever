@@ -319,10 +319,12 @@ function F.GetSpecializationInfoForClassID(classID, index)
 	return 9000 + index, name, "", 130000 + index, "DAMAGER", true, true
 end
 
--- Auras: Forever throws instead of answering in combat
+-- Auras: Forever throws instead of answering in combat. Some calls answer
+-- "no such aura" in combat instead: set W.aurasHiddenInCombat to fake that
 W.auras = W.auras or {}
 local function AuraCheck()
-	if W.combat then error("Auras cannot be accessed when secret while tainted by 'OutfitterForever'", 3) end
+	if W.combat and not W.aurasHiddenInCombat then error("Auras cannot be accessed when secret while tainted by 'OutfitterForever'", 3) end
+	return W.combat and W.aurasHiddenInCombat
 end
 -- An aura with harmful = true is a debuff
 local function AuraList(harmful)
@@ -334,15 +336,15 @@ local function AuraList(harmful)
 end
 local function IsHarmfulFilter(filter) return type(filter) == "string" and filter:find("HARMFUL") ~= nil end
 F.C_UnitAuras = {
-	GetBuffDataByIndex = function(unit, index) AuraCheck() return unit == "player" and AuraList(false)[index] or nil end,
-	GetAuraDataByIndex = function(unit, index, filter) AuraCheck() return unit == "player" and AuraList(IsHarmfulFilter(filter))[index] or nil end,
+	GetBuffDataByIndex = function(unit, index) if AuraCheck() then return nil end return unit == "player" and AuraList(false)[index] or nil end,
+	GetAuraDataByIndex = function(unit, index, filter) if AuraCheck() then return nil end return unit == "player" and AuraList(IsHarmfulFilter(filter))[index] or nil end,
 	GetAuraDataBySpellName = function(unit, name, filter)
-		AuraCheck()
+		if AuraCheck() then return nil end
 		for _, aura in ipairs(AuraList(IsHarmfulFilter(filter))) do if aura.name == name then return aura end end
 		return nil
 	end,
 	GetPlayerAuraBySpellID = function(id)
-		AuraCheck()
+		if AuraCheck() then return nil end
 		for _, aura in ipairs(W.auras) do if aura.spellId == id then return aura end end
 	end,
 }

@@ -1391,14 +1391,15 @@ end
 		Name = Outfitter.cHasBuffOutfit,
 		ID = "HAS_BUFF",
 		Category = "GENERAL",
-		Script = Outfitter:GenerateScriptHeader("UNIT_AURA PLAYER_ENTERING_WORLD", Outfitter.cHasBuffDescription)..
+		Script = Outfitter:GenerateScriptHeader("UNIT_AURA PLAYER_ENTERING_WORLD PLAYER_REGEN_ENABLED", Outfitter.cHasBuffDescription)..
 [[
 -- $SETTING buffName = {type="string", label="Buff name"}
 -- $SETTING DisableInstance={type="boolean", label="Don't equip in dungeons", default=false}
 -- $SETTING DisableBG={type="boolean", label="Don't equip in Battlegrounds", default=false}
 -- $SETTING DisablePVP={type="boolean", label="Don't equip while PvP flagged", default=false}
 
-if select(1, ...) ~= "player" then return end
+-- Auras can't be read in combat, so look again when combat ends
+if event ~= "PLAYER_REGEN_ENABLED" and select(1, ...) ~= "player" then return end
 
 local hasAura = Outfitter:PlayerHasAuraNamed(setting.buffName)
 if hasAura == nil then return end -- can't read auras right now (combat on Forever)
@@ -1425,14 +1426,15 @@ if equip == nil and didEquip then equip = false end
 		Name = Outfitter.cHasDebuffOutfit,
 		ID = "HAS_DEBUFF",
 		Category = "GENERAL",
-		Script = Outfitter:GenerateScriptHeader("UNIT_AURA PLAYER_ENTERING_WORLD", Outfitter.cHasDebuffDescription)..
+		Script = Outfitter:GenerateScriptHeader("UNIT_AURA PLAYER_ENTERING_WORLD PLAYER_REGEN_ENABLED", Outfitter.cHasDebuffDescription)..
 [[
 -- $SETTING debuffName = {type="string", label="Debuff name"}
 -- $SETTING DisableInstance={type="boolean", label="Don't equip in dungeons", default=false}
 -- $SETTING DisableBG={type="boolean", label="Don't equip in Battlegrounds", default=false}
 -- $SETTING DisablePVP={type="boolean", label="Don't equip while PvP flagged", default=false}
 
-if select(1, ...) ~= "player" then return end
+-- Auras can't be read in combat, so look again when combat ends
+if event ~= "PLAYER_REGEN_ENABLED" and select(1, ...) ~= "player" then return end
 
 local hasAura = Outfitter:PlayerHasAuraNamed(setting.debuffName, "HARMFUL")
 if hasAura == nil then return end -- can't read auras right now (combat on Forever)

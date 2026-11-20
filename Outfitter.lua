@@ -4831,8 +4831,10 @@ function Outfitter:TradeSkillIsCooking()
 end
 
 -- True if the player has an aura with this name (a buff, or a debuff with the
--- filter "HARMFUL"). Auras can't be read in combat on Forever (the call throws),
--- so this returns nil then, meaning "unknown": callers should change nothing.
+-- filter "HARMFUL"). Auras can't be read in combat on Forever: the call throws,
+-- or answers "no such aura" even when it's there. So in combat only a found aura
+-- counts, and anything else returns nil, meaning "unknown": callers should change
+-- nothing.
 function Outfitter:PlayerHasAuraNamed(pName, pFilter)
 	if not pName or pName == "" then
 		return false
@@ -4841,7 +4843,13 @@ function Outfitter:PlayerHasAuraNamed(pName, pFilter)
 	if not vSucceeded then
 		return nil
 	end
-	return type(vAuraData) == "table"
+	if type(vAuraData) == "table" then
+		return true
+	end
+	if InCombatLockdown() then
+		return nil
+	end
+	return false
 end
 
 function Outfitter:GetBuffTooltipText(pBuffIndex)
