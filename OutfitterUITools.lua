@@ -485,19 +485,26 @@ function Outfitter.GetFrameEffectiveBounds(pFrame)
 	       pFrame:GetBottom() * vEffectiveScale
 end
 
+-- Escape closes the dialog. Forever: through UISpecialFrames, the list for
+-- addons (the game reads it from secure code). Upstream put the dialog in
+-- Blizzard's UIMenus while it was up, which taints: the game's own menu-closing
+-- code (an Escape handler, also run when the Gamepad UI's B closes the
+-- character window) then hid it tainted, and the next protected call it made
+-- was blocked ("OutfitterForever has been blocked from an action...").
 function Outfitter:BeginMenu(pMenu)
-	table.insert(UIMenus, pMenu:GetName())
+	local vName = pMenu:GetName()
+
+	for _, vSpecialName in ipairs(UISpecialFrames) do
+		if vSpecialName == vName then
+			return
+		end
+	end
+
+	table.insert(UISpecialFrames, vName)
 end
 
 function Outfitter:EndMenu(pMenu)
-	local vName = pMenu:GetName()
-
-	for vIndex = #UIMenus, 1, -1 do
-		if vName == UIMenus[vIndex] then
-			table.remove(UIMenus, vIndex)
-			break
-		end
-	end
+	-- Stays in UISpecialFrames: Escape only hides it while it's shown
 end
 
 function Outfitter:FrameMouseDown(pFrame)

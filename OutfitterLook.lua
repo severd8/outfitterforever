@@ -2395,6 +2395,7 @@ local function BuildCopyDialog()
 	Fill(d, C.win)
 	Border(d, C.edge)
 	table.insert(UISpecialFrames, "OutfitterForeverCopyDialog")
+	Outfitter:UseGamepadNavigation(d, function (pDialog) pDialog:Hide() end)
 
 	local header = CreateFrame("Frame", nil, d)
 	header:SetPoint("TOPLEFT")

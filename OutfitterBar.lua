@@ -911,7 +911,7 @@ function Outfitter.OutfitBar._ChooseIconDialog:Construct()
 		end
 	end
 
-	-- Hook into the UIMenus list when the dialog is up to capture the escape key presses
+	-- Escape closes it (BeginMenu puts it in UISpecialFrames)
 
 	self:SetScript("OnShow", function(self)
 		Outfitter:BeginMenu(self)
@@ -947,6 +947,9 @@ function Outfitter.OutfitBar._ChooseIconDialog:Construct()
 
 	-- Set the default icon set
 	self.IconSetID = self.iconSets[1].id
+
+	-- With the Gamepad UI, the controller moves into it (after the scripts above)
+	Outfitter:UseGamepadNavigation(self, function (pDialog) pDialog:Close() end)
 end
 
 function Outfitter.OutfitBar._ChooseIconDialog:Open(pOutfit)
@@ -1459,6 +1462,7 @@ function Outfitter.OutfitBar._SettingsDialog:New()
 	local vSettingsDialog = CreateFrame("Frame", "OutfitBarSettingsDialog", UIParent, "BackdropTemplate")
 
 	Outfitter:ConstructFrame(vSettingsDialog, self)
+	Outfitter:UseGamepadNavigation(vSettingsDialog, function (pDialog) pDialog:HideDialog() end)
 
 	return vSettingsDialog
 end

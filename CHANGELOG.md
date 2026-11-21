@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.9.8
+
+More for controller players, thank you for the idea!
+
+- **New:** with the game's Gamepad UI turned on, the controller cursor now moves into Outfitter's menus and windows when they open: an outfit's menu, the icon picker, new outfit, rebuild, script settings, the outfit bar's settings and "copy from another character". Press A on a menu line with an arrow to open its submenu, and B to close a menu or window.
+- **Fixed:** closing the character window while the outfit bar's settings or the icon picker was open could bring up "OutfitterForever has been blocked from an action only available to the Blizzard UI". Escape still closes them.
+
 ## 1.9.7
 
 From a controller player's idea, thank you!

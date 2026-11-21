@@ -20,6 +20,7 @@ function Outfitter._EditScriptDialog:Construct()
 	self.Widgets.SourceScriptEditBox.TextChanged = Outfitter.EditorScript_TextChanged
 	
 	self.CloseButton:SetScript("OnClick", function (self) self:GetParent():Done() end)
+	Outfitter:UseGamepadNavigation(self, function (pDialog) pDialog:Cancel() end)
 	
 	-- Tabs
 	

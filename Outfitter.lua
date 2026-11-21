@@ -1184,6 +1184,107 @@ function Outfitter:SetUseSidebarTab(pUseTab)
 	self:Update(false)
 end
 
+----------------------------------------
+-- Gamepad UI (Forever, issue #15)
+----------------------------------------
+-- With the game's Gamepad UI on, the controller cursor only moves inside the
+-- window the game has handed it (GamepadMode.FrameControlsManager). Blizzard's
+-- windows hand themselves over as they open; Outfitter's dialogs and menus do
+-- the same here, and hand it back as they close. The manager turns addon calls
+-- away in combat, so nothing is handed over then, and a window closed in combat
+-- is given back once combat ends.
+
+Outfitter.GamepadFrames = {}
+
+function Outfitter:GetGamepadManager()
+	if not (InputUtil and InputUtil.IsGamepadUIEnabled and GamepadMode and GamepadMode.FrameControlsManager) then
+		return nil
+	end
+	if not InputUtil.IsGamepadUIEnabled() then
+		return nil
+	end
+	return GamepadMode.FrameControlsManager
+end
+
+function Outfitter:GamepadFrameShown(pFrame, pIsPopup)
+	if self.GamepadFrames[pFrame] then
+		return true
+	end
+	local vManager = self:GetGamepadManager()
+	if not vManager or InCombatLockdown() then
+		return false
+	end
+	self.GamepadFrames[pFrame] = true
+	vManager:FrameShown(pFrame, pIsPopup)
+	-- A dialog fills in some of its buttons as it opens: look again a moment later
+	self.SchedulerLib:ScheduleTask(0.05, function ()
+		if pFrame:IsVisible() and not InCombatLockdown() and SmartNavigation
+		and SmartNavigation.GetActiveFrame and SmartNavigation:GetActiveFrame() == pFrame then
+			SmartNavigation:RefreshButtonGroups()
+		end
+	end)
+	return true
+end
+
+function Outfitter:GamepadFrameHidden(pFrame)
+	if not self.GamepadFrames[pFrame] or InCombatLockdown() then
+		return
+	end
+	self.GamepadFrames[pFrame] = nil
+	local vManager = GamepadMode and GamepadMode.FrameControlsManager
+	if vManager then
+		vManager:FrameHidden(pFrame)
+	end
+end
+
+function Outfitter:GamepadCombatEnded()
+	for vFrame in pairs(self.GamepadFrames) do
+		if not vFrame:IsShown() then
+			self:GamepadFrameHidden(vFrame)
+		end
+	end
+end
+
+-- pClose closes the dialog the way its Cancel button does; the controller's B
+-- button runs it (the game looks for SmartNavigationCloseHandler first)
+function Outfitter:UseGamepadNavigation(pFrame, pClose)
+	if not pFrame or pFrame.OutfitterGamepad then
+		return
+	end
+	pFrame.OutfitterGamepad = true
+	pFrame:HookScript("OnShow", function (pShown) Outfitter:GamepadFrameShown(pShown) end)
+	pFrame:HookScript("OnHide", function (pHidden) Outfitter:GamepadFrameHidden(pHidden) end)
+	if pClose then
+		pFrame.SmartNavigationCloseHandler = function (pDialog)
+			pClose(pDialog)
+			return true
+		end
+	end
+	if pFrame:IsVisible() then
+		self:GamepadFrameShown(pFrame)
+	end
+end
+
+-- Outfitter's menus (its own copy of LibDropdown) call these as they open and close
+Outfitter.LibDropdown.GamepadShown = function (pMenu, pIsPopup)
+	if not pMenu.SmartNavigationCloseHandler then
+		pMenu.SmartNavigationCloseHandler = function (pOpenMenu)
+			if pOpenMenu.rootMenu then
+				pOpenMenu:Hide() -- releases it, as Escape does
+			else
+				pOpenMenu.gamepadFocused = nil
+				Outfitter:GamepadFrameHidden(pOpenMenu)
+				pOpenMenu:Hide()
+			end
+			return true
+		end
+	end
+	return Outfitter:GamepadFrameShown(pMenu, pIsPopup)
+end
+Outfitter.LibDropdown.GamepadHidden = function (pMenu)
+	Outfitter:GamepadFrameHidden(pMenu)
+end
+
 function Outfitter_OnAddonCompartmentClick(addonName, buttonName)
 	if CharacterFrame:IsShown() then
 		Outfitter:ToggleOutfitterFrame()
@@ -1491,6 +1592,7 @@ function Outfitter:RegenDisabled(pEvent)
 end
 
 function Outfitter:RegenEnabled(pEvent)
+	self:GamepadCombatEnded()
 	self:BeginEquipmentUpdate()
 	self.InCombat = false
 	local vWaited = next(self.CombatWaitOutfits) -- Forever: the outfits that waited are on now
@@ -4388,6 +4490,7 @@ end
 function Outfitter:OpenNameOutfitDialog(pOutfit)
 	if not self.NameOutfitDialog then
 		self.NameOutfitDialog = Outfitter:New(Outfitter._NameOutfitDialog, UIParent)
+		self:UseGamepadNavigation(self.NameOutfitDialog, function (pDialog) pDialog:Cancel() end)
 	end
 	self.NameOutfitDialog:Open(pOutfit)
 end
@@ -4395,6 +4498,7 @@ end
 function Outfitter:OpenRebuildOutfitDialog(pOutfit)
 	if not self.RebuildOutfitDialog then
 		self.RebuildOutfitDialog = Outfitter:New(Outfitter._RebuildOutfitDialog, UIParent)
+		self:UseGamepadNavigation(self.RebuildOutfitDialog, function (pDialog) pDialog:Cancel() end)
 	end
 	self.RebuildOutfitDialog:Open(pOutfit)
 end

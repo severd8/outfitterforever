@@ -567,6 +567,44 @@ local function Pickup(loc)
 	end
 end
 
+-- The game's Gamepad UI (Options > Gamepad > Enable Gamepad UI): off unless a
+-- test turns it on (W.gamepadUI). The frame manager keeps the windows handed to
+-- the controller, newest last; in combat it turns addon calls away (the game
+-- shows "Interface action failed because of an AddOn").
+F.InputUtil = { IsGamepadUIEnabled = function() return W.gamepadUI == true end }
+W.gamepadFrames = {}
+local function GamepadCall(name)
+	if W.combat then
+		table.insert(W.errors, "blocked in combat: FrameControlsManager:" .. name)
+		return false
+	end
+	return true
+end
+F.GamepadMode = { FrameControlsManager = {
+	FrameShown = function(self, frame, isPopup)
+		if not W.gamepadUI or not GamepadCall("FrameShown") then return end
+		for _, shown in ipairs(W.gamepadFrames) do if shown == frame then return false end end
+		table.insert(W.gamepadFrames, frame)
+		return true
+	end,
+	FrameHidden = function(self, frame)
+		if not W.gamepadUI or not GamepadCall("FrameHidden") then return end
+		for i, shown in ipairs(W.gamepadFrames) do
+			if shown == frame then table.remove(W.gamepadFrames, i) return true end
+		end
+		return false
+	end,
+} }
+F.SmartNavigation = {
+	GetActiveFrame = function() return W.gamepadFrames[#W.gamepadFrames] end,
+	RefreshButtonGroups = function() W.gamepadRefreshes = (W.gamepadRefreshes or 0) + 1 end,
+}
+-- What the controller's B button does on the window it's in
+function W.GamepadBack()
+	local frame = W.gamepadFrames[#W.gamepadFrames]
+	if frame and frame.SmartNavigationCloseHandler then return frame.SmartNavigationCloseHandler(frame) end
+end
+
 -- Protected in combat on Forever: an addon calling it gets ADDON_ACTION_BLOCKED
 -- and nothing happens (a player saw this in 1.8.1)
 function F.PickupInventoryItem(slot)

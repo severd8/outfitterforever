@@ -1412,6 +1412,119 @@ do
 end
 
 ----------------------------------------
+Step("with the Gamepad UI on, the controller moves into Outfitter's dialogs and menus")
+do
+	local fishing = O:FindOutfitByName("Fishing") or O.Settings.Outfits.Complete[1]
+	local function Top() return W.gamepadFrames[#W.gamepadFrames] end
+	local function Has(frame)
+		for _, shown in ipairs(W.gamepadFrames) do if shown == frame then return true end end
+	end
+	W.gamepadFrames = {}
+
+	-- Off: nothing is handed over
+	O.OutfitMenuActions.OUTFITBAR_CHOOSEICON(O, fishing)
+	W.Tick(0.1)
+	Check(#W.gamepadFrames == 0, "with the Gamepad UI off, Outfitter leaves the controller alone")
+	env.OutfitterChooseIconDialog:Close()
+	W.Tick(0.1)
+
+	W.gamepadUI = true
+	local picker = env.OutfitterChooseIconDialog
+	O.OutfitMenuActions.OUTFITBAR_CHOOSEICON(O, fishing)
+	W.Tick(0.1)
+	Check(Top() == picker, "the icon picker takes the controller when it opens")
+	local special = false
+	for _, name in pairs(env.UISpecialFrames) do if name == "OutfitterChooseIconDialog" then special = true end end
+	Check(#env.UIMenus == 0 and special,
+		"Escape closes it through UISpecialFrames, not Blizzard's UIMenus (that tainted closing the character window)")
+	Check((W.gamepadRefreshes or 0) > 0, "and the controller looks at its buttons again once they're filled in")
+	Check(W.GamepadBack() == true and not picker:IsShown(), "B closes it, like Cancel")
+	Check(not Has(picker), "and gives the controller back")
+
+	O:OpenNameOutfitDialog(nil)
+	W.Tick(0.1)
+	Check(Top() == O.NameOutfitDialog, "the new outfit dialog takes the controller")
+	W.GamepadBack()
+	W.Tick(0.1)
+	Check(not O.NameOutfitDialog:IsShown() and not Has(O.NameOutfitDialog), "B cancels it")
+
+	O:OpenRebuildOutfitDialog(fishing)
+	W.Tick(0.1)
+	Check(Top() == O.RebuildOutfitDialog, "the rebuild dialog takes the controller")
+	W.GamepadBack()
+	W.Tick(0.1)
+	Check(not O.RebuildOutfitDialog:IsShown() and not Has(O.RebuildOutfitDialog), "B cancels it")
+
+	env.OutfitterEditScriptDialog:Open(fishing)
+	W.Tick(0.1)
+	Check(Top() == env.OutfitterEditScriptDialog, "the script dialog takes the controller")
+	W.GamepadBack()
+	W.Tick(0.1)
+	Check(not env.OutfitterEditScriptDialog:IsShown() and not Has(env.OutfitterEditScriptDialog), "B cancels it")
+
+	-- The outfit bar's settings (right-click its handle): a player opened these,
+	-- closed the character window with B, and got the "blocked" popup
+	O.OutfitBar:DragBar_OnClick("RightButton")
+	W.Tick(0.1)
+	local settings = O.OutfitBar.SettingsDialog
+	Check(settings:IsShown() and Top() == settings, "the outfit bar's settings take the controller")
+	Check(#env.UIMenus == 0, "and stay out of Blizzard's UIMenus")
+	W.GamepadBack()
+	W.Tick(0.1)
+	Check(not settings:IsShown() and not Has(settings), "B closes them")
+
+	-- The outfit menu (the arrow by each outfit)
+	O:ShowOutfitMenuAtCursor(fishing)
+	W.Tick(0.2)
+	local menu = O.outfitMenu and O.outfitMenu.menuFrame
+	Check(menu and Top() == menu, "the outfit menu takes the controller")
+	local sub
+	for _, line in ipairs(menu and menu.buttons or {}) do
+		if line.group and line:IsShown() then sub = line break end
+	end
+	Check(sub ~= nil, "(the menu has a line with a submenu)")
+	if sub then
+		sub:Click()
+		W.Tick(0.1)
+		Check(sub.groupFrame and sub.groupFrame:IsShown() and Top() == sub.groupFrame,
+			"pressing a line with a submenu opens it and moves the controller into it")
+		local leave = sub:GetScript("OnLeave")
+		if leave then leave(sub) end
+		Check(sub.groupFrame:IsShown(), "it stays open when the cursor leaves that line")
+		W.GamepadBack()
+		W.Tick(0.1)
+		Check(not sub.groupFrame:IsShown() and Top() == menu, "B closes the submenu and goes back to the menu")
+	end
+	W.GamepadBack()
+	W.Tick(0.5)
+	Check(O.outfitMenu == nil and not Has(menu), "B on the menu closes it and gives the controller back")
+
+	-- In combat the game turns addon calls away: nothing is asked then
+	W.combat = true
+	local errors = #W.errors
+	O.OutfitMenuActions.OUTFITBAR_CHOOSEICON(O, fishing)
+	W.Tick(0.1)
+	Check(not Has(picker), "in combat a dialog doesn't try to take the controller")
+	picker:Close()
+	W.combat = false
+	-- opened before combat, closed during it: given back once combat ends
+	O.OutfitMenuActions.OUTFITBAR_CHOOSEICON(O, fishing)
+	W.Tick(0.1)
+	W.combat = true
+	picker:Close()
+	W.Tick(0.1)
+	Check(Has(picker), "closed in combat, it's given back later")
+	W.combat = false
+	W.Fire("PLAYER_REGEN_ENABLED")
+	W.Tick(0.1)
+	Check(not Has(picker), "once combat ends")
+	Check(#W.errors == errors, "and nothing the game would block was tried")
+
+	W.gamepadUI = false
+	W.gamepadFrames = {}
+end
+
+----------------------------------------
 Step("outfits can be moved up and down, and the order is kept")
 do
 	local function Names(category)

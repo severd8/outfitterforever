@@ -291,6 +291,8 @@ end
 function HideGroup(self)
 	if not self then return end
 	if MouseOver(self) then return end
+	-- Outfitter Forever: a submenu the controller is in stays until it's closed (B)
+	if self.groupFrame and self.groupFrame.gamepadFocused then return end
 	if self.groupFrame then
 		self.groupFrame:Hide()
 	end
@@ -392,6 +394,15 @@ do
 	end
 
 	local function click(self)
+		-- Outfitter Forever: with a controller, pressing a line that has a submenu opens it
+		-- and moves the cursor into it (OnEnter alone shows it only while the cursor stays)
+		if self.group and not self.clickable and lib.GamepadShown then
+			ShowGroup(self)
+			if self.groupFrame and self.groupFrame:IsShown() and not self.groupFrame.gamepadFocused then
+				self.groupFrame.gamepadFocused = lib.GamepadShown(self.groupFrame, true) or nil
+			end
+			return
+		end
 		if self.OnClick and self.clickable then
 			self.OnClick(self)
 			PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
@@ -583,6 +594,10 @@ function ReleaseFrame(f)
 	end
 
 	f.released = true
+	if f.gamepadFocused or f.rootMenu then -- Outfitter Forever: give the controller back
+		f.gamepadFocused = nil
+		if lib.GamepadHidden then lib.GamepadHidden(f) end
+	end
 	f.data = nil
 	f.dataname = nil
 	f.rootMenu = nil
@@ -1069,6 +1084,8 @@ do
 				self:OpenAce3Menu(t.args, openMenu)
 				openMenu:Refresh()
 				openMenu:SetFrameStrata("TOOLTIP")
+				-- Outfitter Forever: with the game's Gamepad UI on, the controller moves into the menu
+				if lib.GamepadShown then lib.GamepadShown(openMenu, true) end
 				return openMenu
 			else
 				local sortedOpts = new()
