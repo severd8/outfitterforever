@@ -893,6 +893,10 @@ F.PaperDollItemsFrame.flyoutSettings = {
 	postGetItemsFunc = function(button, items, count) return count end,
 }
 F.PaperDollSidebarTabs = New("Frame", "PaperDollSidebarTabs", F.CharacterFrame)
+-- With the Gamepad UI on, Forever's CharacterFrame:SetupGamepad marks the strip
+-- ignored by controller navigation (SmartNavigation_MarkFrameIgnored), which
+-- covers everything inside it: its tabs are switched with the bumpers instead
+F.PaperDollSidebarTabs.smartNavigationIgnored = true
 -- The strip of tabs above the stats pane: Stats, Equipment Manager, Titles.
 -- It's hidden while the stats pane is collapsed.
 F.PaperDollSidebarTab2 = New("CheckButton", "PaperDollSidebarTab2", F.PaperDollSidebarTabs, nil, 2)

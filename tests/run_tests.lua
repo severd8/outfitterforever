@@ -1306,7 +1306,30 @@ do
 	Check(tab ~= nil, "Outfitter has its own tab button")
 	if tab then
 		Check(tab == O.SidebarTab, "it's the one Outfitter keeps")
-		Check(tab:GetParent() == env.PaperDollSidebarTabs, "it belongs to the tab strip, so it shows and hides with it")
+		-- Controller navigation (Forever's Blizzard_GamepadSmartNavigation): a frame
+		-- is skipped if it or any parent is marked ignored (SmartNavigation_IsFrameIgnored),
+		-- and only buttons inside the open window (CharacterFrame) are found
+		local function GamepadIgnored(frame)
+			while frame do
+				if frame.smartNavigationIgnored == true or frame.smartNavigationIgnoredDontPropagate == true then return true end
+				local parent = frame:GetParent()
+				if parent and parent.smartNavigationIgnoredDontPropagate == true then return false end
+				frame = parent
+			end
+			return false
+		end
+		local function Inside(frame, window)
+			while frame do
+				if frame == window then return true end
+				frame = frame:GetParent()
+			end
+			return false
+		end
+		Check(GamepadIgnored(env.PaperDollSidebarTab2), "(the game's controller navigation skips its own tabs)")
+		Check(not GamepadIgnored(tab), "a controller can move to the tab (it isn't inside the strip the game skips)")
+		Check(Inside(tab, env.CharacterFrame), "it's in the character window, where controller navigation looks for buttons")
+		Check(tab:GetParent() == O.SidebarTabHolder and tab:GetParent():GetParent() == env.PaperDollSidebarTabs:GetParent(),
+			"its holder sits beside the strip")
 		Check(AnchoredTo(tab, env.PaperDollSidebarTab2), "it covers the Equipment Manager tab")
 		Check(tab:GetFrameLevel() > env.PaperDollSidebarTab2:GetFrameLevel(), "and sits above it, so it takes the clicks")
 		Check(tab.Icon and tostring(tab.Icon:GetTexture()):find("Textures\\Tab", 1, true), "it shows Outfitter's icon")
@@ -1332,7 +1355,7 @@ do
 
 		-- Stats pane collapsed: the strip of tabs is gone, so the small button is back
 		W.PlayerCollapsesStatsPane(true)
-		Check(not tab:IsVisible(), "no tab while the stats pane is collapsed")
+		Check(not tab:IsVisible() and not O.SidebarTabHolder:IsShown(), "no tab while the stats pane is collapsed")
 		Check(env.OutfitterButton:IsShown() and env.OutfitterButton:IsVisible(), "the small button stands in")
 		W.PlayerCollapsesStatsPane(false)
 		Check(tab:IsVisible() and not env.OutfitterButton:IsShown(), "and steps aside when the pane opens again")
@@ -1341,6 +1364,8 @@ do
 		W.PlayerTogglesCharacter()
 		W.PlayerTogglesCharacter()
 		Check(tab:IsVisible() and not env.OutfitterButton:IsShown(), "still the tab after reopening the character window")
+		Check(W.replacedBlizzardScripts["PaperDollSidebarTabs:OnShow"] == nil and W.replacedBlizzardScripts["PaperDollSidebarTabs:OnHide"] == nil,
+			"the strip's own scripts are only hooked, never replaced")
 		Check(not tab:GetChecked(), "and it isn't lit, because Outfitter is closed")
 		O:ToggleOutfitterFrame()
 

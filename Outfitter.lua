@@ -1057,10 +1057,13 @@ function Outfitter:OutfitterButtonAdjust()
 end
 
 -- Forever: Outfitter's own button sits over the Equipment Manager tab at the
--- top of the stats pane, so that tab opens Outfitter. It is Outfitter's frame,
--- a child of Blizzard's tab strip so it shows and hides with it; nothing of
--- Blizzard's is changed or hooked. The small button by the pane's arrow is
--- used when the strip is hidden (stats pane collapsed) or the option is off.
+-- top of the stats pane, so that tab opens Outfitter. It lives in Outfitter's
+-- own holder frame, which shows and hides with Blizzard's tab strip. It isn't
+-- a child of the strip: with the Gamepad UI on, the game tells controller
+-- navigation to skip the strip and everything in it (its tabs are switched
+-- with the bumpers), so a tab inside it could never be reached. The small
+-- button by the pane's arrow is used when the strip is hidden (stats pane
+-- collapsed) or the option is off.
 function Outfitter:CreateSidebarTab()
 	if self.SidebarTab or not IsForever then
 		return self.SidebarTab
@@ -1073,7 +1076,16 @@ function Outfitter:CreateSidebarTab()
 		return nil
 	end
 
-	local vTab = CreateFrame("CheckButton", "OutfitterSidebarTab", vTabs)
+	-- Same parent and place as the strip, and visible exactly when it is
+	local vHolder = CreateFrame("Frame", "OutfitterSidebarTabHolder", vTabs:GetParent() or CharacterFrame)
+	vHolder:SetAllPoints(vTabs)
+	vHolder:SetFrameLevel(vTabs:GetFrameLevel())
+	vHolder:SetShown(vTabs:IsShown())
+	vTabs:HookScript("OnShow", function () vHolder:Show() end)
+	vTabs:HookScript("OnHide", function () vHolder:Hide() end)
+	self.SidebarTabHolder = vHolder
+
+	local vTab = CreateFrame("CheckButton", "OutfitterSidebarTab", vHolder)
 
 	vTab:SetAllPoints(vEMTab)
 	vTab:SetFrameLevel(vEMTab:GetFrameLevel() + 5)

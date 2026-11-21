@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.7
+
+From a controller player's idea, thank you!
+
+- **Fixed:** with the game's Gamepad UI turned on, the controller couldn't move to the Outfitter tab at the top of the character window's stats pane. You can now move to it with the D-pad and press A to open Outfitter.
+
 ## 1.9.6
 
 From a paladin player's report, thank you!
