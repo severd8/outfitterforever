@@ -295,6 +295,8 @@ function HideGroup(self)
 	if self.groupFrame and self.groupFrame.gamepadFocused then return end
 	if self.groupFrame then
 		self.groupFrame:Hide()
+		-- Outfitter Forever: never leave the controller in a submenu that's gone
+		if lib.GamepadHidden then lib.GamepadHidden(self.groupFrame) end
 	end
 	self:UnlockHighlight()
 	self:leave()
@@ -399,6 +401,9 @@ do
 		if self.group and not self.clickable and lib.GamepadShown then
 			ShowGroup(self)
 			if self.groupFrame and self.groupFrame:IsShown() and not self.groupFrame.gamepadFocused then
+				-- Marked first: moving the cursor into the submenu runs this line's OnLeave
+				-- (HideGroup), which must leave the submenu open
+				self.groupFrame.gamepadFocused = true
 				self.groupFrame.gamepadFocused = lib.GamepadShown(self.groupFrame, true) or nil
 			end
 			return

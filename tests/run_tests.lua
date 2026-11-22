@@ -1484,6 +1484,9 @@ do
 	end
 	Check(sub ~= nil, "(the menu has a line with a submenu)")
 	if sub then
+		-- The cursor on that line opens the submenu (OnEnter), as hovering does
+		W.gamepadCurrent = sub
+		sub:GetScript("OnEnter")(sub)
 		sub:Click()
 		W.Tick(0.1)
 		Check(sub.groupFrame and sub.groupFrame:IsShown() and Top() == sub.groupFrame,

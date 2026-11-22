@@ -585,6 +585,10 @@ F.GamepadMode = { FrameControlsManager = {
 		if not W.gamepadUI or not GamepadCall("FrameShown") then return end
 		for _, shown in ipairs(W.gamepadFrames) do if shown == frame then return false end end
 		table.insert(W.gamepadFrames, frame)
+		-- The cursor moves into it: the button it was on gets its OnLeave (FocusExit)
+		local current = W.gamepadCurrent
+		W.gamepadCurrent = nil
+		if current and current:GetScript("OnLeave") then current:GetScript("OnLeave")(current) end
 		return true
 	end,
 	FrameHidden = function(self, frame)

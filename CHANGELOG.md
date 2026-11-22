@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.9
+
+From a controller player's report, thank you!
+
+- **Fixed:** with the Gamepad UI on, pressing A on a menu line with an arrow (Key Binding, Title, Outfit display, Bank, Script) showed its submenu, but the cursor couldn't move into it or leave it. Now A opens the submenu with the cursor inside, and B closes it again.
+
 ## 1.9.8
 
 More for controller players, thank you for the idea!
