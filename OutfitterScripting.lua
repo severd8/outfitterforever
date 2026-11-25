@@ -438,10 +438,13 @@ function Outfitter:GenerateDruidShapeshiftScript(pEventID, pDescription)
 		end
 	end
 	return
-		self:GenerateScriptHeader({pEventID, 'NOT_'..pEventID, 'PLAYER_TALENT_UPDATE', 'OUTFIT_EQUIPPED'}, pDescription)..
+		self:GenerateScriptHeader({pEventID, 'NOT_'..pEventID, 'PLAYER_TALENT_UPDATE', 'PLAYER_ENTERING_WORLD', 'OUTFIT_EQUIPPED'}, pDescription)..
 [[
 -- $SETTING DisableBG={type="boolean", label="Don't equip in Battlegrounds", default=false}
 -- $SETTING DisablePVP={type="boolean", label="Don't equip while PvP flagged", default=false}
+-- $SETTING DisableInstance={type="boolean", label="Don't equip in dungeons", default=false}
+-- $SETTING KeepInstance={type="boolean", label="Keep on in dungeons (any form)", default=false}
+-- $SETTING EquipInstance={type="boolean", label="Wear when entering a dungeon", default=false}
 -- $SETTING UnequipComplete={type="boolean", label="Allow Complete outfits to unequip", default=false}
 -- $SETTING Tree1={type="boolean", label=Outfitter:GetTalentTreeName(1), default=true}
 -- $SETTING Tree2={type="boolean", label=Outfitter:GetTalentTreeName(2), default=true}
@@ -455,6 +458,13 @@ or (setting.DisablePVP and UnitIsPVP("player")) then
     return
 end
 
+-- Dungeons and raids: "Don't equip in dungeons" leaves this outfit alone there
+local inInstance, instanceType = IsInInstance()
+local inDungeon = inInstance and (instanceType == "party" or instanceType == "raid")
+if setting.DisableInstance and inDungeon then
+    return
+end
+
 -- Return if they're not in an enabled spec
 if Outfitter.IsMainline then
   if not setting.Tree1 and Outfitter:GetSpecialization() == 1
@@ -465,9 +475,29 @@ if Outfitter.IsMainline then
   end
 end
 
+-- "Wear when entering a dungeon": every loading screen (zoning in, a summon,
+-- running back after a wipe) fires this, in any form. Anywhere else, or with
+-- the option off, it changes nothing. In combat Outfitter puts it on once the
+-- fight is over.
+if event == "PLAYER_ENTERING_WORLD" then
+    if not (setting.EquipInstance and inDungeon) or isEquipped then
+        return
+    end
+    equip = true
+    layer = "shapeshift"
+    delay = 1
+end
+
 -- Return if the user isn't in full control
 
-if not Outfitter.IsDead and not HasFullControl() then
+if event ~= "PLAYER_ENTERING_WORLD" and not Outfitter.IsDead and not HasFullControl() then
+    return
+end
+
+-- "Keep on in dungeons": leaving the form (or a talent update, below) doesn't
+-- take it off there
+if setting.KeepInstance and inDungeon
+and (event == "NOT_]]..pEventID..[[" or event == "PLAYER_TALENT_UPDATE") then
     return
 end
 

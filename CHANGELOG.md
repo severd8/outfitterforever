@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.0
+
+From a bear tank's idea, thank you!
+
+- **New:** three dungeon options in the Bear Form and Cat Form outfits' automation settings. They also count raids.
+  - **Don't equip in dungeons:** shifting into that form inside a dungeon doesn't change your gear. Tick it on Cat to keep your tank gear on while you shift to Cat.
+  - **Keep on in dungeons (any form):** leaving the form inside a dungeon doesn't take the outfit off.
+  - **Wear when entering a dungeon:** the outfit goes on whenever you zone into a dungeon, including from a summon, in any form. If you arrive in a fight, it goes on when the fight ends.
+
 ## 1.9.9
 
 From a controller player's report, thank you!

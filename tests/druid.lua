@@ -98,5 +98,60 @@ cat.ScriptSettings.UnequipComplete = true
 Form(0)
 Check(not O:WearingOutfit(cat), "leaving Cat Form takes Cat off when Complete outfits may unequip")
 
+-- Dungeon options (from a bear tank's request): Cat doesn't go on in dungeons,
+-- Bear stays on there whatever the form, and goes on when entering one
+local function Zone(instanceType)
+	W.instance = instanceType
+	W.Fire("PLAYER_ENTERING_WORLD", false, false)
+	W.Tick(5)
+end
+cat.ScriptSettings.DisableInstance = true
+bear.ScriptSettings.KeepInstance = true
+bear.ScriptSettings.EquipInstance = true
+bear.ScriptSettings.UnequipComplete = true -- so only "Keep on" can hold it on
+O:WearOutfit(healing)
+W.Tick(3)
+Zone(nil)
+Check(O:WearingOutfit(healing) and not O:WearingOutfit(bear), "a loading screen outside a dungeon doesn't put Bear on")
+Form(2)
+Check(O:WearingOutfit(cat), "outside a dungeon Cat Form still puts Cat on")
+Form(0)
+Zone("party")
+Check(O:WearingOutfit(bear) and W.equipped[8] == 1005, "entering a dungeon (or a summon) puts Bear on in caster form (feet have " .. tostring(W.equipped[8]) .. ")")
+Form(2)
+Check(O:WearingOutfit(bear) and not O:WearingOutfit(cat) and W.equipped[8] == 1005, "in a dungeon Cat Form leaves Bear on (feet have " .. tostring(W.equipped[8]) .. ")")
+Form(1)
+Form(0)
+Check(O:WearingOutfit(bear), "in a dungeon leaving Bear Form keeps Bear on")
+W.Fire("PLAYER_TALENT_UPDATE")
+W.Tick(3)
+Check(O:WearingOutfit(bear), "in a dungeon a talent update keeps Bear on")
+
+-- Summoned into a raid mid-fight: Bear goes on when the fight ends
+Zone(nil)
+Form(2)
+Check(O:WearingOutfit(cat), "back outside, Cat Form puts Cat on again")
+W.combat = true
+W.Fire("PLAYER_REGEN_DISABLED")
+Zone("raid")
+W.combat = false
+W.Fire("PLAYER_REGEN_ENABLED")
+W.Tick(5)
+Check(O:WearingOutfit(bear) and W.equipped[8] == 1005, "a summon into a raid in combat puts Bear on by the end of the fight")
+
+-- With the option off, entering a dungeon changes nothing
+Zone(nil)
+Form(0)
+O:WearOutfit(healing)
+W.Tick(3)
+bear.ScriptSettings.EquipInstance = false
+Zone("party")
+Check(O:WearingOutfit(healing) and not O:WearingOutfit(bear), "with \"Wear when entering\" off, entering a dungeon doesn't put Bear on")
+bear.ScriptSettings.KeepInstance = false
+Form(1)
+Form(0)
+Check(not O:WearingOutfit(bear), "with \"Keep on\" off, leaving Bear Form in a dungeon takes it off as before")
+Zone(nil)
+
 for _, message in ipairs(W.errors) do Check(false, "Lua error: " .. message:sub(1, 300)) end
 return failures
